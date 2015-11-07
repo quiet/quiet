@@ -1,20 +1,20 @@
-#include    <stdio.h>
-#include    <stdlib.h>
-#include    <string.h>
-#include    <math.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <math.h>
 
-#include    <sndfile.h>
-
-
-#ifndef     M_PI
-#define     M_PI        3.14159265358979323846264338
-#endif
-
+#include <liquid/liquid.h>
+#include <sndfile.h>
 
 const int sample_rate = 44100;
+
+float normalize_freq(float freq) {
+    return (freq / sample_rate) * 2 * M_PI;
+}
+
+
 const float ceiling = 1.0 * 0x7f000000;
 const size_t writeblock_len = 512;
-
 
 void write_wav(char *fname, const float *samples, size_t sample_len) {
     SF_INFO sfinfo;
@@ -55,14 +55,36 @@ void write_wav(char *fname, const float *samples, size_t sample_len) {
 }
 
 
+const float carrier_freq = 6300.0f;
+
+void modulate(const float complex *symbols, size_t symbol_len, float *samples) {
+    nco_crcf carrier = nco_crcf_create(LIQUID_NCO);
+    nco_crcf_set_phase(carrier, 0.0f);
+    nco_crcf_set_frequency(carrier, normalize_freq(carrier_freq));
+
+    for (size_t i = 0; i < symbol_len; i++) {
+        float complex sample;
+        // TODO modulation depth?
+        nco_crcf_mix_up(carrier, symbols[i], &sample);
+        samples[i] = crealf(sample);
+        nco_crcf_step(carrier);
+    }
+
+    nco_crcf_destroy(carrier);
+}
+
+
 int main(int argc, char **argv) {
     size_t sample_len = sample_rate * 4;
+    float complex symbols[sample_len];
     float samples[sample_len];
-    const float freq = (440.0 / sample_rate);
+    const float freq = normalize_freq(440.0);
 
     for (size_t k = 0; k < sample_len; k++) {
-        samples[k] = sin(freq * 2 * k * M_PI);
+        symbols[k] = sin(freq * k);
     }
+
+    modulate(symbols, sample_len, samples);
 
     write_wav("sine.wav", samples, sample_len);
 
