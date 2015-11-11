@@ -10,7 +10,9 @@
 const int sample_rate = 44100;
 
 float normalize_freq(float freq) {
-    return (freq / sample_rate) * 2 * M_PI;
+    float norm = (freq / (float)(sample_rate)) * 2 * M_PI;
+    printf("%f\n", norm);
+    return norm;
 }
 
 SNDFILE *wav_open(const char *fname) {
@@ -40,10 +42,10 @@ typedef struct {
 } Carrier;
 
 
-const float carrier_freq = 3150.0f;
+const float carrier_freq = 11000.0f;
 const unsigned int samples_per_symbol = 2;
-const unsigned int symbol_delay = 3;
-const float excess_bw = 0.3f;
+const unsigned int symbol_delay = 11;
+const float excess_bw = 0.2f;
 const size_t num_coeffs = (2 * samples_per_symbol * symbol_delay) + 1;
 
 
@@ -55,7 +57,7 @@ Carrier *create_modulator() {
     nco_crcf_set_frequency(c->nco, normalize_freq(carrier_freq));
 
     float coeff[num_coeffs];
-    liquid_firdes_prototype(LIQUID_FIRFILT_RRC, samples_per_symbol, symbol_delay, excess_bw, 0, coeff);
+    liquid_firdes_rrcos(samples_per_symbol, symbol_delay, excess_bw, 0, coeff);
     c->interp = firinterp_crcf_create(samples_per_symbol, coeff, num_coeffs);
 
     return c;
@@ -66,10 +68,10 @@ void modulate(Carrier *carrier, const float complex *symbols, size_t symbol_len,
     for (size_t i = 0; i < symbol_len; i++) {
         firinterp_crcf_execute(carrier->interp, symbols[i], &post_filter[0]);
         for (size_t j = 0; j < samples_per_symbol; j++) {
-            float c, s;
-            nco_crcf_sincos(carrier->nco, &s, &c);
+            float complex mixed;
+            nco_crcf_mix_up(carrier->nco, post_filter[j], &mixed);
+            samples[i * samples_per_symbol + j] = crealf(mixed);
             nco_crcf_step(carrier->nco);
-            samples[i * samples_per_symbol + j] = (crealf(post_filter[j]) * c) - (cimagf(post_filter[j]) * s);
         }
     }
 }
@@ -80,10 +82,10 @@ void destroy_modulator(Carrier *c) {
 }
 
 
-const unsigned int num_subcarriers = 64;
+const unsigned int num_subcarriers = 512;
 const unsigned int cyclic_prefix_len = 16;
 const unsigned int taper_len = 4;
-const size_t encode_block_len = 120;
+const size_t encode_block_len = 16000;
 const size_t encode_symbol_len = num_subcarriers + cyclic_prefix_len;
 const size_t encode_sample_len = encode_symbol_len * samples_per_symbol;
 
@@ -102,11 +104,17 @@ int encode_to_wav(const char *payload_fname, const char *out_fname) {
         return 1;
     }
 
+    ofdmflexframegenprops_s props = {
+        LIQUID_CRC_32,
+        LIQUID_FEC_NONE,
+        LIQUID_FEC_NONE,
+        LIQUID_MODEM_SQAM128,
+    };
     ofdmflexframegen framegen = ofdmflexframegen_create(num_subcarriers,
                                                         cyclic_prefix_len,
                                                         taper_len,
                                                         NULL,
-                                                        NULL);
+                                                        &props);
 
     Carrier *modulator = create_modulator();
 
@@ -126,6 +134,11 @@ int encode_to_wav(const char *payload_fname, const char *out_fname) {
     float pad[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
     wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+
     while (!done) {
         size_t nread = fread(readbuf, sizeof(unsigned char), encode_block_len, payload);
         if (nread == 0) {
@@ -135,18 +148,32 @@ int encode_to_wav(const char *payload_fname, const char *out_fname) {
         }
 
         unsigned char header[8];
-        ofdmflexframegen_assemble(framegen, header, readbuf, encode_block_len);
+        ofdmflexframegen_assemble(framegen, header, readbuf, nread);
+        ofdmflexframegen_print(framegen);
 
         int last_symbol = 0;
         while (!last_symbol) {
             last_symbol = ofdmflexframegen_writesymbol(framegen, symbolbuf);
             modulate(modulator, symbolbuf, encode_symbol_len, samplebuf);
             wav_write(wav, samplebuf, encode_sample_len);
-            printf("%lu samples written.\n", encode_sample_len);
         }
-
     }
 
+    float complex terminate[2 * symbol_delay];
+    for (size_t i = 0; i < 2 * symbol_delay; i++) {
+        terminate[i] = 0;
+    }
+    modulate(modulator, terminate, 2 * symbol_delay, samplebuf);
+    wav_write(wav, samplebuf, 2 * symbol_delay * samples_per_symbol);
+
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
+    wav_write(wav, pad, 18);
     wav_write(wav, pad, 18);
 
     free(readbuf);

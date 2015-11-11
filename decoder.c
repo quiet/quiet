@@ -40,10 +40,10 @@ typedef struct {
 } Carrier;
 
 
-const float carrier_freq = 3150.0f;
+const float carrier_freq = 11000.0f;
 const unsigned int samples_per_symbol = 2;
-const unsigned int symbol_delay = 3;
-const float excess_bw = 0.3f;
+const unsigned int symbol_delay = 11;
+const float excess_bw = 0.2f;
 const size_t num_coeffs = (2 * samples_per_symbol * symbol_delay) + 1;
 
 
@@ -54,8 +54,11 @@ Carrier *create_demodulator() {
     nco_crcf_set_phase(c->nco, 0.0f);
     nco_crcf_set_frequency(c->nco, normalize_freq(carrier_freq));
 
-    float coeff[num_coeffs];
-    liquid_firdes_prototype(LIQUID_FIRFILT_RRC, samples_per_symbol, symbol_delay, excess_bw, 0, coeff);
+    float coeff_rev[num_coeffs], coeff[num_coeffs];
+    liquid_firdes_prototype(LIQUID_FIRFILT_RRC, samples_per_symbol, symbol_delay, excess_bw, 0, coeff_rev);
+    for (size_t i = 0; i < num_coeffs; i++) {
+        coeff[i] = coeff_rev[num_coeffs - i - 1];
+    }
     c->decim = firdecim_crcf_create(samples_per_symbol, coeff, num_coeffs);
 
     return c;
@@ -71,10 +74,8 @@ void demodulate(Carrier *carrier, float *samples, size_t sample_len, float compl
 
     for (size_t i = 0; i < sample_len; i += samples_per_symbol) {
         for (size_t j = 0; j < samples_per_symbol; j++) {
-            float c, s;
-            nco_crcf_sincos(carrier->nco, &s, &c);
+            nco_crcf_mix_down(carrier->nco, samples[i + j], &post_mixer[j]);
             nco_crcf_step(carrier->nco);
-            post_mixer[j] = (samples[i + j] * c) + (I * samples[i + j] * s);
         }
 
         firdecim_crcf_execute(carrier->decim, &post_mixer[0], &symbols[(i/samples_per_symbol)]);
@@ -88,28 +89,30 @@ void destroy_demodulator(Carrier *c) {
 }
 
 
-const size_t decode_buf_len = 1024;
+const size_t decode_buf_len = 1 << 20;
+size_t accum = 0;
 
 int on_decode(unsigned char *header, int header_valid, unsigned char *payload, unsigned int payload_len,
               int payload_valid, framesyncstats_s stats, void *vbuf) {
     printf("%d %d\n", header_valid, payload_valid);
     if (!header_valid || !payload_valid) {
-        return 0;
+        return 1;
     }
 
     if (payload_len > decode_buf_len) {
         payload_len = decode_buf_len;
     }
     memmove(vbuf, payload, payload_len);
+    accum += payload_len;
 
     return 0;
 }
 
 
-const unsigned int num_subcarriers = 64;
+const unsigned int num_subcarriers = 512;
 const unsigned int cyclic_prefix_len = 16;
 const unsigned int taper_len = 4;
-const size_t encode_block_len = 120;
+const size_t encode_block_len = 4096;
 const size_t encode_symbol_len = num_subcarriers + cyclic_prefix_len;
 const size_t encode_sample_len = encode_symbol_len * samples_per_symbol;
 
@@ -150,14 +153,14 @@ int decode_wav(const char *wav_fname, const char *payload_fname) {
     if (samplebuf == NULL) {
         return 1;
     }
+    size_t wantread = 96;
+    unsigned int i = 0;
     while (!done) {
-        size_t nread = wav_read(wav, samplebuf, encode_sample_len);
-
-        printf("%lu samples read.\n", nread);
+        size_t nread = wav_read(wav, samplebuf, wantread);
 
         if (nread == 0) {
             break;
-        } else if (nread < encode_sample_len) {
+        } else if (nread < wantread) {
             done = true;
         }
 
@@ -165,10 +168,15 @@ int decode_wav(const char *wav_fname, const char *payload_fname) {
 
         ofdmflexframesync_execute(framesync, symbolbuf, (nread/samples_per_symbol));
 
-        ofdmflexframesync_debug_print(framesync, "framesync.out");
+        if (accum > 0) {
+            char fname[50];
+            sprintf(fname, "framesync_%u.out", i);
+            ofdmflexframesync_debug_print(framesync, fname);
+            i++;
 
-        // TODO actually get payload_len from the decoder callback and use here
-        fwrite(writebuf, sizeof(unsigned char), encode_block_len, payload);
+            fwrite(writebuf, sizeof(unsigned char), accum, payload);
+            accum = 0;
+        }
     }
 
     free(symbolbuf);
