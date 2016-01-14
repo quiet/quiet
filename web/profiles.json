@@ -1,0 +1,43 @@
+{
+    "main": {
+        "ofdm": {
+            "num_subcarriers": 128,
+            "cyclic_prefix_length": 16,
+            "taper_length": 8,
+            "left_band": 0,
+            "right_band": 9
+        },
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27p23",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "qam256",
+        "frame_length": 400,
+        "modulation": {
+            "samples_per_symbol": 2,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35,
+            "center_radians": 1.5708,
+            "gain": 0.15
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.1
+        }
+    },
+    "modem": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27p23",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "qam256",
+        "frame_length": 400,
+        "modulation": {
+            "samples_per_symbol": 2,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35,
+            "center_radians": 1.5708,
+            "gain": 0.15
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.01
+        }
+    }
+}
