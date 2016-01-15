@@ -11,6 +11,10 @@ Profiles
 -----------
 The encoding and decoding process are controlled by the profiles in `web/profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction. This project uses libjansson to read the profiles and then select one based on a given profile name.
 
+Ultrasonic
+-----------
+The `highfreq` profile encodes data into a very low bitrate, but the audio content falls entirely between 18.5kHz and 19.5kHz, which should pass through audio equipment relatively well while being inaudible to the average person. This is a good option for sending data through a channel where you would prefer not to disrupt or notify human listeners.
+
 Dependencies
 -----------
 * [Liquid DSP](https://github.com/jgaeddert/liquid-dsp)
