@@ -13,6 +13,6 @@ The encoding and decoding process are controlled by the profiles in `web/profile
 
 Dependencies
 -----------
-[Liquid DSP](https://github.com/jgaeddert/liquid-dsp)
-[libfec](http://www.ka9q.net/code/fec/)
-[Jansson](https://github.com/akheron/jansson)
+* [Liquid DSP](https://github.com/jgaeddert/liquid-dsp)
+* [libfec](http://www.ka9q.net/code/fec/)
+* [Jansson](https://github.com/akheron/jansson)
