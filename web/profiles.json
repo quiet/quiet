@@ -39,5 +39,22 @@
         "encoder_filters": {
             "dc_filter_alpha": 0.01
         }
+    },
+    "highfreq": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27p23",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "psk2",
+        "frame_length": 25,
+        "modulation": {
+            "samples_per_symbol": 40,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35,
+            "center_radians": 2.707,
+            "gain": 0.15
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.01
+        }
     }
 }

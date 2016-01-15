@@ -272,8 +272,11 @@ modulator *create_modulator(const modulator_options *opt) {
     } else {
         m->premixfilter = NULL;
     }
+    /*
     m->mixfilter = firfilt_crcf_create_kaiser(
         2048, opt->center_rads * (1 / (2 * M_PI)) + 0.23f, 60.0f, 0);
+        */
+    m->mixfilter = NULL;
     if (opt->dc_filter_opt.alpha) {
         m->dcfilter = iirfilt_crcf_create_dc_blocker(opt->dc_filter_opt.alpha);
     } else {
@@ -367,7 +370,9 @@ void destroy_modulator(modulator *m) {
     if (m->premixfilter) {
         iirfilt_crcf_destroy(m->premixfilter);
     }
-    firfilt_crcf_destroy(m->mixfilter);
+    if (m->mixfilter) {
+        firfilt_crcf_destroy(m->mixfilter);
+    }
     if (m->dcfilter) {
         iirfilt_crcf_destroy(m->dcfilter);
     }
