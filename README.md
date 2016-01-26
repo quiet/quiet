@@ -5,7 +5,7 @@ This library uses liquid SDR to encode and decode data through 44.1kHz. This mak
 
 Building this project on a modern computer is somewhat tricky as libfec does not know about 64-bit architectures. I have a customized version which can handle this case which should be coming soon.
 
-Generating the emscripten build requires that all dependencies be built with emscripten (e.g. emconfigure ./configure; emmake make; make install) for each dependency. After the emscripten-comiled dependencies are installed, run this project's ./build_js. Alternately, you may use the precompiled encode.js provided by this project. Be sure to include the third party license information in web/LICENSE-3RD-PARTY.txt.
+Generating the emscripten build requires that all dependencies be built with emscripten (e.g. emconfigure ./configure; emmake make; make install) for each dependency. After the emscripten-compiled dependencies are installed, run this project's ./build_js. Alternately, you may use the precompiled encode.js provided by this project. Be sure to include the third party license information in web/LICENSE-3RD-PARTY.txt.
 
 Profiles
 -----------
