@@ -63,13 +63,13 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
             opt->modopt.symbol_delay = json_integer_value(vv);
         }
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
-            opt->modopt.excess_bw = json_real_value(vv);
+            opt->modopt.excess_bw = json_number_value(vv);
         }
         if ((vv = json_object_get(v, "center_radians"))) {
-            opt->modopt.center_rads = json_real_value(vv);
+            opt->modopt.center_rads = json_number_value(vv);
         }
         if ((vv = json_object_get(v, "gain"))) {
-            opt->modopt.gain = json_real_value(vv);
+            opt->modopt.gain = json_number_value(vv);
         }
     }
     if ((v = json_object_get(profile, "encoder_filters"))) {
@@ -77,14 +77,14 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
         json_t *vvv;
         if ((vv = json_object_get(v, "premix"))) {
             if ((vvv = json_object_get(vv, "cutoff"))) {
-                opt->modopt.premix_filter_opt.cutoff = json_real_value(vvv);
+                opt->modopt.premix_filter_opt.cutoff = json_number_value(vvv);
             }
             if ((vvv = json_object_get(vv, "order"))) {
                 opt->modopt.premix_filter_opt.order = json_integer_value(vvv);
             }
         }
         if ((vv = json_object_get(v, "dc_filter_alpha"))) {
-            opt->modopt.dc_filter_opt.alpha = json_real_value(vv);
+            opt->modopt.dc_filter_opt.alpha = json_number_value(vv);
         }
     }
 
@@ -161,10 +161,10 @@ decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
             opt->demodopt.symbol_delay = json_integer_value(vv);
         }
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
-            opt->demodopt.excess_bw = json_real_value(vv);
+            opt->demodopt.excess_bw = json_number_value(vv);
         }
         if ((vv = json_object_get(v, "center_radians"))) {
-            opt->demodopt.center_rads = json_real_value(vv);
+            opt->demodopt.center_rads = json_number_value(vv);
         }
     }
     if ((v = json_object_get(profile, "decoder_filters"))) {
@@ -172,7 +172,7 @@ decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
         json_t *vvv;
         if ((vv = json_object_get(v, "mix"))) {
             if ((vvv = json_object_get(vv, "cutoff"))) {
-                opt->demodopt.mix_filter_opt.cutoff = json_real_value(vvv);
+                opt->demodopt.mix_filter_opt.cutoff = json_number_value(vvv);
             }
             if ((vvv = json_object_get(vv, "order"))) {
                 opt->demodopt.mix_filter_opt.order = json_integer_value(vvv);
