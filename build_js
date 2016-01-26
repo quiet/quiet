@@ -1,0 +1,3 @@
+#!/bin/bash
+
+emcc -Wall -Werror -Wpedantic encode.c -o web/encode.js -s EXPORTED_FUNCTIONS="['_decode', '_create_decoder', '_decode_max_len', '_decode_flush', '_decoder_readbuf', '_destroy_decoder', '_encode', '_create_encoder', '_destroy_encoder', '_encoder_set_payload', '_get_encoder_profile_str', '_get_decoder_profile_str']" -lliquid -lfec -ljansson -O2
