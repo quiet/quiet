@@ -1,10 +1,8 @@
 var SampleEncoder = SampleEncoder || {};
 
 var Module = {
-    onFileSelect: function(e) {
-        var reader = new FileReader()
-        reader.readAsDataURL(e.target.files[0]);
-        var payload = intArrayFromString(reader.result);
+    onFileRead: function(e) {
+        var payload = intArrayFromString(e.result);
         ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [Module.encoder, payload, payload.length]);
 
         var sample_len = 16384;
@@ -27,7 +25,11 @@ var Module = {
         setTimeout(function() {
             transmitter.connect(Module.audio_ctx.destination);
         }, 5000);
-
+    },
+    onFileSelect: function(e) {
+        var reader = new FileReader()
+        reader.onload = Module.onFileRead;
+        reader.readAsDataURL(e.target.files[0]);
     },
     onProfilesFetch: function(profiles) {
         Module.audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
