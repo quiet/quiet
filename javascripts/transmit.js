@@ -11,8 +11,8 @@ var Module = {
         var samples = ccall('malloc', 'pointer', ['number'], [4 * sample_len]);
         var sample_view = HEAPF32.subarray((samples/4), (samples/4) + sample_len);
 
-        var script_processor = audio_ctx.createScriptProcessor || audio_ctx.createJavaScriptNode
-        var transmitter = script_processor.call(audio_ctx, sample_len, 1, 2);
+        var script_processor = Module.audio_ctx.createScriptProcessor || Module.audio_ctx.createJavaScriptNode
+        var transmitter = script_processor.call(Module.audio_ctx, sample_len, 1, 2);
         transmitter.onaudioprocess = function(e) {
             var output_offset = 0;
             var output_l = e.outputBuffer.getChannelData(0);
@@ -25,13 +25,13 @@ var Module = {
 
 
         setTimeout(function() {
-            transmitter.connect(audio_ctx.destination);
+            transmitter.connect(Module.audio_ctx.destination);
         }, 5000);
 
     },
     onProfilesFetch: function(profiles) {
-        var audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
-        console.log(audio_ctx.sampleRate);
+        Module.audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
+        console.log(Module.audio_ctx.sampleRate);
 
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
