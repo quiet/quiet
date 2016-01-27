@@ -10,6 +10,8 @@ var Module = {
         var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);
         var data_buffer_size = Math.pow(2, 16);
         var data_buffer = ccall('malloc', 'pointer', ['number'], [data_buffer_size]);
+        var content_target = document.querySelector('[data-quiet-receive-target]');
+        var content = "";
         var getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia);
         getUserMedia.call(navigator, {
                 audio: {
@@ -46,8 +48,8 @@ var Module = {
                     ccall('decoder_readbuf', 'number', ['pointer', 'pointer', 'number'], [decoder, data_buffer, data_buffered]);
                     var result = HEAP8.subarray(data_buffer, data_buffer + data_buffered)
                     var result_str = String.fromCharCode.apply(null, new Uint8Array(result));
-                    var div = document.getElementById('payload');
-                    div.innerHTML = div.innerHTML + result_str;
+                    content += result_str;
+                    content_target.innerHTML = "<img src='" + content + "'>;
                 }
             }
 
