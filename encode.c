@@ -33,6 +33,9 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     if ((v = json_object_get(profile, "frame_length"))) {
         opt->frame_len = json_integer_value(v);
     }
+    if ((v = json_object_get(profile, "noise_prefix"))) {
+        opt->noise_prefix = json_integer_value(v);
+    }
     if ((v = json_object_get(profile, "ofdm"))) {
         json_t *vv;
         opt->is_ofdm = true;
@@ -589,6 +592,8 @@ encoder *create_encoder(const encoder_options *opt) {
     e->payload_length = 0;
     e->has_flushed = true;
 
+    e->noise_prefix_remaining = opt->noise_prefix;
+
     return e;
 }
 
@@ -671,6 +676,15 @@ size_t _constrained_write(sample_t *src, size_t src_len, sample_t *dst,
     return len;
 }
 
+size_t _encoder_write_noise(encoder *e) {
+    float noise_floor = -20.0f;
+    float nstd = powf(10.0f, noise_floor/20.0f);
+    for (size_t i = 0; i < e->noise_prefix_remaining; i++) {
+        e->samplebuf[i] = nstd * (randnf() + _Complex_I * randnf()) * M_SQRT1_2;
+    }
+    return e->noise_prefix_remaining;
+}
+
 size_t _encoder_pad(encoder *e) {
     size_t padding_len;
     if (e->opt.is_ofdm) {
@@ -739,6 +753,20 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         }
 
         e->samplebuf_offset = 0;
+
+        if (e->noise_prefix_remaining > 0) {
+            size_t noise_wanted = e->noise_prefix_remaining;
+            if (noise_wanted > e->samplebuf_cap) {
+                e->samplebuf =
+                    realloc(e->samplebuf,
+                            noise_wanted *
+                                sizeof(sample_t));  // XXX check malloc result
+                e->samplebuf_cap = noise_wanted;
+            }
+            e->samplebuf_len = _encoder_write_noise(e);
+            e->noise_prefix_remaining = 0;
+            continue;
+        }
 
         if (!(_encoder_assembled(e))) {
             if (e->payload_length == 0) {

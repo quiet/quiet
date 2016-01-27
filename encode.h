@@ -67,6 +67,7 @@ typedef struct {
     unsigned int outer_fec_scheme;
     unsigned int mod_scheme;
     size_t frame_len;
+    size_t noise_prefix;
     bool is_ofdm;
     ofdm_options ofdmopt;
     modulator_options modopt;
@@ -102,6 +103,7 @@ typedef struct {
     uint8_t *payload;
     size_t payload_length;
     bool has_flushed;
+    size_t noise_prefix_remaining;
 } encoder;
 
 typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
