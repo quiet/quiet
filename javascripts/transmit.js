@@ -33,7 +33,6 @@ var Module = {
         var audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
         console.log(audio_ctx.sampleRate);
 
-        Module.memoryInitializerPrefixURL = "javascripts/";
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
@@ -48,7 +47,7 @@ var Module = {
     onRuntimeInitialized: function() {
         var xhr = new XMLHttpRequest();
         xhr.overrideMimeType("application/json");
-        xhr.open("GET", "profiles.json", true);
+        xhr.open("GET", "javascripts/profiles.json", true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == "200") {
                 Module.onProfilesFetch(xhr.responseText);
