@@ -17,7 +17,9 @@ var Module = {
             var written = ccall('encode', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, samples, sample_len]);
             output_l.set(sample_view);
             if (written < sample_len) {
-                output_l.fill(0, written);
+                for (var i = written; i < sample_len; i++) {
+                    output_l[i] = 0;
+                }
             }
         };
 
