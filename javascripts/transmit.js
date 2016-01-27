@@ -38,7 +38,7 @@ var Module = {
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
         var encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
 
-        document.querySelectorAll('[data-quiet-file-input]').addEventListener('change', Module.onFileSelect, false);
+        document.querySelector('[data-quiet-file-input]').addEventListener('change', Module.onFileSelect, false);
 
 
         //ccall('destroy_encoder', null, ['pointer'], [encoder]);
