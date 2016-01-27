@@ -33,6 +33,7 @@ var Module = {
         var audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
         console.log(audio_ctx.sampleRate);
 
+        Module.memoryInitializerPrefixURL = "javascripts/";
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
