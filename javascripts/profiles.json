@@ -10,8 +10,8 @@
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27p23",
         "outer_fec_scheme": "rs8",
-        "mod_scheme": "qam64",
-        "frame_length": 40,
+        "mod_scheme": "qam256",
+        "frame_length": 400,
         "modulation": {
             "samples_per_symbol": 2,
             "symbol_delay": 4,
@@ -22,7 +22,7 @@
         "encoder_filters": {
             "dc_filter_alpha": 0.1
         },
-        "noise_prefix": 1000
+        "noise_prefix": 10000
     },
     "modem": {
         "checksum_scheme": "crc32",
