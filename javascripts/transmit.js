@@ -2,9 +2,9 @@ var SampleEncoder = SampleEncoder || {};
 
 var Module = {
     onFileSelect: function(e) {
-        var payload_str = padding.join('') + payloadarray.join('');
-        payload_str = payload_str.repeat(2);
-        var payload = intArrayFromString(payload_str);
+        var reader = new FileReader()
+        reader.readAsDataURL(e.target.files[0]);
+        var payload = intArrayFromString(reader.result);
         ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [encoder, payload, payload.length]);
 
         var sample_len = 16384;
