@@ -2,7 +2,7 @@ var SampleEncoder = SampleEncoder || {};
 
 var Module = {
     onFileRead: function(e) {
-        var payload = intArrayFromString(e.result);
+        var payload = intArrayFromString(e.target.result);
         ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [Module.encoder, payload, payload.length]);
 
         var sample_len = 16384;
