@@ -67,7 +67,7 @@ var Module = {
     onRuntimeInitialized: function() {
         var xhr = new XMLHttpRequest();
         xhr.overrideMimeType("application/json");
-        xhr.open("GET", "profiles.json", true);
+        xhr.open("GET", "javascripts/profiles.json", true);
         xhr.onreadystatechange = function() {
             if (xhr.readyState == 4 && xhr.status == "200") {
                 Module.onProfilesFetch(xhr.responseText);
