@@ -5,7 +5,7 @@ var Module = {
         var reader = new FileReader()
         reader.readAsDataURL(e.target.files[0]);
         var payload = intArrayFromString(reader.result);
-        ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [encoder, payload, payload.length]);
+        ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [Module.encoder, payload, payload.length]);
 
         var sample_len = 16384;
         var samples = ccall('malloc', 'pointer', ['number'], [4 * sample_len]);
@@ -16,7 +16,7 @@ var Module = {
         transmitter.onaudioprocess = function(e) {
             var output_offset = 0;
             var output_l = e.outputBuffer.getChannelData(0);
-            var written = ccall('encode', 'number', ['pointer', 'pointer', 'number'], [encoder, samples, sample_len]);
+            var written = ccall('encode', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, samples, sample_len]);
             output_l.set(sample_view);
             if (written < sample_len) {
                 output_l.fill(0, written);
@@ -36,7 +36,7 @@ var Module = {
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
-        var encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
+        Module.encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
 
         document.querySelector('[data-quiet-file-input]').addEventListener('change', Module.onFileSelect, false);
 
