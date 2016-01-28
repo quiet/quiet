@@ -22,7 +22,7 @@ var Module = {
                 }
             }
         };
-        document.querySelect('[data-quiet-send-button]').addEventListener('click', function() { transmitter.connect(Module.audio_ctx.destination) }, false);
+        document.querySelector('[data-quiet-send-button]').addEventListener('click', function() { transmitter.connect(Module.audio_ctx.destination) }, false);
     },
     onFileSelect: function(e) {
         var reader = new FileReader()
