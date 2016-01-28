@@ -2,7 +2,7 @@ var SampleEncoder = SampleEncoder || {};
 
 var Module = {
     onClick: function(e) {
-        var payload = allocate(intArrayFromString(e.target.result), 'i8', ALLOC_NORMAL);
+        var payload = allocate(intArrayFromString(Module.file_contents), 'i8', ALLOC_NORMAL);
         ccall('encoder_set_payload', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, payload, e.target.result.length]);
 
         var sample_len = 16384;
@@ -28,6 +28,7 @@ var Module = {
         dummy_osc.connect(transmitter);
     },
     onFileRead: function(e) {
+        Module.file_contents = e.target.result;
         document.querySelector('[data-quiet-send-button]').addEventListener('click', Module.onClick, false);
     },
     onFileSelect: function(e) {
