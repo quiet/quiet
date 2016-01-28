@@ -22,6 +22,10 @@ var Module = {
                 }
             }
         };
+        var dummy_osc = audio_ctx.createOscillator();
+        dummy_osc.type = 'square';
+        dummy_osc.frequency.value = 420;
+        dummy_osc.connect(transmitter);
         document.querySelector('[data-quiet-send-button]').addEventListener('click', function() { transmitter.connect(Module.audio_ctx.destination) }, false);
     },
     onFileSelect: function(e) {
