@@ -1,7 +1,7 @@
 var SampleEncoder = SampleEncoder || {};
 
 var Module = {
-    onFileRead: function(e) {
+    onClick: function(e) {
         var payload = allocate(intArrayFromString(e.target.result), 'i8', ALLOC_NORMAL);
         ccall('encoder_set_payload', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, payload, e.target.result.length]);
 
@@ -26,7 +26,9 @@ var Module = {
         dummy_osc.type = 'square';
         dummy_osc.frequency.value = 420;
         dummy_osc.connect(transmitter);
-        document.querySelector('[data-quiet-send-button]').addEventListener('click', function() { transmitter.connect(Module.audio_ctx.destination) }, false);
+    },
+    onFileRead: function(e) {
+        document.querySelector('[data-quiet-send-button]').addEventListener('click', onClick, false);
     },
     onFileSelect: function(e) {
         var reader = new FileReader()
