@@ -26,6 +26,7 @@ var Module = {
         dummy_osc.type = 'square';
         dummy_osc.frequency.value = 420;
         dummy_osc.connect(transmitter);
+        transmitter.connect(Module.audio_ctx.destination);
     },
     onFileRead: function(e) {
         Module.file_contents = e.target.result;
