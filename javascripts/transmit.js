@@ -22,7 +22,7 @@ var Module = {
                 }
             }
         };
-        var dummy_osc = audio_ctx.createOscillator();
+        var dummy_osc = Module.audio_ctx.createOscillator();
         dummy_osc.type = 'square';
         dummy_osc.frequency.value = 420;
         dummy_osc.connect(transmitter);
