@@ -20,8 +20,8 @@ var Module = {
         }
         var payload_str = padding.join('') + payloadarray.join('');
         payload_str = payload_str.repeat(2);
-        var payload = intArrayFromString(payload_str);
-        ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [encoder, payload, payload.length]);
+        var payload = allocate(intArrayFromString(payload_str), 'i8', ALLOC_NORMAL);
+        ccall('encoder_set_payload', 'number', ['pointer', 'pointer', 'number'], [encoder, payload, payload_str.length]);
 
         var sample_len = 16384;
         var samples = ccall('malloc', 'pointer', ['number'], [4 * sample_len]);

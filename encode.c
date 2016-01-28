@@ -1,5 +1,9 @@
 #include "encode.h"
 
+const size_t HEADER_DUMMY = 0;
+const char HEADER_DUMMY_IS_DUMMY = 0;
+const char HEADER_DUMMY_NO_DUMMY = 1;
+
 encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
@@ -32,6 +36,9 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "frame_length"))) {
         opt->frame_len = json_integer_value(v);
+    }
+    if ((v = json_object_get(profile, "dummy_prefix"))) {
+        opt->dummy_prefix = json_integer_value(v);
     }
     if ((v = json_object_get(profile, "noise_prefix"))) {
         opt->noise_prefix = json_integer_value(v);
@@ -610,10 +617,12 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
                       (e->samplebuf_len != 0);
 
     e->payload = payload;
+    printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
     e->payload_length = payload_length;
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;
     e->has_flushed = false;
+    e->dummy_frames_remaining = e->opt.dummy_prefix;
 
     if (e->opt.is_ofdm) {
         ofdmflexframegen_reset(e->frame.ofdm.framegen);
@@ -627,25 +636,39 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
 
 void _encoder_consume(encoder *e) {
     size_t payload_length = e->opt.frame_len;
-    if (e->payload_length < payload_length) {
+    bool is_dummy = (e->dummy_frames_remaining != 0);
+    if (!is_dummy && e->payload_length < payload_length) {
         payload_length = e->payload_length;
+    }
+    uint8_t *payload = e->payload;
+    if (is_dummy) {
+        payload = malloc(payload_length * sizeof(uint8_t));
+        for (size_t i = 0; i < payload_length; i++) {
+            payload[i] = rand() & 0xff;
+        }
+        e->dummy_frames_remaining--;
+    } else {
+        e->payload += payload_length;
+        e->payload_length -= payload_length;
     }
     if (e->opt.is_ofdm) {
         uint8_t *header = calloc(sizeof(uint8_t), 8);
-        ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, e->payload,
+        header[HEADER_DUMMY] = is_dummy ? HEADER_DUMMY_IS_DUMMY : HEADER_DUMMY_NO_DUMMY;
+        if (!is_dummy) {
+            printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
+        }
+        ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, payload,
                                   payload_length);
         free(header);
     } else {
         uint8_t *header = calloc(sizeof(uint8_t), 14);
-        flexframegen_assemble(e->frame.modem.framegen, header, e->payload,
+        header[HEADER_DUMMY] = is_dummy ? HEADER_DUMMY_IS_DUMMY : HEADER_DUMMY_NO_DUMMY;
+        flexframegen_assemble(e->frame.modem.framegen, header, payload,
                               payload_length);
         e->frame.modem.symbols_remaining =
             flexframegen_getframelen(e->frame.modem.framegen);
         free(header);
     }
-
-    e->payload += payload_length;
-    e->payload_length -= payload_length;
 }
 
 size_t encoder_sample_len(encoder *e, size_t data_len) {
@@ -677,10 +700,8 @@ size_t _constrained_write(sample_t *src, size_t src_len, sample_t *dst,
 }
 
 size_t _encoder_write_noise(encoder *e) {
-    float noise_floor = -20.0f;
-    float nstd = powf(10.0f, noise_floor/20.0f);
     for (size_t i = 0; i < e->noise_prefix_remaining; i++) {
-        e->samplebuf[i] = nstd * (randnf() + _Complex_I * randnf()) * M_SQRT1_2;
+        e->symbolbuf[i] = randnf() + _Complex_I * randnf() * M_SQRT1_2;
     }
     return e->noise_prefix_remaining;
 }
@@ -706,11 +727,25 @@ size_t _encoder_pad(encoder *e) {
 }
 
 size_t _encoder_fillsymbols(encoder *e, size_t requested_length) {
+    if (e->noise_prefix_remaining > 0) {
+        size_t noise_wanted = e->noise_prefix_remaining;
+        if (noise_wanted > e->symbolbuf_len) {
+            e->symbolbuf =
+                realloc(e->symbolbuf,
+                        noise_wanted *
+                            sizeof(float complex));  // XXX check malloc result
+            e->symbolbuf_len = noise_wanted;
+        }
+        size_t written = _encoder_write_noise(e);
+        e->noise_prefix_remaining = 0;
+        return written;
+    }
+
     if (e->opt.is_ofdm) {
         // ofdm can't control the size of its blocks, so it ignores
         // requested_length
         ofdmflexframegen_writesymbol(e->frame.ofdm.framegen, e->symbolbuf);
-        return e->symbolbuf_len;
+        return e->opt.ofdmopt.num_subcarriers + e->opt.ofdmopt.cyclic_prefix_len;
     } else {
         if (requested_length > e->frame.modem.symbols_remaining) {
             requested_length = e->frame.modem.symbols_remaining;
@@ -754,20 +789,6 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
 
         e->samplebuf_offset = 0;
 
-        if (e->noise_prefix_remaining > 0) {
-            size_t noise_wanted = e->noise_prefix_remaining;
-            if (noise_wanted > e->samplebuf_cap) {
-                e->samplebuf =
-                    realloc(e->samplebuf,
-                            noise_wanted *
-                                sizeof(sample_t));  // XXX check malloc result
-                e->samplebuf_cap = noise_wanted;
-            }
-            e->samplebuf_len = _encoder_write_noise(e);
-            e->noise_prefix_remaining = 0;
-            continue;
-        }
-
         if (!(_encoder_assembled(e))) {
             if (e->payload_length == 0) {
                 if (e->has_flushed) {
@@ -779,7 +800,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
                 e->has_flushed = true;
                 continue;
             } else {
-                e->samplebuf_len = _encoder_pad(e);
+                // e->samplebuf_len = _encoder_pad(e);
             }
             _encoder_consume(e);
             continue;
@@ -869,6 +890,10 @@ int _on_decode(unsigned char *header, int header_valid, unsigned char *payload,
     }
 
     if (!dvoid) {
+        return 0;
+    }
+
+    if (header[HEADER_DUMMY] == HEADER_DUMMY_IS_DUMMY) {
         return 0;
     }
 

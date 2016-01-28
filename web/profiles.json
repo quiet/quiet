@@ -21,8 +21,7 @@
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.1
-        },
-        "noise_prefix": 1000
+        }
     },
     "modem": {
         "checksum_scheme": "crc32",
