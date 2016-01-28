@@ -23,10 +23,7 @@ var Module = {
             }
         };
 
-
-        setTimeout(function() {
-            transmitter.connect(Module.audio_ctx.destination);
-        }, 5000);
+        transmitter.connect(Module.audio_ctx.destination);
     },
     onFileSelect: function(e) {
         var reader = new FileReader()

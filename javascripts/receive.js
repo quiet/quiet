@@ -49,7 +49,7 @@ var Module = {
                     var result = HEAP8.subarray(data_buffer, data_buffer + data_buffered)
                     var result_str = String.fromCharCode.apply(null, new Uint8Array(result));
                     content += result_str;
-                    content_target.innerHTML = content;
+                    content_target.innerHTML = "<img src='" + content + "'>";
                 }
             }
 
