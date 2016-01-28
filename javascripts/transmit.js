@@ -3,7 +3,7 @@ var SampleEncoder = SampleEncoder || {};
 var Module = {
     onFileRead: function(e) {
         var payload = allocate(intArrayFromString(e.target.result), 'i8', ALLOC_NORMAL);
-        ccall('encoder_set_payload', 'number', ['pointer', 'array', 'number'], [Module.encoder, payload, e.target.result.length]);
+        ccall('encoder_set_payload', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, payload, e.target.result.length]);
 
         var sample_len = 16384;
         var samples = ccall('malloc', 'pointer', ['number'], [4 * sample_len]);
