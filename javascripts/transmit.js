@@ -28,7 +28,7 @@ var Module = {
         dummy_osc.connect(transmitter);
     },
     onFileRead: function(e) {
-        document.querySelector('[data-quiet-send-button]').addEventListener('click', onClick, false);
+        document.querySelector('[data-quiet-send-button]').addEventListener('click', Module.onClick, false);
     },
     onFileSelect: function(e) {
         var reader = new FileReader()
