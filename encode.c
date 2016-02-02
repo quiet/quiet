@@ -301,6 +301,8 @@ size_t modulate_sample_len(const modulator *m, size_t symbol_len) {
         return 0;
     }
 
+    // do resample estimation count here
+
     return m->opt.samples_per_symbol * symbol_len;
 }
 
@@ -710,7 +712,7 @@ size_t _encoder_pad(encoder *e) {
     size_t padding_len;
     if (e->opt.is_ofdm) {
         padding_len =
-            e->opt.ofdmopt.cyclic_prefix_len * e->mod->opt.samples_per_symbol;
+            modulate_sample_len(e->mod, e->opt.ofdmopt.cyclic_prefix_len);
     } else {
         padding_len = 32;
     }
@@ -814,8 +816,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
             symbols_wanted++;
         }
         size_t symbols_written = _encoder_fillsymbols(e, symbols_wanted);
-        size_t sample_buffer_needed =
-            symbols_written * e->mod->opt.samples_per_symbol;
+        size_t sample_buffer_needed = modulate_sample_len(e->mod, symbols_written);
 
         if (remaining < sample_buffer_needed) {
             // in this case, just write to the samplebuf and restart loop
