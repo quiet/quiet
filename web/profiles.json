@@ -21,6 +21,12 @@
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.1
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
         }
     },
     "modem": {

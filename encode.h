@@ -19,6 +19,13 @@ typedef struct {
 } filter_options;
 
 typedef struct {
+    size_t delay;
+    float bandwidth;
+    float attenuation;
+    size_t filter_bank_size;
+} resampler_options;
+
+typedef struct {
     unsigned int samples_per_symbol;
     unsigned int symbol_delay;
     float excess_bw;
@@ -72,6 +79,8 @@ typedef struct {
     bool is_ofdm;
     ofdm_options ofdmopt;
     modulator_options modopt;
+    resampler_options resampler;
+    float sample_rate;
 } encoder_options;
 
 typedef struct {
@@ -106,6 +115,8 @@ typedef struct {
     bool has_flushed;
     size_t dummy_frames_remaining;
     size_t noise_prefix_remaining;
+    float resample_rate;
+    resamp_rrrf resampler;
 } encoder;
 
 typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
@@ -135,6 +146,7 @@ decoder_options *get_decoder_profile_file(const char *fname,
                                           const char *profilename);
 decoder_options *get_decoder_profile_str(const char *input,
                                          const char *profilename);
+void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate);
 
 modulator *create_modulator(const modulator_options *opt);
 size_t modulate_sample_len(const modulator *m, size_t symbol_len);

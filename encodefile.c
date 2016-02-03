@@ -4,7 +4,7 @@
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }
 
-const int sample_rate = 44100;
+const int sample_rate = 48000;
 
 float normalize_freq(float freq, float sample_rate) {
     return freq2rad(freq / (float)(sample_rate));
@@ -107,6 +107,7 @@ int main(int argc, char **argv) {
     }
     encoder_options *encodeopt =
         get_encoder_profile_file("web/profiles.json", argv[1]);
+    encoder_opt_set_sample_rate(encodeopt, sample_rate);
 
     encode_to_wav("payload", "encoded.wav", encodeopt);
 

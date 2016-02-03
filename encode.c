@@ -1,5 +1,6 @@
 #include "encode.h"
 
+const unsigned int SAMPLE_RATE = 44100;
 const size_t HEADER_DUMMY = 0;
 const char HEADER_DUMMY_IS_DUMMY = 0;
 const char HEADER_DUMMY_NO_DUMMY = 1;
@@ -97,6 +98,23 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
             opt->modopt.dc_filter_opt.alpha = json_number_value(vv);
         }
     }
+    if ((v = json_object_get(profile, "resampler"))) {
+        json_t *vv;
+        if ((vv = json_object_get(v, "delay"))) {
+            opt->resampler.delay = json_integer_value(vv);
+        }
+        if ((vv = json_object_get(v, "bandwidth"))) {
+            opt->resampler.bandwidth = json_number_value(vv);
+        }
+        if ((vv = json_object_get(v, "attenuation"))) {
+            opt->resampler.attenuation = json_number_value(vv);
+        }
+        if ((vv = json_object_get(v, "filter_bank_size"))) {
+            opt->resampler.filter_bank_size = json_number_value(vv);
+        }
+    }
+
+    opt->sample_rate = SAMPLE_RATE;
 
     return opt;
 }
@@ -219,6 +237,10 @@ decoder_options *get_decoder_profile_str(const char *input,
     return get_decoder_profile(root, profilename);
 }
 
+void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
+    opt->sample_rate = sample_rate;
+}
+
 unsigned char *create_ofdm_subcarriers(const ofdm_options *opt) {
     unsigned char *subcarriers =
         malloc(opt->num_subcarriers * sizeof(unsigned char));
@@ -301,9 +323,15 @@ size_t modulate_sample_len(const modulator *m, size_t symbol_len) {
         return 0;
     }
 
-    // do resample estimation count here
-
     return m->opt.samples_per_symbol * symbol_len;
+}
+
+size_t modulate_symbol_len(const modulator *m, size_t sample_len) {
+    if (!m) {
+        return 0;
+    }
+
+    return sample_len / (m->opt.samples_per_symbol);
 }
 
 // modulate assumes that samples is large enough to store symbol_len *
@@ -603,6 +631,16 @@ encoder *create_encoder(const encoder_options *opt) {
 
     e->noise_prefix_remaining = opt->noise_prefix;
 
+    e->resample_rate = 1;
+    if (opt->sample_rate != SAMPLE_RATE) {
+        float rate = (float)opt->sample_rate / (float)SAMPLE_RATE;
+        e->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
+                                          opt->resampler.bandwidth, opt->resampler.attenuation,
+                                          opt->resampler.filter_bank_size);
+        e->resample_rate = rate;
+    }
+
+
     return e;
 }
 
@@ -779,13 +817,25 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         size_t iter_written;
 
         if (e->samplebuf_len > 0) {
-            iter_written =
-                _constrained_write(e->samplebuf + e->samplebuf_offset,
-                                   e->samplebuf_len, samplebuf, remaining);
-            samplebuf += iter_written;
-            written += iter_written;
-            e->samplebuf_offset += iter_written;
-            e->samplebuf_len -= iter_written;
+            if (e->resampler) {
+                unsigned int samples_read, samples_written;
+                resamp_rrrf_execute_output_block(e->resampler, e->samplebuf,
+                                                 e->samplebuf_len, &samples_read,
+                                                 samplebuf, remaining,
+                                                 &samples_written);
+                samplebuf += samples_written;
+                written += samples_written;
+                e->samplebuf_offset += samples_read;
+                e->samplebuf_len -= samples_read;
+            } else {
+                iter_written =
+                    _constrained_write(e->samplebuf + e->samplebuf_offset,
+                                       e->samplebuf_len, samplebuf, remaining);
+                samplebuf += iter_written;
+                written += iter_written;
+                e->samplebuf_offset += iter_written;
+                e->samplebuf_len -= iter_written;
+            }
             continue;
         }
 
@@ -811,37 +861,28 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         // now we get to the steady state, writing one block of symbols at a
         // time
         // we provide symbols_wanted as a hint of how many symbols to get
-        size_t symbols_wanted = remaining / e->mod->opt.samples_per_symbol;
+
+        // we're going to write into our baserate samples buffer and then restart loop
+        // once we do, we'll resample (if desired) and write to output buffer
+
+        size_t baserate_samples_wanted = (size_t)(ceilf(remaining / e->resample_rate));
+        size_t symbols_wanted = modulate_symbol_len(e->mod, baserate_samples_wanted);
         if (remaining % e->mod->opt.samples_per_symbol) {
             symbols_wanted++;
         }
         size_t symbols_written = _encoder_fillsymbols(e, symbols_wanted);
         size_t sample_buffer_needed = modulate_sample_len(e->mod, symbols_written);
 
-        if (remaining < sample_buffer_needed) {
-            // in this case, just write to the samplebuf and restart loop
-            // TODO call modulate once for remaining samples and then for the
-            // rest
-
-            if (sample_buffer_needed > e->samplebuf_cap) {
-                e->samplebuf =
-                    realloc(e->samplebuf,
-                            sample_buffer_needed *
-                                sizeof(sample_t));  // XXX check malloc result
-                e->samplebuf_cap = sample_buffer_needed;
-            }
-
-            e->samplebuf_len =
-                modulate(e->mod, e->symbolbuf, symbols_written, e->samplebuf);
-            continue;
+        if (sample_buffer_needed > e->samplebuf_cap) {
+            e->samplebuf =
+                realloc(e->samplebuf,
+                        sample_buffer_needed *
+                            sizeof(sample_t));  // XXX check malloc result
+            e->samplebuf_cap = sample_buffer_needed;
         }
 
-        // we have enough capacity in the output buf, so just write there
-        // directly
-        iter_written =
-            modulate(e->mod, e->symbolbuf, symbols_written, samplebuf);
-        samplebuf += iter_written;
-        written += iter_written;
+        e->samplebuf_len =
+            modulate(e->mod, e->symbolbuf, symbols_written, e->samplebuf);
     }
 
     return written;
@@ -856,6 +897,9 @@ void destroy_encoder(encoder *e) {
         ofdmflexframegen_destroy(e->frame.ofdm.framegen);
     } else {
         flexframegen_destroy(e->frame.modem.framegen);
+    }
+    if (e->resampler) {
+        resamp_rrrf_destroy(e->resampler);
     }
     destroy_modulator(e->mod);
     free(e->symbolbuf);
