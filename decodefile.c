@@ -5,12 +5,16 @@
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }
 
-SNDFILE *wav_open(const char *fname) {
+SNDFILE *wav_open(const char *fname, unsigned int *sample_rate) {
     SF_INFO sfinfo;
 
     memset(&sfinfo, 0, sizeof(sfinfo));
 
-    return sf_open(fname, SFM_READ, &sfinfo);
+    SNDFILE *f = sf_open(fname, SFM_READ, &sfinfo);
+
+    *sample_rate = sfinfo.samplerate;
+
+    return f;
 }
 
 size_t wav_read(SNDFILE *wav, float *samples, size_t sample_len) {
@@ -20,7 +24,7 @@ size_t wav_read(SNDFILE *wav, float *samples, size_t sample_len) {
 void wav_close(SNDFILE *wav) { sf_close(wav); }
 
 int decode_wav(const char *wav_fname, const char *payload_fname,
-               const decoder_options *opt) {
+               decoder_options *opt) {
     FILE *payload = fopen(payload_fname, "wb");
 
     if (payload == NULL) {
@@ -28,12 +32,14 @@ int decode_wav(const char *wav_fname, const char *payload_fname,
         return 1;
     }
 
-    SNDFILE *wav = wav_open(wav_fname);
+    unsigned int sample_rate;
+    SNDFILE *wav = wav_open(wav_fname, &sample_rate);
 
     if (wav == NULL) {
         printf("failed to open wav file for reading\n");
         return 1;
     }
+    decoder_opt_set_sample_rate(opt, sample_rate);
 
     decoder *d = create_decoder(opt);
     size_t wantread = 16384;

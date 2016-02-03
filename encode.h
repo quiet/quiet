@@ -88,6 +88,8 @@ typedef struct {
     bool is_debug;
     ofdm_options ofdmopt;
     demodulator_options demodopt;
+    resampler_options resampler;
+    float sample_rate;
 } decoder_options;
 
 typedef struct { ofdmflexframegen framegen; } ofdm_encoder;
@@ -136,6 +138,10 @@ typedef struct {
     float complex *symbolbuf;
     size_t symbolbuf_len;
     unsigned int i;
+    float resample_rate;
+    resamp_rrrf resampler;
+    sample_t *baserate;
+    size_t baserate_offset;
 } decoder;
 
 encoder_options *get_encoder_profile_file(const char *fname,
@@ -147,6 +153,7 @@ decoder_options *get_decoder_profile_file(const char *fname,
 decoder_options *get_decoder_profile_str(const char *input,
                                          const char *profilename);
 void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate);
+void decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate);
 
 modulator *create_modulator(const modulator_options *opt);
 size_t modulate_sample_len(const modulator *m, size_t symbol_len);

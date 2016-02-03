@@ -145,6 +145,10 @@ encoder_options *get_encoder_profile_str(const char *input,
     return get_encoder_profile(root, profilename);
 }
 
+void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
+    opt->sample_rate = sample_rate;
+}
+
 decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
@@ -207,6 +211,21 @@ decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
             }
         }
     }
+    if ((v = json_object_get(profile, "resampler"))) {
+        json_t *vv;
+        if ((vv = json_object_get(v, "delay"))) {
+            opt->resampler.delay = json_integer_value(vv);
+        }
+        if ((vv = json_object_get(v, "bandwidth"))) {
+            opt->resampler.bandwidth = json_number_value(vv);
+        }
+        if ((vv = json_object_get(v, "attenuation"))) {
+            opt->resampler.attenuation = json_number_value(vv);
+        }
+        if ((vv = json_object_get(v, "filter_bank_size"))) {
+            opt->resampler.filter_bank_size = json_number_value(vv);
+        }
+    }
 
     return opt;
 }
@@ -237,7 +256,7 @@ decoder_options *get_decoder_profile_str(const char *input,
     return get_decoder_profile(root, profilename);
 }
 
-void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
+void decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate) {
     opt->sample_rate = sample_rate;
 }
 
@@ -819,7 +838,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         if (e->samplebuf_len > 0) {
             if (e->resampler) {
                 unsigned int samples_read, samples_written;
-                resamp_rrrf_execute_output_block(e->resampler, e->samplebuf,
+                resamp_rrrf_execute_output_block(e->resampler, e->samplebuf + e->samplebuf_offset,
                                                  e->samplebuf_len, &samples_read,
                                                  samplebuf, remaining,
                                                  &samples_written);
@@ -867,7 +886,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
 
         size_t baserate_samples_wanted = (size_t)(ceilf(remaining / e->resample_rate));
         size_t symbols_wanted = modulate_symbol_len(e->mod, baserate_samples_wanted);
-        if (remaining % e->mod->opt.samples_per_symbol) {
+        if (baserate_samples_wanted % e->mod->opt.samples_per_symbol) {
             symbols_wanted++;
         }
         size_t symbols_written = _encoder_fillsymbols(e, symbols_wanted);
@@ -1017,6 +1036,19 @@ decoder *create_decoder(const decoder_options *opt) {
     d->demod = create_demodulator(&(opt->demodopt));
 
     d->i = 0;
+    d->resample_rate = 1;
+    d->baserate = NULL;
+    if (opt->sample_rate != SAMPLE_RATE) {
+        float rate =  (float)SAMPLE_RATE / (float)opt->sample_rate;
+        d->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
+                                          opt->resampler.bandwidth, opt->resampler.attenuation,
+                                          opt->resampler.filter_bank_size);
+        d->resample_rate = rate;
+        size_t stride_len = decode_max_len(d);
+        d->baserate = malloc(stride_len * sizeof(sample_t));
+        d->baserate_offset = 0;
+    }
+
 
     printf("decoder created\n");
     printf("is_ofdm %d\n", opt->is_ofdm);
@@ -1057,13 +1089,39 @@ size_t decode(decoder *d, sample_t *samplebuf, size_t sample_len) {
 
     size_t stride_len = decode_max_len(d);
 
-    for (size_t i = 0; i < sample_len; i += stride_len) {
-        size_t bufsize = stride_len;
-        if ((sample_len - i) < bufsize) {
-            bufsize = sample_len - i;
+    for (size_t i = 0; i < sample_len; ) {
+        size_t symbol_len;
+        if (d->resampler) {
+            unsigned int resamp_read, resamp_write;
+            resamp_rrrf_execute_output_block(d->resampler, samplebuf + i,
+                                             sample_len - i, &resamp_read,
+                                             d->baserate + d->baserate_offset,
+                                             stride_len - d->baserate_offset,
+                                             &resamp_write);
+            i += resamp_read;
+            resamp_write += d->baserate_offset;
+
+            size_t leftover = 0;
+            if (resamp_write % d->demod->opt.samples_per_symbol) {
+                leftover = resamp_write % d->demod->opt.samples_per_symbol;
+                resamp_write -= leftover;
+            }
+
+            symbol_len =
+                demodulate(d->demod, d->baserate, resamp_write, d->symbolbuf);
+
+            if (leftover) {
+                memmove(d->baserate, d->baserate + resamp_write, leftover * sizeof(sample_t));
+            }
+            d->baserate_offset = leftover;
+        } else {
+            size_t bufsize = stride_len;
+            if ((sample_len - i) < bufsize) {
+                bufsize = sample_len - i;
+            }
+            symbol_len = demodulate(d->demod, samplebuf + i, bufsize, d->symbolbuf);
+            i += bufsize;
         }
-        size_t symbol_len =
-            demodulate(d->demod, samplebuf + i, bufsize, d->symbolbuf);
 
         if (d->opt.is_ofdm) {
             ofdmflexframesync_execute(d->frame.ofdm.framesync, d->symbolbuf,
@@ -1095,6 +1153,8 @@ size_t decode_flush(decoder *d) {
         return 0;
     }
 
+    // XXX flush the resampler here
+
     size_t symbol_len = demodulate_flush(d->demod, d->symbolbuf);
 
     if (d->opt.is_ofdm) {
@@ -1117,6 +1177,12 @@ void destroy_decoder(decoder *d) {
         ofdmflexframesync_destroy(d->frame.ofdm.framesync);
     } else {
         flexframesync_destroy(d->frame.modem.framesync);
+    }
+    if (d->resampler) {
+        resamp_rrrf_destroy(d->resampler);
+    }
+    if (d->baserate) {
+        free(d->baserate);
     }
     destroy_demodulator(d->demod);
     free(d->symbolbuf);
