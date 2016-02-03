@@ -676,7 +676,6 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
                       (e->samplebuf_len != 0);
 
     e->payload = payload;
-    printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
     e->payload_length = payload_length;
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;
