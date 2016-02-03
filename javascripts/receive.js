@@ -5,6 +5,7 @@ var Module = {
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
         var opt = ccall('get_decoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
+        ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate);
         var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
         var sample_buffer_size = 16384;
         var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);

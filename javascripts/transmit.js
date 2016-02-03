@@ -44,6 +44,7 @@ var Module = {
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString("main");
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
+        ccall('encoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate);
         Module.encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
 
         document.querySelector('[data-quiet-file-input]').addEventListener('change', Module.onFileSelect, false);
