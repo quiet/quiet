@@ -51,6 +51,7 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
     uint8_t *readbuf = malloc(block_len * sizeof(uint8_t));
     size_t samplebuf_len = 16384;
     sample_t *samplebuf = malloc(samplebuf_len * sizeof(sample_t));
+    encoder_clamp_frame_len(e, samplebuf_len);
     bool done = false;
     if (readbuf == NULL) {
         return 1;

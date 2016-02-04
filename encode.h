@@ -176,6 +176,7 @@ size_t demodulate_flush(demodulator *d, float complex *symbols);
 void destroy_demodulator(demodulator *d);
 
 encoder *create_encoder(const encoder_options *opt);
+void encoder_clamp_frame_len(encoder *e, size_t sample_len);
 int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length);
 size_t encoder_sample_len(encoder *e, size_t data_len);
 size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len);

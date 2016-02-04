@@ -666,6 +666,40 @@ encoder *create_encoder(const encoder_options *opt) {
     return e;
 }
 
+void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
+    if (!e->opt.is_close_frame) {
+        return;
+    }
+
+    // get sample_len in base rate (conservative estimate)
+    // assume we can also get ceil(resample_rate) samples out plus "linear" count
+    size_t baserate_sample_len = ceilf((float)sample_len/e->resample_rate) + ceilf(e->resample_rate);
+
+    // subtract headroom for flushing mod & resamp
+    baserate_sample_len -= modulate_flush_sample_len(e->mod);
+    baserate_sample_len -= e->opt.resampler.delay;
+
+    // do inverse calc from base rate sample len to frame length
+    // this has to be iterative as we don't have inverse func for this
+    // we'll start with the suggested length and then do binary search
+    size_t max_frame_len = e->opt.frame_len;
+    size_t min_frame_len = 0;
+    size_t frame_len = max_frame_len / 2;
+    while (max_frame_len - min_frame_len > 1) {
+        size_t projected_sample_len = encoder_sample_len(e, frame_len);
+        if (projected_sample_len > baserate_sample_len) {
+            // this frame size was too big
+            max_frame_len = frame_len;
+        } else {
+            // this frame size fit but maybe we can fit more
+            min_frame_len = frame_len;
+        }
+        frame_len = (max_frame_len - min_frame_len) / 2 + min_frame_len;
+    }
+    e->opt.frame_len = frame_len;
+    printf("new frame len %lu\n", e->opt.frame_len);
+}
+
 int _encoder_assembled(encoder *e) {
     if (e->opt.is_ofdm) {
         return ofdmflexframegen_is_assembled(e->frame.ofdm.framegen);
@@ -878,6 +912,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
                     }
                     e->samplebuf_len += e->opt.resampler.delay;
                 }
+                // XXX reset modulator or resampler?
                 e->has_flushed = true;
                 continue;
             } else {
