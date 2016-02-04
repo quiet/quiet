@@ -113,6 +113,9 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
             opt->resampler.filter_bank_size = json_number_value(vv);
         }
     }
+    if ((v = json_object_get(profile, "close_frame"))) {
+        opt->is_close_frame = json_boolean_value(v);
+    }
 
     opt->sample_rate = SAMPLE_RATE;
 
@@ -860,13 +863,21 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         e->samplebuf_offset = 0;
 
         if (!(_encoder_assembled(e))) {
-            if (e->payload_length == 0) {
+            // if we are in close-frame mode, and we've already written this time, then
+            //    close out the buffer
+            // also close it out if payload is emptied out
+            bool do_close_frame = e->opt.is_close_frame && written > 0;
+            if (e->payload_length == 0 || do_close_frame) {
                 if (e->has_flushed) {
                     break;
                 }
-                // TODO make modulator understand interp/decim and set flush len
-                // to 0 accordingly
                 e->samplebuf_len = modulate_flush(e->mod, e->samplebuf);
+                if (e->resampler) {
+                    for (size_t i = 0; i < e->opt.resampler.delay; i++) {
+                        e->samplebuf[i + e->samplebuf_len] = 0;
+                    }
+                    e->samplebuf_len += e->opt.resampler.delay;
+                }
                 e->has_flushed = true;
                 continue;
             } else {
@@ -901,6 +912,15 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
 
         e->samplebuf_len =
             modulate(e->mod, e->symbolbuf, symbols_written, e->samplebuf);
+        e->has_flushed = false;
+    }
+
+    if (e->payload_length) {
+        for (size_t i = written; i < samplebuf_len; ++i) {
+            samplebuf[i] = 0;
+        }
+
+        return samplebuf_len;
     }
 
     return written;

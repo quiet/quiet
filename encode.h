@@ -81,6 +81,7 @@ typedef struct {
     modulator_options modopt;
     resampler_options resampler;
     float sample_rate;
+    bool is_close_frame;
 } encoder_options;
 
 typedef struct {
