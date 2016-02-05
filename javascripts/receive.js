@@ -26,7 +26,7 @@ var Module = {
                 }
             }, function(e){
             var context = new (window.AudioContext || window.webkitAudioContext)();
-            ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
+            ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, context.sampleRate]);
             var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
             var sample_buffer_size = 16384;
             var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);
