@@ -53,7 +53,7 @@ var Module = {
                     var result_str = String.fromCharCode.apply(null, new Uint8Array(result));
                     content += result_str;
                     if (img_target !== null) {
-                        img_target.innerHTML = "<img src='" + img + "'>";
+                        img_target.innerHTML = "<img src='" + content + "'>";
                     }
                     if (text_target !== null) {
                         text_target.innerHTML = document.createTextNode(content);
