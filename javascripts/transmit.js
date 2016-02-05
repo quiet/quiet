@@ -1,5 +1,3 @@
-var SampleEncoder = SampleEncoder || {};
-
 var Module = {
     onClick: function(e) {
         var payload = allocate(intArrayFromString(Module.file_contents), 'i8', ALLOC_NORMAL);
@@ -41,8 +39,10 @@ var Module = {
         Module.audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
         console.log(Module.audio_ctx.sampleRate);
 
+        var profilename = document.querySelect('[data-quiet-profile-name]').innerText;
+
         var c_profiles = intArrayFromString(profiles);
-        var c_profilename = intArrayFromString("main");
+        var c_profilename = intArrayFromString(profilename);
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
         ccall('encoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
         Module.encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
