@@ -52,8 +52,8 @@ var Module = {
                     var result = HEAP8.subarray(data_buffer, data_buffer + data_buffered)
                     var result_str = String.fromCharCode.apply(null, new Uint8Array(result));
                     content += result_str;
-                    if (content_target !== null) {
-                        content_target.innerHTML = "<img src='" + content + "'>";
+                    if (img_target !== null) {
+                        img_target.innerHTML = "<img src='" + img + "'>";
                     }
                     if (text_target !== null) {
                         text_target.innerHTML = document.createTextNode(content);
