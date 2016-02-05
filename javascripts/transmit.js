@@ -1,5 +1,8 @@
 var Module = {
     onClick: function(e) {
+        if (Module.payload === "") {
+            return
+        }
         var payload = allocate(intArrayFromString(Module.payload), 'i8', ALLOC_NORMAL);
         ccall('encoder_set_payload', 'number', ['pointer', 'pointer', 'number'], [Module.encoder, payload, Module.payload.length]);
 
@@ -48,6 +51,8 @@ var Module = {
         var opt = ccall('get_encoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
         ccall('encoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
         Module.encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
+
+        Module.payload = "";
 
         var file_input = document.querySelector('[data-quiet-file-input]');
         if (file_input !== null) {
