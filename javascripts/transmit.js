@@ -49,8 +49,15 @@ var Module = {
         ccall('encoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
         Module.encoder = ccall('create_encoder', 'pointer', ['pointer'], [opt]);
 
-        document.querySelector('[data-quiet-file-input]').addEventListener('change', Module.onFileSelect, false);
-        document.querySelector('[data-quiet-text-input]').addEventListener('change', Module.onTextChange, false);
+        var file_input = document.querySelector('[data-quiet-file-input]');
+        if (file_input !== null) {
+            file_input.addEventListener('change', Module.onFileSelect, false);
+        }
+
+        var text_input = document.querySelector('[data-quiet-text-input]');
+        if (text_input !== null) {
+            text_input.addEventListener('change', Module.onTextChange, false);
+        }
         document.querySelector('[data-quiet-send-button]').addEventListener('click', Module.onClick, false);
 
 
