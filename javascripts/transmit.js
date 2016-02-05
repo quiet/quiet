@@ -39,7 +39,7 @@ var Module = {
         Module.audio_ctx = new (window.AudioContext || window.webkitAudioContext)();
         console.log(Module.audio_ctx.sampleRate);
 
-        var profilename = document.querySelect('[data-quiet-profile-name]').innerText;
+        var profilename = document.querySelector('[data-quiet-profile-name]').innerText;
 
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString(profilename);
