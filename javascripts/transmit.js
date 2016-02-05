@@ -28,7 +28,7 @@ var Module = {
     },
     onTextChange: function(e) {
         Module.payload = e.target.textContent;
-
+    },
     onFileRead: function(e) {
         Module.payload = e.target.result;
     },
