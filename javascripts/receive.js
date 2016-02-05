@@ -2,8 +2,9 @@ var SampleDecoder = SampleDecoder || {};
 
 var Module = {
     onProfilesFetch: function(profiles) {
+        var profilename = document.querySelector('[data-quiet-profile-name]').textContent;
         var c_profiles = intArrayFromString(profiles);
-        var c_profilename = intArrayFromString("main");
+        var c_profilename = intArrayFromString("profilename");
         var opt = ccall('get_decoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
         ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate);
         var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
@@ -11,7 +12,8 @@ var Module = {
         var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);
         var data_buffer_size = Math.pow(2, 16);
         var data_buffer = ccall('malloc', 'pointer', ['number'], [data_buffer_size]);
-        var content_target = document.querySelector('[data-quiet-receive-target]');
+        var img_target = document.querySelector('[data-quiet-receive-target]');
+        var text_target = document.querySelector('[data-quiet-receive-text-target]');
         var content = "";
         var getUserMedia = (navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia);
         getUserMedia.call(navigator, {
@@ -50,7 +52,12 @@ var Module = {
                     var result = HEAP8.subarray(data_buffer, data_buffer + data_buffered)
                     var result_str = String.fromCharCode.apply(null, new Uint8Array(result));
                     content += result_str;
-                    content_target.innerHTML = "<img src='" + content + "'>";
+                    if (content_target !== null) {
+                        content_target.innerHTML = "<img src='" + content + "'>";
+                    }
+                    if (text_target !== null) {
+                        text_target.innerHTML = document.createTextNode(content);
+                    }
                 }
             }
 
