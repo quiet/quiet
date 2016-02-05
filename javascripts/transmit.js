@@ -30,7 +30,7 @@ var Module = {
         transmitter.connect(Module.audio_ctx.destination);
     },
     onTextChange: function(e) {
-        Module.payload = e.target.textContent;
+        Module.payload = e.target.value;
     },
     onFileRead: function(e) {
         Module.payload = e.target.result;
