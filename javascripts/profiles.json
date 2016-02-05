@@ -80,7 +80,7 @@
             "filter_bank_size": 64
         }
     },
-    "highfreq": {
+    "robust": {
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27p23",
         "outer_fec_scheme": "rs8",
@@ -95,6 +95,12 @@
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.01
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
         }
     }
 }
