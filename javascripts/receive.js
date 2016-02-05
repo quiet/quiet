@@ -6,12 +6,6 @@ var Module = {
         var c_profiles = intArrayFromString(profiles);
         var c_profilename = intArrayFromString(profilename);
         var opt = ccall('get_decoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
-        ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
-        var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
-        var sample_buffer_size = 16384;
-        var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);
-        var data_buffer_size = Math.pow(2, 16);
-        var data_buffer = ccall('malloc', 'pointer', ['number'], [data_buffer_size]);
         var img_target = document.querySelector('[data-quiet-receive-target]');
         var text_target = document.querySelector('[data-quiet-receive-text-target]');
         var content = "";
@@ -32,6 +26,12 @@ var Module = {
                 }
             }, function(e){
             var context = new (window.AudioContext || window.webkitAudioContext)();
+            ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
+            var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
+            var sample_buffer_size = 16384;
+            var sample_buffer = ccall('malloc', 'pointer', ['number'], [4 * sample_buffer_size]);
+            var data_buffer_size = Math.pow(2, 16);
+            var data_buffer = ccall('malloc', 'pointer', ['number'], [data_buffer_size]);
             var audioInput = context.createMediaStreamSource(e);
             window.stupid_anti_gc = audioInput;
             window.recorder = context.createScriptProcessor(16384, 2, 1);
