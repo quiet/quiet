@@ -4,7 +4,7 @@ var Module = {
     onProfilesFetch: function(profiles) {
         var profilename = document.querySelector('[data-quiet-profile-name]').textContent;
         var c_profiles = intArrayFromString(profiles);
-        var c_profilename = intArrayFromString("profilename");
+        var c_profilename = intArrayFromString(profilename);
         var opt = ccall('get_decoder_profile_str', 'pointer', ['array', 'array'], [c_profiles, c_profilename]);
         ccall('decoder_opt_set_sample_rate', 'number', ['pointer', 'number'], [opt, Module.audio_ctx.sampleRate]);
         var decoder = ccall('create_decoder', 'pointer', ['pointer'], [opt]);
