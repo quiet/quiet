@@ -1098,11 +1098,11 @@ decoder *create_decoder(const decoder_options *opt) {
                                           opt->resampler.bandwidth, opt->resampler.attenuation,
                                           opt->resampler.filter_bank_size);
         d->resample_rate = rate;
-        size_t stride_len = decode_max_len(d);
-        d->baserate = malloc(stride_len * sizeof(sample_t));
-        d->baserate_offset = 0;
     }
 
+    size_t stride_len = decode_max_len(d);
+    d->baserate = malloc(stride_len * sizeof(sample_t));
+    d->baserate_offset = 0;
 
     printf("decoder created\n");
     printf("is_ofdm %d\n", opt->is_ofdm);
@@ -1170,11 +1170,25 @@ size_t decode(decoder *d, sample_t *samplebuf, size_t sample_len) {
             d->baserate_offset = leftover;
         } else {
             size_t bufsize = stride_len;
-            if ((sample_len - i) < bufsize) {
-                bufsize = sample_len - i;
+            size_t remaining = sample_len - i + d->baserate_offset;
+            if (remaining < bufsize) {
+                bufsize = remaining;
             }
-            symbol_len = demodulate(d->demod, samplebuf + i, bufsize, d->symbolbuf);
-            i += bufsize;
+            memmove(d->baserate + d->baserate_offset, samplebuf + i,
+                    (bufsize - d->baserate_offset) * sizeof(sample_t));
+            i += bufsize - d->baserate_offset;
+
+            size_t leftover = 0;
+            if (bufsize % d->demod->opt.samples_per_symbol) {
+                leftover = bufsize % d->demod->opt.samples_per_symbol;
+                bufsize -= leftover;
+            }
+            symbol_len = demodulate(d->demod, d->baserate, bufsize, d->symbolbuf);
+
+            if (leftover) {
+                memmove(d->baserate, d->baserate + bufsize, leftover * sizeof(sample_t));
+            }
+            d->baserate_offset = leftover;
         }
 
         if (d->opt.is_ofdm) {
