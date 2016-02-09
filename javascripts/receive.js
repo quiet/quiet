@@ -56,7 +56,10 @@ var Module = {
                         img_target.innerHTML = "<img src='" + content + "'>";
                     }
                     if (text_target !== null) {
-                        text_target.innerHTML = document.createTextNode(content);
+                        if (text_target.firstChild !== null) {
+                            text_target.removeChild(text_target.firstChild);
+                        }
+                        text_target.appendChild(document.createTextNode(content));
                     }
                 }
             }
