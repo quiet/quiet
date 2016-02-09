@@ -697,7 +697,7 @@ void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
         frame_len = (max_frame_len - min_frame_len) / 2 + min_frame_len;
     }
     e->opt.frame_len = frame_len;
-    printf("new frame len %lu\n", e->opt.frame_len);
+    printf("new frame len %zu\n", e->opt.frame_len);
 }
 
 int _encoder_assembled(encoder *e) {
