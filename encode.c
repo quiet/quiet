@@ -719,6 +719,11 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
     e->has_flushed = false;
     e->dummy_frames_remaining = e->opt.dummy_prefix;
 
+    size_t flush_len = modulate_flush_sample_len(e->mod);
+    sample_t *temp = malloc(flush_len * sizeof(sample_t));
+    modulate_flush(e->mod, temp);
+    free(temp);
+
     if (e->opt.is_ofdm) {
         ofdmflexframegen_reset(e->frame.ofdm.framegen);
     } else {
