@@ -1,4 +1,4 @@
-#include "encode.h"
+#include "quiet.h"
 
 #include <sndfile.h>
 

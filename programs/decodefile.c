@@ -1,6 +1,6 @@
 #define DEBUG_OFDMFLEXFRAMESYNC 1
 #define DEBUG_FLEXFRAMESYNC 1
-#include "encode.h"
+#include "quiet.h"
 #include <sndfile.h>
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }

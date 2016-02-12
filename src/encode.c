@@ -1,4 +1,4 @@
-#include "encode.h"
+#include "quiet.h"
 
 const unsigned int SAMPLE_RATE = 44100;
 const size_t HEADER_DUMMY = 0;

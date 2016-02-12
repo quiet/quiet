@@ -1,0 +1,12 @@
+#!/bin/bash
+
+script_path=`dirname $BASH_SOURCE`
+build_path="$script_path/build"
+
+if [ ! -d "$build_path" ]; then
+    mkdir "$build_path"
+fi
+
+cd "$build_path"
+cmake ..
+make
