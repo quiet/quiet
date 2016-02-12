@@ -107,7 +107,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     encoder_options *encodeopt =
-        get_encoder_profile_file("web/profiles.json", argv[1]);
+        get_encoder_profile_file("profiles.json", argv[1]);
     encoder_opt_set_sample_rate(encodeopt, sample_rate);
 
     encode_to_wav("payload", "encoded.wav", encodeopt);

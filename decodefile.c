@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     decoder_options *decodeopt =
-        get_decoder_profile_file("web/profiles.json", argv[1]);
+        get_decoder_profile_file("profiles.json", argv[1]);
 
     decodeopt->is_debug = true;
 
