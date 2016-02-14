@@ -13,7 +13,7 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH on)
 endif()
 
-set(SRCFILES src/utility.c src/encode.c src/profile.c)
+set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/encode.c src/profile.c)
 
 add_library(quiet ${SRCFILES})
 target_link_libraries(quiet liquid jansson)

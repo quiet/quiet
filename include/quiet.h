@@ -155,25 +155,6 @@ decoder_options *get_decoder_profile_str(const char *input,
 void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate);
 void decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate);
 
-modulator *create_modulator(const modulator_options *opt);
-size_t modulate_sample_len(const modulator *m, size_t symbol_len);
-// modulate assumes that samples is large enough to store symbol_len *
-// samples_per_symbol samples
-// returns number of samples written to *samples
-size_t modulate(modulator *m, const float complex *symbols, size_t symbol_len,
-                sample_t *samples);
-size_t modulate_flush_sample_len(modulator *m);
-size_t modulate_flush(modulator *m, sample_t *samples);
-void destroy_modulator(modulator *m);
-
-demodulator *create_demodulator(const demodulator_options *opt);
-size_t demodulate_symbol_len(const demodulator *d, size_t sample_len);
-size_t demodulate(demodulator *d, sample_t *samples, size_t sample_len,
-                  float complex *symbols);
-size_t demodulate_flush_symbol_len(demodulator *d);
-size_t demodulate_flush(demodulator *d, float complex *symbols);
-void destroy_demodulator(demodulator *d);
-
 encoder *create_encoder(const encoder_options *opt);
 void encoder_clamp_frame_len(encoder *e, size_t sample_len);
 int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length);
