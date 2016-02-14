@@ -5,6 +5,14 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall")
 
+if(APPLE)
+    set(CMAKE_SKIP_BUILD_RPATH  false)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH false)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH true)
+    set(CMAKE_MACOSX_RPATH on)
+endif()
+
 add_library(quiet src/encode.c include/quiet.h)
 target_link_libraries(quiet liquid jansson)
 add_library(quiet_shared SHARED src/encode.c)
