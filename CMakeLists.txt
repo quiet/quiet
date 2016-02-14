@@ -18,8 +18,10 @@ target_link_libraries(quiet liquid jansson)
 add_library(quiet_shared MODULE src/encode.c)
 target_link_libraries(quiet_shared liquid jansson)
 
-add_executable(encodefile programs/encodefile.c)
+add_executable(encodefile EXCLUDE_FROM_ALL programs/encodefile.c)
 target_link_libraries(encodefile quiet sndfile)
 
-add_executable(decodefile programs/decodefile.c)
+add_executable(decodefile EXCLUDE_FROM_ALL programs/decodefile.c)
 target_link_libraries(decodefile quiet sndfile)
+
+add_custom_target(programs DEPENDS encodefile decodefile)
