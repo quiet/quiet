@@ -7,7 +7,6 @@
 #include <math.h>
 
 #include <liquid/liquid.h>
-#include <jansson.h>
 
 typedef float sample_t;
 

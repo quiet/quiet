@@ -13,9 +13,11 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH on)
 endif()
 
-add_library(quiet src/encode.c)
+set(SRCFILES src/encode.c src/profile.c)
+
+add_library(quiet ${SRCFILES})
 target_link_libraries(quiet liquid jansson)
-add_library(quiet_shared MODULE src/encode.c)
+add_library(quiet_shared MODULE ${SRCFILES})
 target_link_libraries(quiet_shared liquid jansson)
 
 add_executable(encodefile EXCLUDE_FROM_ALL programs/encodefile.c)
