@@ -297,6 +297,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
     }
 
     size_t written = 0;
+    bool frame_closed = false;
     while (written < samplebuf_len) {
         size_t remaining = samplebuf_len - written;
         size_t iter_written;
@@ -333,6 +334,9 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
             bool do_close_frame = e->opt.is_close_frame && written > 0;
             if (e->payload_length == 0 || do_close_frame) {
                 if (e->has_flushed) {
+                    if (do_close_frame) {
+                        frame_closed = true;
+                    }
                     break;
                 }
                 e->samplebuf_len = modulate_flush(e->mod, e->samplebuf);
@@ -380,7 +384,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         e->has_flushed = false;
     }
 
-    if (e->payload_length) {
+    if (frame_closed) {
         for (size_t i = written; i < samplebuf_len; ++i) {
             samplebuf[i] = 0;
         }
