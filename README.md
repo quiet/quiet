@@ -28,3 +28,12 @@ Dependencies
 * [Liquid DSP](https://github.com/jgaeddert/liquid-dsp)
 * [libfec](http://www.ka9q.net/code/fec/)
 * [Jansson](https://github.com/akheron/jansson)
+
+Acknowledgements
+-----------
+I'd like to thank the people who provided feedback and helped me with pull requests and advice on software
+
+* Joseph Gaeddert, for his excellent SDR library, encouragement, and feedback on all things DSP
+* Alon Zakai and @juj for advising me on emscripten and for taking my PRs
+* Jan-Ivar Bruaroey and Maire Reavy for helping me patch the echo cancellation behavior of Firefox's getUserMedia
+* Fabrice Bellard for thoughtfully answering a stranger's question out of the blue about digital communications
