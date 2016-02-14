@@ -1,3 +1,0 @@
-#!/bin/bash
-
-emcc -Wall -Werror -Wpedantic encode.c -o quiet-emscripten.js -s EXPORTED_FUNCTIONS="['_decode', '_create_decoder', '_decode_max_len', '_decode_flush', '_decoder_readbuf', '_destroy_decoder', '_encode', '_create_encoder', '_destroy_encoder', '_encoder_set_payload', '_get_encoder_profile_str', '_get_decoder_profile_str', '_encoder_opt_set_sample_rate', '_decoder_opt_set_sample_rate', '_encoder_clamp_frame_len']" -lliquid -lfec -ljansson -O2

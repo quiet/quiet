@@ -3,7 +3,7 @@ project (Quiet)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall -D_XOPEN_SOURCE=700")
 
 if(APPLE)
     set(CMAKE_SKIP_BUILD_RPATH  false)
@@ -13,9 +13,9 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH on)
 endif()
 
-add_library(quiet src/encode.c include/quiet.h)
+add_library(quiet src/encode.c)
 target_link_libraries(quiet liquid jansson)
-add_library(quiet_shared SHARED src/encode.c)
+add_library(quiet_shared MODULE src/encode.c)
 target_link_libraries(quiet_shared liquid jansson)
 
 add_executable(encodefile programs/encodefile.c)
