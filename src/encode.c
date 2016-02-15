@@ -179,8 +179,7 @@ void _encoder_consume(encoder *e) {
         e->payload_length -= payload_length;
     }
     if (e->opt.is_ofdm) {
-        uint8_t *header = calloc(sizeof(uint8_t), 8);
-        header[HEADER_DUMMY] = is_dummy ? HEADER_DUMMY_IS_DUMMY : HEADER_DUMMY_NO_DUMMY;
+        uint8_t *header = calloc(sizeof(uint8_t), 1);
         if (!is_dummy) {
             printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
         }
@@ -188,8 +187,7 @@ void _encoder_consume(encoder *e) {
                                   payload_length);
         free(header);
     } else {
-        uint8_t *header = calloc(sizeof(uint8_t), 14);
-        header[HEADER_DUMMY] = is_dummy ? HEADER_DUMMY_IS_DUMMY : HEADER_DUMMY_NO_DUMMY;
+        uint8_t *header = calloc(sizeof(uint8_t), 1);
         flexframegen_assemble(e->frame.modem.framegen, header, payload,
                               payload_length);
         e->frame.modem.symbols_remaining =
@@ -200,7 +198,7 @@ void _encoder_consume(encoder *e) {
 
 size_t encoder_sample_len(encoder *e, size_t data_len) {
     uint8_t *empty = calloc(data_len, sizeof(uint8_t));
-    uint8_t header[8];
+    uint8_t header[1];
     if (e->opt.is_ofdm) {
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, empty,
                                   data_len);  // TODO actual calculation?

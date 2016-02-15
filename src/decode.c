@@ -36,10 +36,6 @@ int _on_decode(unsigned char *header, int header_valid, unsigned char *payload,
         return 0;
     }
 
-    if (header[HEADER_DUMMY] == HEADER_DUMMY_IS_DUMMY) {
-        return 0;
-    }
-
     decoder *d = dvoid;
 
     while (payload_len > (d->writebuf_len - d->writebuf_accum)) {
