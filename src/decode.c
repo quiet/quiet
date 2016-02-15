@@ -61,6 +61,7 @@ void create_ofdm_decoder(const decoder_options *opt, decoder *d) {
     ofdm.framesync = ofdmflexframesync_create(
         opt->ofdmopt.num_subcarriers, opt->ofdmopt.cyclic_prefix_len,
         opt->ofdmopt.taper_len, subcarriers, _on_decode, d);
+    ofdmflexframesync_set_header_len(ofdm.framesync, 0);
     if (opt->is_debug) {
         ofdmflexframesync_debug_enable(ofdm.framesync);
     }
@@ -80,6 +81,7 @@ void create_modem_decoder(const decoder_options *opt, decoder *d) {
     modem_decoder modem;
 
     modem.framesync = flexframesync_create(_on_decode, d);
+    flexframesync_set_header_len(modem.framesync, 0);
     if (opt->is_debug) {
         flexframesync_debug_enable(modem.framesync);
     }

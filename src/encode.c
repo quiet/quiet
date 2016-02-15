@@ -19,6 +19,7 @@ void create_ofdm_encoder(const encoder_options *opt, encoder *e) {
     ofdm.framegen = ofdmflexframegen_create(
         opt->ofdmopt.num_subcarriers, opt->ofdmopt.cyclic_prefix_len,
         opt->ofdmopt.taper_len, subcarriers, &props);
+    ofdmflexframegen_set_header_len(ofdm.framegen, 0);
 
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
@@ -42,6 +43,7 @@ void create_modem_encoder(const encoder_options *opt, encoder *e) {
     };
 
     modem.framegen = flexframegen_create(&props);
+    flexframegen_set_header_len(modem.framegen, 0);
 
     e->symbolbuf = NULL;
     e->symbolbuf_len = 0;
