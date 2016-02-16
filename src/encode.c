@@ -138,7 +138,7 @@ int _encoder_assembled(encoder *e) {
     }
 }
 
-int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
+int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length) {
     int had_payload = (e->payload_length != 0) || (_encoder_assembled(e)) ||
                       (e->samplebuf_len != 0);
 
@@ -162,7 +162,7 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
 
 void _encoder_consume(encoder *e) {
     size_t payload_length = e->opt.frame_len;
-    uint8_t *payload = e->payload;
+    const uint8_t *payload = e->payload;
     e->payload += payload_length;
     e->payload_length -= payload_length;
     if (e->opt.is_ofdm) {
