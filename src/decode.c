@@ -115,6 +115,7 @@ decoder *create_decoder(const decoder_options *opt) {
     d->i = 0;
     d->resample_rate = 1;
     d->baserate = NULL;
+    d->resampler = NULL;
     if (opt->sample_rate != SAMPLE_RATE) {
         float rate =  (float)SAMPLE_RATE / (float)opt->sample_rate;
         d->resampler = resamp_rrrf_create(rate, opt->resampler.delay,

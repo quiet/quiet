@@ -81,6 +81,7 @@ encoder *create_encoder(const encoder_options *opt) {
     e->noise_prefix_remaining = opt->noise_prefix;
 
     e->resample_rate = 1;
+    e->resampler = NULL;
     if (opt->sample_rate != SAMPLE_RATE) {
         float rate = (float)opt->sample_rate / (float)SAMPLE_RATE;
         e->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
