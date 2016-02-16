@@ -27,3 +27,9 @@ add_executable(decodefile EXCLUDE_FROM_ALL programs/decodefile.c)
 target_link_libraries(decodefile quiet sndfile)
 
 add_custom_target(programs DEPENDS encodefile decodefile)
+
+add_executable(test_integration tests/integration.c)
+target_link_libraries(test_integration quiet)
+add_test(NAME integration_test COMMAND test_integration)
+
+enable_testing()
