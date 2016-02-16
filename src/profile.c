@@ -125,7 +125,9 @@ encoder_options *get_encoder_profile_file(const char *fname,
         return NULL;
     }
 
-    return get_encoder_profile(root, profilename);
+    encoder_options *opt = get_encoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
 }
 
 encoder_options *get_encoder_profile_str(const char *input,
@@ -138,7 +140,9 @@ encoder_options *get_encoder_profile_str(const char *input,
         return NULL;
     }
 
-    return get_encoder_profile(root, profilename);
+    encoder_options *opt = get_encoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
 }
 
 decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
@@ -232,7 +236,9 @@ decoder_options *get_decoder_profile_file(const char *fname,
         return NULL;
     }
 
-    return get_decoder_profile(root, profilename);
+    decoder_options *opt = get_decoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
 }
 
 decoder_options *get_decoder_profile_str(const char *input,
@@ -245,6 +251,8 @@ decoder_options *get_decoder_profile_str(const char *input,
         return NULL;
     }
 
-    return get_decoder_profile(root, profilename);
+    decoder_options *opt = get_decoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
 }
 
