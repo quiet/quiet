@@ -161,7 +161,7 @@ int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_lengt
 }
 
 void _encoder_consume(encoder *e) {
-    size_t payload_length = e->opt.frame_len;
+    size_t payload_length = (e->opt.frame_len < e->payload_length) ? e->opt.frame_len : e->payload_length;
     const uint8_t *payload = e->payload;
     e->payload += payload_length;
     e->payload_length -= payload_length;
