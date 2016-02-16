@@ -167,7 +167,6 @@ void _encoder_consume(encoder *e) {
     e->payload_length -= payload_length;
     if (e->opt.is_ofdm) {
         uint8_t *header = calloc(sizeof(uint8_t), 1);
-        printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, payload,
                                   payload_length);
         free(header);
