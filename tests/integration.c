@@ -85,19 +85,33 @@ int test_profile(const char *profiles_fname, const char *profile_name,
 
     free(payload_decoded);
     free(samplebuf);
+    free(encodeopt);
+    free(decodeopt);
     destroy_encoder(e);
     destroy_decoder(d);
     return 0;
 }
 
 int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
-    size_t payload_len = 1<<16;
-    uint8_t *payload = malloc(payload_len*sizeof(uint8_t));
-    for (size_t i = 0; i < payload_len; i++) {
-        payload[i] = rand() & 0xff;
+    size_t payload_lens[] = { 1, 2, 4, 12, 320, 1023, 1<<16 };
+    size_t payload_lens_len = sizeof(payload_lens)/sizeof(size_t);
+    for (size_t i = 0; i < payload_lens_len; i++) {
+        size_t payload_len = payload_lens[i];
+        uint8_t *payload = malloc(payload_len*sizeof(uint8_t));
+        for (size_t j = 0; j < payload_len; j++) {
+            payload[j] = rand() & 0xff;
+        }
+        printf("testing encode_rate=%u, decode_rate=%u, payload_len=%6zu... ",
+               encode_rate, decode_rate, payload_len);
+        if (test_profile("test-profiles.json", "ofdm", payload, payload_len,
+                         encode_rate, decode_rate)) {
+            printf("FAILED\n");
+            return -1;
+        }
+        printf("PASSED\n");
+        free(payload);
     }
-    return test_profile("test-profiles.json", "ofdm", payload, payload_len,
-                        encode_rate, decode_rate);
+    return 0;
 }
 
 int main(int argc, char **argv) {
