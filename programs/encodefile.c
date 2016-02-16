@@ -96,6 +96,7 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
     destroy_encoder(e);
     free(readbuf);
     free(samplebuf);
+    free(pad);
     wav_close(wav);
     fclose(payload);
     return 0;

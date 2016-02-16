@@ -99,5 +99,7 @@ int main(int argc, char **argv) {
 
     decode_wav("encoded.wav", "payload_out", decodeopt);
 
+    free(decodeopt);
+
     return 0;
 }
