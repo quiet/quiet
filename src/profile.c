@@ -34,9 +34,6 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     if ((v = json_object_get(profile, "frame_length"))) {
         opt->frame_len = json_integer_value(v);
     }
-    if ((v = json_object_get(profile, "dummy_prefix"))) {
-        opt->dummy_prefix = json_integer_value(v);
-    }
     if ((v = json_object_get(profile, "noise_prefix"))) {
         opt->noise_prefix = json_integer_value(v);
     }

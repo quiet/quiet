@@ -115,7 +115,6 @@ typedef struct {
     uint8_t *payload;
     size_t payload_length;
     bool has_flushed;
-    size_t dummy_frames_remaining;
     size_t noise_prefix_remaining;
     float resample_rate;
     resamp_rrrf resampler;

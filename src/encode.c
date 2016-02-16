@@ -147,7 +147,6 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;
     e->has_flushed = false;
-    e->dummy_frames_remaining = e->opt.dummy_prefix;
 
     modulate_reset(e->mod);
 
@@ -163,26 +162,12 @@ int encoder_set_payload(encoder *e, uint8_t *payload, size_t payload_length) {
 
 void _encoder_consume(encoder *e) {
     size_t payload_length = e->opt.frame_len;
-    bool is_dummy = (e->dummy_frames_remaining != 0);
-    if (!is_dummy && e->payload_length < payload_length) {
-        payload_length = e->payload_length;
-    }
     uint8_t *payload = e->payload;
-    if (is_dummy) {
-        payload = malloc(payload_length * sizeof(uint8_t));
-        for (size_t i = 0; i < payload_length; i++) {
-            payload[i] = rand() & 0xff;
-        }
-        e->dummy_frames_remaining--;
-    } else {
-        e->payload += payload_length;
-        e->payload_length -= payload_length;
-    }
+    e->payload += payload_length;
+    e->payload_length -= payload_length;
     if (e->opt.is_ofdm) {
         uint8_t *header = calloc(sizeof(uint8_t), 1);
-        if (!is_dummy) {
-            printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
-        }
+        printf("first bytes: %d %d %d %d %d\n", payload[0], payload[1], payload[2], payload[3], payload[4]);
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, payload,
                                   payload_length);
         free(header);
