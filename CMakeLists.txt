@@ -32,4 +32,9 @@ add_executable(test_integration tests/integration.c)
 target_link_libraries(test_integration quiet)
 add_test(NAME integration_test COMMAND test_integration)
 
+add_custom_command(OUTPUT test-profiles.json
+    COMMAND cp ${CMAKE_CURRENT_SOURCE_DIR}/tests/test-profiles.json ${CMAKE_BINARY_DIR}/test-profiles.json)
+add_custom_target(cp-test-profiles DEPENDS test-profiles.json)
+add_dependencies(test_integration cp-test-profiles)
+
 enable_testing()
