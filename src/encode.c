@@ -61,9 +61,6 @@ encoder *create_encoder(const encoder_options *opt) {
 
     e->opt = *opt;
 
-    printf("%d %d\n", opt->checksum_scheme, opt->mod_scheme);
-    printf("%f %f\n", opt->modopt.excess_bw, opt->modopt.center_rads);
-
     if (opt->is_ofdm) {
         create_ofdm_encoder(opt, e);
     } else {
@@ -127,7 +124,7 @@ void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
         frame_len = (max_frame_len - min_frame_len) / 2 + min_frame_len;
     }
     e->opt.frame_len = frame_len;
-    printf("new frame len %zu\n", e->opt.frame_len);
+    printf("new frame len clamped to %zu\n", e->opt.frame_len);
 }
 
 int _encoder_assembled(encoder *e) {

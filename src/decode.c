@@ -127,9 +127,6 @@ decoder *create_decoder(const decoder_options *opt) {
     d->baserate = malloc(stride_len * sizeof(sample_t));
     d->baserate_offset = 0;
 
-    printf("decoder created\n");
-    printf("is_ofdm %d\n", opt->is_ofdm);
-
     return d;
 }
 
