@@ -29,7 +29,10 @@ target_link_libraries(decodefile quiet sndfile)
 add_executable(encode_soundcard EXCLUDE_FROM_ALL programs/encode_soundcard.c)
 target_link_libraries(encode_soundcard quiet portaudio)
 
-add_custom_target(programs DEPENDS encodefile decodefile encode_soundcard)
+add_executable(decode_soundcard EXCLUDE_FROM_ALL programs/decode_soundcard.c)
+target_link_libraries(decode_soundcard quiet portaudio)
+
+add_custom_target(programs DEPENDS encodefile decodefile encode_soundcard decode_soundcard)
 
 add_executable(test_integration tests/integration.c)
 target_link_libraries(test_integration quiet)
