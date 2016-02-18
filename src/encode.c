@@ -78,7 +78,7 @@ encoder *create_encoder(const encoder_options *opt) {
     e->payload_length = 0;
     e->has_flushed = true;
 
-    e->noise_prefix_remaining = opt->noise_prefix;
+    e->opt.is_close_frame = false;
 
     e->resample_rate = 1;
     e->resampler = NULL;
@@ -95,9 +95,7 @@ encoder *create_encoder(const encoder_options *opt) {
 }
 
 void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
-    if (!e->opt.is_close_frame) {
-        return;
-    }
+    e->opt.is_close_frame = true;
 
     // get sample_len in base rate (conservative estimate)
     // assume we can also get ceil(resample_rate) samples out plus "linear" count
@@ -206,13 +204,6 @@ size_t _constrained_write(sample_t *src, size_t src_len, sample_t *dst,
     return len;
 }
 
-size_t _encoder_write_noise(encoder *e) {
-    for (size_t i = 0; i < e->noise_prefix_remaining; i++) {
-        e->symbolbuf[i] = randnf() + _Complex_I * randnf() * M_SQRT1_2;
-    }
-    return e->noise_prefix_remaining;
-}
-
 size_t _encoder_pad(encoder *e) {
     size_t padding_len;
     if (e->opt.is_ofdm) {
@@ -234,20 +225,6 @@ size_t _encoder_pad(encoder *e) {
 }
 
 size_t _encoder_fillsymbols(encoder *e, size_t requested_length) {
-    if (e->noise_prefix_remaining > 0) {
-        size_t noise_wanted = e->noise_prefix_remaining;
-        if (noise_wanted > e->symbolbuf_len) {
-            e->symbolbuf =
-                realloc(e->symbolbuf,
-                        noise_wanted *
-                            sizeof(float complex));  // XXX check malloc result
-            e->symbolbuf_len = noise_wanted;
-        }
-        size_t written = _encoder_write_noise(e);
-        e->noise_prefix_remaining = 0;
-        return written;
-    }
-
     if (e->opt.is_ofdm) {
         // ofdm can't control the size of its blocks, so it ignores
         // requested_length

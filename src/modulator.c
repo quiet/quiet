@@ -22,14 +22,6 @@ modulator *create_modulator(const modulator_options *opt) {
         m->interp = NULL;
     }
 
-    if (opt->premix_filter_opt.order) {
-        filter_options filteropt = opt->premix_filter_opt;
-        m->premixfilter =
-            iirfilt_crcf_create_lowpass(filteropt.order, filteropt.cutoff);
-    } else {
-        m->premixfilter = NULL;
-    }
-    m->mixfilter = NULL;
     if (opt->dc_filter_opt.alpha) {
         m->dcfilter = iirfilt_crcf_create_dc_blocker(opt->dc_filter_opt.alpha);
     } else {
@@ -74,10 +66,6 @@ size_t modulate(modulator *m, const float complex *symbols, size_t symbol_len,
         }
         for (size_t j = 0; j < m->opt.samples_per_symbol; j++) {
             float complex mixed;
-            if (m->premixfilter) {
-                iirfilt_crcf_execute(m->premixfilter, post_filter[j],
-                                     &post_filter[j]);
-            }
             nco_crcf_mix_up(m->nco, post_filter[j], &mixed);
             if (m->dcfilter) {
                 iirfilt_crcf_execute(m->dcfilter, mixed, &mixed);
@@ -132,12 +120,6 @@ void destroy_modulator(modulator *m) {
     nco_crcf_destroy(m->nco);
     if (m->interp) {
         firinterp_crcf_destroy(m->interp);
-    }
-    if (m->premixfilter) {
-        iirfilt_crcf_destroy(m->premixfilter);
-    }
-    if (m->mixfilter) {
-        firfilt_crcf_destroy(m->mixfilter);
     }
     if (m->dcfilter) {
         iirfilt_crcf_destroy(m->dcfilter);

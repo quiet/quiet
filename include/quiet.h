@@ -13,11 +13,6 @@ typedef float sample_t;
 typedef struct { float alpha; } dc_filter_options;
 
 typedef struct {
-    float cutoff;
-    unsigned int order;
-} filter_options;
-
-typedef struct {
     size_t delay;
     float bandwidth;
     float attenuation;
@@ -30,7 +25,6 @@ typedef struct {
     float excess_bw;
     float center_rads;
     float gain;
-    filter_options premix_filter_opt;
     dc_filter_options dc_filter_opt;
 } modulator_options;
 
@@ -39,15 +33,12 @@ typedef struct {
     unsigned int symbol_delay;
     float excess_bw;
     float center_rads;
-    filter_options mix_filter_opt;
 } demodulator_options;
 
 typedef struct {
     nco_crcf nco;
     firinterp_crcf interp;
     modulator_options opt;
-    iirfilt_crcf premixfilter;
-    firfilt_crcf mixfilter;
     iirfilt_crcf dcfilter;
 } modulator;
 
@@ -55,8 +46,6 @@ typedef struct {
     nco_crcf nco;
     firdecim_crcf decim;
     demodulator_options opt;
-    iirfilt_crcf premixfilter;
-    iirfilt_crcf mixfilter;
 } demodulator;
 
 typedef struct {

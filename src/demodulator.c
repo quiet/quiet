@@ -22,14 +22,6 @@ demodulator *create_demodulator(const demodulator_options *opt) {
         d->decim = NULL;
     }
 
-    d->premixfilter = NULL;
-    if (opt->mix_filter_opt.order) {
-        filter_options filteropt = opt->mix_filter_opt;
-        d->mixfilter =
-            iirfilt_crcf_create_lowpass(filteropt.order, filteropt.cutoff);
-    } else {
-        d->mixfilter = NULL;
-    }
     return d;
 }
 
@@ -62,10 +54,6 @@ size_t demodulate(demodulator *d, sample_t *samples, size_t sample_len,
     for (size_t i = 0; i < sample_len; i += d->opt.samples_per_symbol) {
         for (size_t j = 0; j < d->opt.samples_per_symbol; j++) {
             nco_crcf_mix_down(d->nco, samples[i + j], &post_mixer[j]);
-            if (d->mixfilter) {
-                iirfilt_crcf_execute(d->mixfilter, post_mixer[j],
-                                     &post_mixer[j]);
-            }
             nco_crcf_step(d->nco);
         }
 
@@ -113,12 +101,6 @@ void destroy_demodulator(demodulator *d) {
     nco_crcf_destroy(d->nco);
     if (d->decim) {
         firdecim_crcf_destroy(d->decim);
-    }
-    if (d->premixfilter) {
-        iirfilt_crcf_destroy(d->premixfilter);
-    }
-    if (d->mixfilter) {
-        iirfilt_crcf_destroy(d->mixfilter);
     }
     free(d);
 }

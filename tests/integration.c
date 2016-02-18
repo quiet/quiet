@@ -53,7 +53,6 @@ int test_profile(const char *profiles_fname, const char *profile_name,
 
     size_t samplebuf_len = 16384;
     sample_t *samplebuf = malloc(samplebuf_len * sizeof(sample_t));
-    encoder_clamp_frame_len(e, samplebuf_len);
 
     encoder_set_payload(e, payload, payload_len);
 

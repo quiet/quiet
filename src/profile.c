@@ -34,9 +34,6 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     if ((v = json_object_get(profile, "frame_length"))) {
         opt->frame_len = json_integer_value(v);
     }
-    if ((v = json_object_get(profile, "noise_prefix"))) {
-        opt->noise_prefix = json_integer_value(v);
-    }
     if ((v = json_object_get(profile, "ofdm"))) {
         json_t *vv;
         opt->is_ofdm = true;
@@ -78,15 +75,6 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "encoder_filters"))) {
         json_t *vv;
-        json_t *vvv;
-        if ((vv = json_object_get(v, "premix"))) {
-            if ((vvv = json_object_get(vv, "cutoff"))) {
-                opt->modopt.premix_filter_opt.cutoff = json_number_value(vvv);
-            }
-            if ((vvv = json_object_get(vv, "order"))) {
-                opt->modopt.premix_filter_opt.order = json_integer_value(vvv);
-            }
-        }
         if ((vv = json_object_get(v, "dc_filter_alpha"))) {
             opt->modopt.dc_filter_opt.alpha = json_number_value(vv);
         }
@@ -105,9 +93,6 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "filter_bank_size"))) {
             opt->resampler.filter_bank_size = json_number_value(vv);
         }
-    }
-    if ((v = json_object_get(profile, "close_frame"))) {
-        opt->is_close_frame = json_boolean_value(v);
     }
 
     opt->sample_rate = SAMPLE_RATE;
@@ -195,18 +180,6 @@ decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
             opt->demodopt.center_rads = json_number_value(vv);
         }
     }
-    if ((v = json_object_get(profile, "decoder_filters"))) {
-        json_t *vv;
-        json_t *vvv;
-        if ((vv = json_object_get(v, "mix"))) {
-            if ((vvv = json_object_get(vv, "cutoff"))) {
-                opt->demodopt.mix_filter_opt.cutoff = json_number_value(vvv);
-            }
-            if ((vvv = json_object_get(vv, "order"))) {
-                opt->demodopt.mix_filter_opt.order = json_integer_value(vvv);
-            }
-        }
-    }
     if ((v = json_object_get(profile, "resampler"))) {
         json_t *vv;
         if ((vv = json_object_get(v, "delay"))) {
@@ -255,4 +228,3 @@ decoder_options *get_decoder_profile_str(const char *input,
     json_decref(root);
     return opt;
 }
-
