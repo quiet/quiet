@@ -78,15 +78,15 @@ int encode_to_soundcard(FILE *input, encoder_options *opt) {
 }
 
 int main(int argc, char **argv) {
-    if (argc != 3) {
-        printf("usage: encode_soundcard <profilename> <input_source>\n");
+    if (argc < 2 || argc > 4) {
+        printf("usage: encode_soundcard <profilename> [<input_source>]\n");
         exit(1);
     }
     encoder_options *encodeopt =
         get_encoder_profile_file("profiles.json", argv[1]);
 
     FILE *input;
-    if (strncmp(argv[2], "-", 2) == 0) {
+    if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {
         input = stdin;
     } else {
         input = fopen(argv[2], "rb");
