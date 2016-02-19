@@ -40,7 +40,8 @@ int read_and_check(const uint8_t *payload, size_t payload_len,
 
 int test_profile(const char *profiles_fname, const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
-                 unsigned int encode_rate, unsigned int decode_rate) {
+                 unsigned int encode_rate, unsigned int decode_rate,
+                 bool do_clamp) {
     encoder_options *encodeopt =
         get_encoder_profile_file(profiles_fname, profile_name);
     encoder_opt_set_sample_rate(encodeopt, encode_rate);
@@ -53,6 +54,9 @@ int test_profile(const char *profiles_fname, const char *profile_name,
 
     size_t samplebuf_len = 16384;
     sample_t *samplebuf = malloc(samplebuf_len * sizeof(sample_t));
+    if (do_clamp) {
+        encoder_clamp_frame_len(e, samplebuf_len);
+    }
 
     encoder_set_payload(e, payload, payload_len);
 
@@ -92,22 +96,26 @@ int test_profile(const char *profiles_fname, const char *profile_name,
 }
 
 int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
-    size_t payload_lens[] = { 1, 2, 4, 12, 320, 1023, 1<<16 };
+    size_t payload_lens[] = { 1, 2, 4, 12, 320, 399, 400, 797, 798, 799, 800, 1023, 1<<16 };
     size_t payload_lens_len = sizeof(payload_lens)/sizeof(size_t);
+    bool do_close_frame[] = { false, true };
+    size_t do_close_frame_len = sizeof(do_close_frame)/sizeof(bool);
     for (size_t i = 0; i < payload_lens_len; i++) {
         size_t payload_len = payload_lens[i];
         uint8_t *payload = malloc(payload_len*sizeof(uint8_t));
         for (size_t j = 0; j < payload_len; j++) {
             payload[j] = rand() & 0xff;
         }
-        printf("testing encode_rate=%u, decode_rate=%u, payload_len=%6zu... ",
-               encode_rate, decode_rate, payload_len);
-        if (test_profile("test-profiles.json", "ofdm", payload, payload_len,
-                         encode_rate, decode_rate)) {
-            printf("FAILED\n");
-            return -1;
+        for (size_t j = 0; j < do_close_frame_len; j++) {
+            printf("testing encode_rate=%u, decode_rate=%u, payload_len=%6zu, close_frame=%s... ",
+                   encode_rate, decode_rate, payload_len, (do_close_frame[j]?" true":"false"));
+            if (test_profile("test-profiles.json", "ofdm", payload, payload_len,
+                             encode_rate, decode_rate, do_close_frame[j])) {
+                printf("FAILED\n");
+                return -1;
+            }
+            printf("PASSED\n");
         }
-        printf("PASSED\n");
         free(payload);
     }
     return 0;
