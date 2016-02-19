@@ -13,11 +13,11 @@ int compare_chunk(const uint8_t *l, const uint8_t *r, size_t len) {
 }
 
 int read_and_check(const uint8_t *payload, size_t payload_len,
-                   size_t accum, decoder *d, uint8_t *payload_decoded,
+                   size_t accum, quiet_decoder *d, uint8_t *payload_decoded,
                    size_t payload_blocklen) {
     while (accum > 0) {
         size_t want = (payload_blocklen < accum) ? payload_blocklen : accum;
-        size_t read = decoder_readbuf(d, payload_decoded, want);
+        size_t read = quiet_decoder_readbuf(d, payload_decoded, want);
         if (want != read) {
             printf("failed, read less from decoder than asked for, want=%zu, read=%zu\n", want, read);
             return 1;
@@ -42,31 +42,31 @@ int test_profile(const char *profiles_fname, const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
                  unsigned int encode_rate, unsigned int decode_rate,
                  bool do_clamp) {
-    encoder_options *encodeopt =
-        get_encoder_profile_file(profiles_fname, profile_name);
-    encoder_opt_set_sample_rate(encodeopt, encode_rate);
-    encoder *e = create_encoder(encodeopt);
+    quiet_encoder_options *encodeopt =
+        quiet_encoder_profile_file(profiles_fname, profile_name);
+    quiet_encoder_opt_set_sample_rate(encodeopt, encode_rate);
+    quiet_encoder *e = quiet_encoder_create(encodeopt);
 
-    decoder_options *decodeopt =
-        get_decoder_profile_file(profiles_fname, profile_name);
-    decoder_opt_set_sample_rate(decodeopt, decode_rate);
-    decoder *d = create_decoder(decodeopt);
+    quiet_decoder_options *decodeopt =
+        quiet_decoder_profile_file(profiles_fname, profile_name);
+    quiet_decoder_opt_set_sample_rate(decodeopt, decode_rate);
+    quiet_decoder *d = quiet_decoder_create(decodeopt);
 
     size_t samplebuf_len = 16384;
-    sample_t *samplebuf = malloc(samplebuf_len * sizeof(sample_t));
+    quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));
     if (do_clamp) {
-        encoder_clamp_frame_len(e, samplebuf_len);
+        quiet_encoder_clamp_frame_len(e, samplebuf_len);
     }
 
-    encoder_set_payload(e, payload, payload_len);
+    quiet_encoder_set_payload(e, payload, payload_len);
 
     size_t payload_blocklen = 4096;
     uint8_t *payload_decoded = malloc(payload_blocklen * sizeof(uint8_t));
 
     size_t written = samplebuf_len;
     while (written == samplebuf_len) {
-        written = encode(e, samplebuf, samplebuf_len);
-        size_t accum = decode(d, samplebuf, written);
+        written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
+        size_t accum = quiet_decoder_recv(d, samplebuf, written);
         if (read_and_check(payload, payload_len, accum, d, payload_decoded, payload_blocklen)) {
             return 1;
         }
@@ -74,7 +74,7 @@ int test_profile(const char *profiles_fname, const char *profile_name,
         payload_len -= accum;
     }
 
-    size_t accum = decode_flush(d);
+    size_t accum = quiet_decoder_flush(d);
     if (read_and_check(payload, payload_len, accum, d, payload_decoded, payload_blocklen)) {
         return 1;
     }
@@ -90,8 +90,8 @@ int test_profile(const char *profiles_fname, const char *profile_name,
     free(samplebuf);
     free(encodeopt);
     free(decodeopt);
-    destroy_encoder(e);
-    destroy_decoder(d);
+    quiet_encoder_destroy(e);
+    quiet_decoder_destroy(d);
     return 0;
 }
 

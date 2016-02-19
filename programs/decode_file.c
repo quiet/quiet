@@ -24,7 +24,7 @@ size_t wav_read(SNDFILE *wav, float *samples, size_t sample_len) {
 void wav_close(SNDFILE *wav) { sf_close(wav); }
 
 int decode_wav(const char *wav_fname, const char *payload_fname,
-               decoder_options *opt) {
+               quiet_decoder_options *opt) {
     FILE *payload = fopen(payload_fname, "wb");
 
     if (payload == NULL) {
@@ -39,11 +39,11 @@ int decode_wav(const char *wav_fname, const char *payload_fname,
         printf("failed to open wav file for reading\n");
         return 1;
     }
-    decoder_opt_set_sample_rate(opt, sample_rate);
+    quiet_decoder_opt_set_sample_rate(opt, sample_rate);
 
-    decoder *d = create_decoder(opt);
+    quiet_decoder *d = quiet_decoder_create(opt);
     size_t wantread = 16384;
-    sample_t *samplebuf = malloc(wantread * sizeof(sample_t));
+    quiet_sample_t *samplebuf = malloc(wantread * sizeof(quiet_sample_t));
     if (samplebuf == NULL) {
         return 1;
     }
@@ -59,29 +59,29 @@ int decode_wav(const char *wav_fname, const char *payload_fname,
             done = true;
         }
 
-        size_t accum = decode(d, samplebuf, nread);
+        size_t accum = quiet_decoder_recv(d, samplebuf, nread);
 
         if (accum > 0) {
             if (accum > bufsize) {
                 bufsize = accum;
                 buf = realloc(buf, bufsize);
             }
-            size_t ndecoderread = decoder_readbuf(d, buf, accum);
-            fwrite(buf, 1, ndecoderread, payload);
+            size_t nquiet_decoderread = quiet_decoder_readbuf(d, buf, accum);
+            fwrite(buf, 1, nquiet_decoderread, payload);
         }
     }
 
-    size_t accum = decode_flush(d);
+    size_t accum = quiet_decoder_flush(d);
 
     if (accum) {
         // XXX buffer overrun!!!
-        size_t ndecoderread = decoder_readbuf(d, buf, accum);
-        fwrite(buf, 1, ndecoderread, payload);
+        size_t nquiet_decoderread = quiet_decoder_readbuf(d, buf, accum);
+        fwrite(buf, 1, nquiet_decoderread, payload);
     }
 
     free(samplebuf);
     free(buf);
-    destroy_decoder(d);
+    quiet_decoder_destroy(d);
     wav_close(wav);
     fclose(payload);
     return 0;
@@ -92,8 +92,8 @@ int main(int argc, char **argv) {
         printf("usage: encodefile <profilename>\n");
         exit(1);
     }
-    decoder_options *decodeopt =
-        get_decoder_profile_file("profiles.json", argv[1]);
+    quiet_decoder_options *decodeopt =
+        quiet_decoder_profile_file("profiles.json", argv[1]);
 
     decodeopt->is_debug = true;
 

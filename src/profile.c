@@ -1,7 +1,7 @@
 #include "quiet/common.h"
 #include <jansson.h>
 
-encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
+encoder_options *encoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
         printf("failed to access profile %s\n", profilename);
@@ -100,8 +100,8 @@ encoder_options *get_encoder_profile(json_t *root, const char *profilename) {
     return opt;
 }
 
-encoder_options *get_encoder_profile_file(const char *fname,
-                                          const char *profilename) {
+encoder_options *quiet_encoder_profile_file(const char *fname,
+                                            const char *profilename) {
     json_error_t error;
     json_t *root = json_load_file(fname, 0, &error);
 
@@ -110,13 +110,13 @@ encoder_options *get_encoder_profile_file(const char *fname,
         return NULL;
     }
 
-    encoder_options *opt = get_encoder_profile(root, profilename);
+    encoder_options *opt = encoder_profile(root, profilename);
     json_decref(root);
     return opt;
 }
 
-encoder_options *get_encoder_profile_str(const char *input,
-                                         const char *profilename) {
+encoder_options *quiet_encoder_profile_str(const char *input,
+                                           const char *profilename) {
     json_error_t error;
     json_t *root = json_loads(input, 0, &error);
 
@@ -125,12 +125,12 @@ encoder_options *get_encoder_profile_str(const char *input,
         return NULL;
     }
 
-    encoder_options *opt = get_encoder_profile(root, profilename);
+    encoder_options *opt = encoder_profile(root, profilename);
     json_decref(root);
     return opt;
 }
 
-decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
+decoder_options *decoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
         printf("failed to access profile %s\n", profilename);
@@ -199,8 +199,8 @@ decoder_options *get_decoder_profile(json_t *root, const char *profilename) {
     return opt;
 }
 
-decoder_options *get_decoder_profile_file(const char *fname,
-                                          const char *profilename) {
+decoder_options *quiet_decoder_profile_file(const char *fname,
+                                            const char *profilename) {
     json_error_t error;
     json_t *root = json_load_file(fname, 0, &error);
 
@@ -209,13 +209,13 @@ decoder_options *get_decoder_profile_file(const char *fname,
         return NULL;
     }
 
-    decoder_options *opt = get_decoder_profile(root, profilename);
+    decoder_options *opt = decoder_profile(root, profilename);
     json_decref(root);
     return opt;
 }
 
-decoder_options *get_decoder_profile_str(const char *input,
-                                         const char *profilename) {
+decoder_options *quiet_decoder_profile_str(const char *input,
+                                           const char *profilename) {
     json_error_t error;
     json_t *root = json_loads(input, 0, &error);
 
@@ -224,7 +224,7 @@ decoder_options *get_decoder_profile_str(const char *input,
         return NULL;
     }
 
-    decoder_options *opt = get_decoder_profile(root, profilename);
+    decoder_options *opt = decoder_profile(root, profilename);
     json_decref(root);
     return opt;
 }

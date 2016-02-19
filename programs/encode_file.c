@@ -21,14 +21,14 @@ SNDFILE *wav_open(const char *fname, float sample_rate) {
     return sf_open(fname, SFM_WRITE, &sfinfo);
 }
 
-size_t wav_write(SNDFILE *wav, const sample_t *samples, size_t sample_len) {
+size_t wav_write(SNDFILE *wav, const quiet_sample_t *samples, size_t sample_len) {
     return sf_write_float(wav, samples, sample_len);
 }
 
 void wav_close(SNDFILE *wav) { sf_close(wav); }
 
 int encode_to_wav(const char *payload_fname, const char *out_fname,
-                  const encoder_options *opt) {
+                  const quiet_encoder_options *opt) {
     FILE *payload = fopen(payload_fname, "rb");
 
     if (payload == NULL) {
@@ -43,15 +43,15 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
         return 1;
     }
 
-    encoder *e = create_encoder(opt);
+    quiet_encoder *e = quiet_encoder_create(opt);
 
     printf("created\n");
 
     size_t block_len = 16384;
     uint8_t *readbuf = malloc(block_len * sizeof(uint8_t));
     size_t samplebuf_len = 16384;
-    sample_t *samplebuf = malloc(samplebuf_len * sizeof(sample_t));
-    encoder_clamp_frame_len(e, samplebuf_len);
+    quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));
+    quiet_encoder_clamp_frame_len(e, samplebuf_len);
     bool done = false;
     if (readbuf == NULL) {
         return 1;
@@ -60,7 +60,7 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
         return 1;
     }
 
-    sample_t *pad = calloc((sample_rate / 1000), sizeof(sample_t));  // ~1ms
+    quiet_sample_t *pad = calloc((sample_rate / 1000), sizeof(quiet_sample_t));  // ~1ms
     for (size_t i = 0; i < 5; i++) {
         wav_write(wav, pad, 18);
     }
@@ -73,13 +73,13 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
             done = true;
         }
 
-        encoder_set_payload(e, readbuf, nread);
+        quiet_encoder_set_payload(e, readbuf, nread);
 
         printf("payload set\n");
 
         size_t written = samplebuf_len;
         while (written == samplebuf_len) {
-            written = encode(e, samplebuf, samplebuf_len);
+            written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
             for (size_t i = 0; i < written; i++) {
                 if (samplebuf[i] > 1 || samplebuf[i] < -1) {
                     printf("%f\n", samplebuf[i]);
@@ -93,7 +93,7 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
         wav_write(wav, pad, 18);
     }
 
-    destroy_encoder(e);
+    quiet_encoder_destroy(e);
     free(readbuf);
     free(samplebuf);
     free(pad);
@@ -107,9 +107,9 @@ int main(int argc, char **argv) {
         printf("usage: encodefile <profilename>\n");
         exit(1);
     }
-    encoder_options *encodeopt =
-        get_encoder_profile_file("profiles.json", argv[1]);
-    encoder_opt_set_sample_rate(encodeopt, sample_rate);
+    quiet_encoder_options *encodeopt =
+        quiet_encoder_profile_file("profiles.json", argv[1]);
+    quiet_encoder_opt_set_sample_rate(encodeopt, sample_rate);
 
     encode_to_wav("payload", "encoded.wav", encodeopt);
 

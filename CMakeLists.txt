@@ -13,29 +13,29 @@ if(APPLE)
     set(CMAKE_MACOSX_RPATH on)
 endif()
 
-set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decode.c src/encode.c src/profile.c)
+set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/encoder.c src/profile.c)
 
-add_library(quiet ${SRCFILES})
+add_library(quiet_static ${SRCFILES})
+target_link_libraries(quiet_static liquid jansson)
+add_library(quiet MODULE ${SRCFILES})
 target_link_libraries(quiet liquid jansson)
-add_library(quiet_shared MODULE ${SRCFILES})
-target_link_libraries(quiet_shared liquid jansson)
 
-add_executable(encodefile EXCLUDE_FROM_ALL programs/encodefile.c)
-target_link_libraries(encodefile quiet sndfile)
+add_executable(encode_file EXCLUDE_FROM_ALL programs/encode_file.c)
+target_link_libraries(encode_file quiet_static sndfile)
 
-add_executable(decodefile EXCLUDE_FROM_ALL programs/decodefile.c)
-target_link_libraries(decodefile quiet sndfile)
+add_executable(decode_file EXCLUDE_FROM_ALL programs/decode_file.c)
+target_link_libraries(decode_file quiet_static sndfile)
 
 add_executable(encode_soundcard EXCLUDE_FROM_ALL programs/encode_soundcard.c)
-target_link_libraries(encode_soundcard quiet portaudio)
+target_link_libraries(encode_soundcard quiet_static portaudio)
 
 add_executable(decode_soundcard EXCLUDE_FROM_ALL programs/decode_soundcard.c)
-target_link_libraries(decode_soundcard quiet portaudio)
+target_link_libraries(decode_soundcard quiet_static portaudio)
 
-add_custom_target(programs DEPENDS encodefile decodefile encode_soundcard decode_soundcard)
+add_custom_target(programs DEPENDS encode_file decode_file encode_soundcard decode_soundcard)
 
 add_executable(test_integration tests/integration.c)
-target_link_libraries(test_integration quiet)
+target_link_libraries(test_integration quiet_static)
 add_test(NAME integration_test COMMAND test_integration)
 
 add_custom_command(OUTPUT test-profiles.json

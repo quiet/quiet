@@ -4,7 +4,7 @@
 
 #include <PortAudio.h>
 
-int decode_from_soundcard(FILE *output, decoder_options *opt) {
+int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     PaError err = Pa_Initialize();
     if (err != paNoError) {
         printf("failed to initialize port audio, %s\n", Pa_GetErrorText(err));
@@ -12,7 +12,7 @@ int decode_from_soundcard(FILE *output, decoder_options *opt) {
     }
 
     size_t sample_buffer_size = 1<<14;
-    sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(sample_t));
+    quiet_sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(quiet_sample_t));
     PaStream *stream;
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
@@ -32,8 +32,8 @@ int decode_from_soundcard(FILE *output, decoder_options *opt) {
     }
 
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
-    decoder_opt_set_sample_rate(opt, info->sampleRate);
-    decoder *d = create_decoder(opt);
+    quiet_decoder_opt_set_sample_rate(opt, info->sampleRate);
+    quiet_decoder *d = quiet_decoder_create(opt);
 
     size_t write_buffer_size = 16384;
     uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));
@@ -51,11 +51,11 @@ int decode_from_soundcard(FILE *output, decoder_options *opt) {
             printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
             return 1;
         }
-        size_t accum = decode(d, sample_buffer, sample_buffer_size);
+        size_t accum = quiet_decoder_recv(d, sample_buffer, sample_buffer_size);
 
         if (accum > 0) {
             size_t want = (accum > write_buffer_size) ? write_buffer_size : accum;
-            size_t read = decoder_readbuf(d, write_buffer, want);
+            size_t read = quiet_decoder_readbuf(d, write_buffer, want);
             fwrite(write_buffer, 1, read, output);
         }
     }
@@ -64,7 +64,7 @@ int decode_from_soundcard(FILE *output, decoder_options *opt) {
     Pa_CloseStream(stream);
     Pa_Terminate();
 
-    destroy_decoder(d);
+    quiet_decoder_destroy(d);
     free(sample_buffer);
     free(write_buffer);
 
@@ -76,8 +76,8 @@ int main(int argc, char **argv) {
         printf("usage: encode_soundcard <profilename> [<output_destination>]\n");
         exit(1);
     }
-    decoder_options *decodeopt =
-        get_decoder_profile_file("profiles.json", argv[1]);
+    quiet_decoder_options *decodeopt =
+        quiet_decoder_profile_file("profiles.json", argv[1]);
 
     FILE *output;
     if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {

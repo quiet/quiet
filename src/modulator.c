@@ -1,6 +1,6 @@
 #include "quiet/common.h"
 
-modulator *create_modulator(const modulator_options *opt) {
+modulator *modulator_create(const modulator_options *opt) {
     if (!opt) {
         return NULL;
     }
@@ -31,7 +31,7 @@ modulator *create_modulator(const modulator_options *opt) {
     return m;
 }
 
-size_t modulate_sample_len(const modulator *m, size_t symbol_len) {
+size_t modulator_sample_len(const modulator *m, size_t symbol_len) {
     if (!m) {
         return 0;
     }
@@ -39,7 +39,7 @@ size_t modulate_sample_len(const modulator *m, size_t symbol_len) {
     return m->opt.samples_per_symbol * symbol_len;
 }
 
-size_t modulate_symbol_len(const modulator *m, size_t sample_len) {
+size_t modulator_symbol_len(const modulator *m, size_t sample_len) {
     if (!m) {
         return 0;
     }
@@ -47,11 +47,11 @@ size_t modulate_symbol_len(const modulator *m, size_t sample_len) {
     return sample_len / (m->opt.samples_per_symbol);
 }
 
-// modulate assumes that samples is large enough to store symbol_len *
+// modulator_emit assumes that samples is large enough to store symbol_len *
 // samples_per_symbol samples
 // returns number of samples written to *samples
-size_t modulate(modulator *m, const float complex *symbols, size_t symbol_len,
-                sample_t *samples) {
+size_t modulator_emit(modulator *m, const float complex *symbols, size_t symbol_len,
+                             sample_t *samples) {
     if (!m) {
         return 0;
     }
@@ -79,7 +79,7 @@ size_t modulate(modulator *m, const float complex *symbols, size_t symbol_len,
     return written;
 }
 
-size_t modulate_flush_sample_len(modulator *m) {
+size_t modulator_flush_sample_len(modulator *m) {
     if (!m) {
         return 0;
     }
@@ -87,7 +87,7 @@ size_t modulate_flush_sample_len(modulator *m) {
     return m->opt.samples_per_symbol * 2 * m->opt.symbol_delay;
 }
 
-size_t modulate_flush(modulator *m, sample_t *samples) {
+size_t modulator_flush(modulator *m, sample_t *samples) {
     if (!m) {
         return 0;
     }
@@ -102,17 +102,17 @@ size_t modulate_flush(modulator *m, sample_t *samples) {
         terminate[i] = 0;
     }
 
-    return modulate(m, terminate, symbol_len, samples);
+    return modulator_emit(m, terminate, symbol_len, samples);
 }
 
-void modulate_reset(modulator *m) {
+void modulator_reset(modulator *m) {
     firinterp_crcf_reset(m->interp);
     if (m->dcfilter) {
         iirfilt_crcf_reset(m->dcfilter);
     }
 }
 
-void destroy_modulator(modulator *m) {
+void modulator_destroy(modulator *m) {
     if (!m) {
         return;
     }

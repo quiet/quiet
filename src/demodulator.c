@@ -1,6 +1,6 @@
 #include "quiet/common.h"
 
-demodulator *create_demodulator(const demodulator_options *opt) {
+demodulator *demodulator_create(const demodulator_options *opt) {
     if (!opt) {
         return NULL;
     }
@@ -25,20 +25,7 @@ demodulator *create_demodulator(const demodulator_options *opt) {
     return d;
 }
 
-size_t demodulate_symbol_len(const demodulator *d, size_t sample_len) {
-    if (!d) {
-        return 0;
-    }
-
-    if (sample_len % d->opt.samples_per_symbol != 0) {
-        printf("must receive multiple of samples_per_symbol samples");
-        return 0;
-    }
-
-    return sample_len / d->opt.samples_per_symbol;
-}
-
-size_t demodulate(demodulator *d, sample_t *samples, size_t sample_len,
+size_t demodulator_recv(demodulator *d, sample_t *samples, size_t sample_len,
                   float complex *symbols) {
     if (!d) {
         return 0;
@@ -71,7 +58,7 @@ size_t demodulate(demodulator *d, sample_t *samples, size_t sample_len,
     return written;
 }
 
-size_t demodulate_flush_symbol_len(demodulator *d) {
+size_t demodulator_flush_symbol_len(const demodulator *d) {
     if (!d) {
         return 0;
     }
@@ -79,21 +66,21 @@ size_t demodulate_flush_symbol_len(demodulator *d) {
     return 2 * d->opt.symbol_delay;
 }
 
-size_t demodulate_flush(demodulator *d, float complex *symbols) {
+size_t demodulator_flush(demodulator *d, float complex *symbols) {
     if (!d) {
         return 0;
     }
 
-    size_t sample_len = 2 * d->opt.symbol_delay * d->opt.samples_per_symbol;
+    size_t sample_len = d->opt.samples_per_symbol * demodulator_flush_symbol_len(d);
     sample_t terminate[sample_len];
     for (size_t i = 0; i < sample_len; i++) {
         terminate[i] = 0;
     }
 
-    return demodulate(d, terminate, sample_len, symbols);
+    return demodulator_recv(d, terminate, sample_len, symbols);
 }
 
-void destroy_demodulator(demodulator *d) {
+void demodulator_destroy(demodulator *d) {
     if (!d) {
         return;
     }

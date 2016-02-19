@@ -1,11 +1,10 @@
-#include "quiet/common.h"
-#include "quiet/modulator.h"
+#include "quiet/encoder.h"
 
-void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
+void quiet_encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
     opt->sample_rate = sample_rate;
 }
 
-void create_ofdm_encoder(const encoder_options *opt, encoder *e) {
+void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
     ofdm_encoder ofdm;
 
     ofdmflexframegenprops_s props = {
@@ -15,7 +14,7 @@ void create_ofdm_encoder(const encoder_options *opt, encoder *e) {
         .mod_scheme = opt->mod_scheme,
     };
 
-    unsigned char *subcarriers = create_ofdm_subcarriers(&opt->ofdmopt);
+    unsigned char *subcarriers = ofdm_subcarriers_create(&opt->ofdmopt);
     ofdm.framegen = ofdmflexframegen_create(
         opt->ofdmopt.num_subcarriers, opt->ofdmopt.cyclic_prefix_len,
         opt->ofdmopt.taper_len, subcarriers, &props);
@@ -32,7 +31,7 @@ void create_ofdm_encoder(const encoder_options *opt, encoder *e) {
     e->frame.ofdm = ofdm;
 }
 
-void create_modem_encoder(const encoder_options *opt, encoder *e) {
+void encoder_modem_create(const encoder_options *opt, encoder *e) {
     modem_encoder modem;
 
     flexframegenprops_s props = {
@@ -52,7 +51,7 @@ void create_modem_encoder(const encoder_options *opt, encoder *e) {
     e->frame.modem = modem;
 }
 
-encoder *create_encoder(const encoder_options *opt) {
+encoder *quiet_encoder_create(const encoder_options *opt) {
     if (!opt) {
         return NULL;
     }
@@ -62,14 +61,14 @@ encoder *create_encoder(const encoder_options *opt) {
     e->opt = *opt;
 
     if (opt->is_ofdm) {
-        create_ofdm_encoder(opt, e);
+        encoder_ofdm_create(opt, e);
     } else {
-        create_modem_encoder(opt, e);
+        encoder_modem_create(opt, e);
     }
 
-    e->mod = create_modulator(&(opt->modopt));
+    e->mod = modulator_create(&(opt->modopt));
 
-    e->samplebuf_cap = modulate_sample_len(e->mod, e->symbolbuf_len);
+    e->samplebuf_cap = modulator_sample_len(e->mod, e->symbolbuf_len);
     e->samplebuf = malloc(e->samplebuf_cap * sizeof(sample_t));
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;
@@ -94,7 +93,7 @@ encoder *create_encoder(const encoder_options *opt) {
     return e;
 }
 
-size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
+size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     e->opt.is_close_frame = true;
 
     // get sample_len in base rate (conservative estimate)
@@ -102,13 +101,13 @@ size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     size_t baserate_sample_len = ceilf((float)sample_len/e->resample_rate) + ceilf(e->resample_rate);
 
     // subtract headroom for flushing mod & resamp
-    baserate_sample_len -= modulate_flush_sample_len(e->mod);
+    baserate_sample_len -= modulator_flush_sample_len(e->mod);
     if (e->resampler) {
         baserate_sample_len -= e->opt.resampler.delay;
     }
 
     // first, let's see if the current length will still work
-    size_t projected_sample_len = encoder_sample_len(e, e->opt.frame_len);
+    size_t projected_sample_len = quiet_encoder_sample_len(e, e->opt.frame_len);
     if (projected_sample_len <= baserate_sample_len) {
         return e->opt.frame_len;
     }
@@ -124,7 +123,7 @@ size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     size_t min_frame_len = 0;
     size_t frame_len = max_frame_len / 2;
     while (max_frame_len - min_frame_len > 1) {
-        size_t projected_sample_len = encoder_sample_len(e, frame_len);
+        size_t projected_sample_len = quiet_encoder_sample_len(e, frame_len);
         if (projected_sample_len > baserate_sample_len) {
             // this frame size was too big
             max_frame_len = frame_len;
@@ -138,7 +137,7 @@ size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     return frame_len;
 }
 
-int _encoder_assembled(encoder *e) {
+static int encoder_is_assembled(encoder *e) {
     if (e->opt.is_ofdm) {
         return ofdmflexframegen_is_assembled(e->frame.ofdm.framegen);
     } else {
@@ -146,8 +145,8 @@ int _encoder_assembled(encoder *e) {
     }
 }
 
-int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length) {
-    int had_payload = (e->payload_length != 0) || (_encoder_assembled(e)) ||
+int quiet_encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length) {
+    int had_payload = (e->payload_length != 0) || (encoder_is_assembled(e)) ||
                       (e->samplebuf_len != 0);
 
     e->payload = payload;
@@ -156,7 +155,7 @@ int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_lengt
     e->samplebuf_offset = 0;
     e->has_flushed = false;
 
-    modulate_reset(e->mod);
+    modulator_reset(e->mod);
 
     if (e->opt.is_ofdm) {
         ofdmflexframegen_reset(e->frame.ofdm.framegen);
@@ -168,7 +167,7 @@ int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_lengt
     return had_payload;
 }
 
-void _encoder_consume(encoder *e) {
+static void encoder_consume(encoder *e) {
     size_t payload_length = (e->opt.frame_len < e->payload_length) ? e->opt.frame_len : e->payload_length;
     const uint8_t *payload = e->payload;
     e->payload += payload_length;
@@ -188,7 +187,7 @@ void _encoder_consume(encoder *e) {
     }
 }
 
-size_t encoder_sample_len(encoder *e, size_t data_len) {
+size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
     uint8_t *empty = calloc(data_len, sizeof(uint8_t));
     uint8_t header[1];
     if (e->opt.is_ofdm) {
@@ -196,47 +195,15 @@ size_t encoder_sample_len(encoder *e, size_t data_len) {
                                   data_len);  // TODO actual calculation?
         size_t num_ofdm_blocks =
             ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
-        return modulate_sample_len(e->mod, num_ofdm_blocks * e->symbolbuf_len);
+        return modulator_sample_len(e->mod, num_ofdm_blocks * e->symbolbuf_len);
     } else {
         flexframegen_assemble(e->frame.modem.framegen, header, empty, data_len);
         size_t num_symbols = flexframegen_getframelen(e->frame.modem.framegen);
-        return modulate_sample_len(e->mod, num_symbols);
+        return modulator_sample_len(e->mod, num_symbols);
     }
 }
 
-size_t _constrained_write(sample_t *src, size_t src_len, sample_t *dst,
-                          size_t dest_len) {
-    size_t len = src_len;
-    if (dest_len < src_len) {
-        len = dest_len;
-    }
-
-    memmove(dst, src, len * sizeof(sample_t));
-
-    return len;
-}
-
-size_t _encoder_pad(encoder *e) {
-    size_t padding_len;
-    if (e->opt.is_ofdm) {
-        padding_len =
-            modulate_sample_len(e->mod, e->opt.ofdmopt.cyclic_prefix_len);
-    } else {
-        padding_len = 32;
-    }
-    if (padding_len > e->samplebuf_cap) {
-        e->samplebuf =
-            realloc(e->samplebuf,
-                    padding_len * sizeof(sample_t));  // XXX check malloc result
-        e->samplebuf_cap = padding_len;
-    }
-    for (size_t i = 0; i < padding_len; i++) {
-        e->samplebuf[i] = 0;
-    }
-    return padding_len;
-}
-
-size_t _encoder_fillsymbols(encoder *e, size_t requested_length) {
+static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
     if (e->opt.is_ofdm) {
         // ofdm can't control the size of its blocks, so it ignores
         // requested_length
@@ -262,7 +229,7 @@ size_t _encoder_fillsymbols(encoder *e, size_t requested_length) {
     }
 }
 
-size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
+size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
     if (!e) {
         return 0;
     }
@@ -286,8 +253,8 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
                 e->samplebuf_len -= samples_read;
             } else {
                 iter_written =
-                    _constrained_write(e->samplebuf + e->samplebuf_offset,
-                                       e->samplebuf_len, samplebuf, remaining);
+                    constrained_write(e->samplebuf + e->samplebuf_offset,
+                                      e->samplebuf_len, samplebuf, remaining);
                 samplebuf += iter_written;
                 written += iter_written;
                 e->samplebuf_offset += iter_written;
@@ -298,7 +265,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
 
         e->samplebuf_offset = 0;
 
-        if (!(_encoder_assembled(e))) {
+        if (!(encoder_is_assembled(e))) {
             // if we are in close-frame mode, and we've already written this time, then
             //    close out the buffer
             // also close it out if payload is emptied out
@@ -310,7 +277,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
                     }
                     break;
                 }
-                e->samplebuf_len = modulate_flush(e->mod, e->samplebuf);
+                e->samplebuf_len = modulator_flush(e->mod, e->samplebuf);
                 if (e->resampler) {
                     for (size_t i = 0; i < e->opt.resampler.delay; i++) {
                         e->samplebuf[i + e->samplebuf_len] = 0;
@@ -320,10 +287,8 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
                 // XXX reset modulator or resampler?
                 e->has_flushed = true;
                 continue;
-            } else {
-                // e->samplebuf_len = _encoder_pad(e);
             }
-            _encoder_consume(e);
+            encoder_consume(e);
             continue;
         }
 
@@ -335,12 +300,12 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         // once we do, we'll resample (if desired) and write to output buffer
 
         size_t baserate_samples_wanted = (size_t)(ceilf(remaining / e->resample_rate));
-        size_t symbols_wanted = modulate_symbol_len(e->mod, baserate_samples_wanted);
+        size_t symbols_wanted = modulator_symbol_len(e->mod, baserate_samples_wanted);
         if (baserate_samples_wanted % e->mod->opt.samples_per_symbol) {
             symbols_wanted++;
         }
-        size_t symbols_written = _encoder_fillsymbols(e, symbols_wanted);
-        size_t sample_buffer_needed = modulate_sample_len(e->mod, symbols_written);
+        size_t symbols_written = encoder_fillsymbols(e, symbols_wanted);
+        size_t sample_buffer_needed = modulator_sample_len(e->mod, symbols_written);
 
         if (sample_buffer_needed > e->samplebuf_cap) {
             e->samplebuf =
@@ -351,7 +316,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
         }
 
         e->samplebuf_len =
-            modulate(e->mod, e->symbolbuf, symbols_written, e->samplebuf);
+            modulator_emit(e->mod, e->symbolbuf, symbols_written, e->samplebuf);
         e->has_flushed = false;
     }
 
@@ -368,7 +333,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
     return written;
 }
 
-void destroy_encoder(encoder *e) {
+void quiet_encoder_destroy(encoder *e) {
     if (!e) {
         return;
     }
@@ -381,7 +346,7 @@ void destroy_encoder(encoder *e) {
     if (e->resampler) {
         resamp_rrrf_destroy(e->resampler);
     }
-    destroy_modulator(e->mod);
+    modulator_destroy(e->mod);
     free(e->symbolbuf);
     free(e->samplebuf);
     free(e);

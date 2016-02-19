@@ -4,7 +4,7 @@
 
 #include <PortAudio.h>
 
-int encode_to_soundcard(FILE *input, encoder_options *opt) {
+int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
     PaError err = Pa_Initialize();
     if (err != paNoError) {
         printf("failed to initialize port audio, %s\n", Pa_GetErrorText(err));
@@ -12,7 +12,7 @@ int encode_to_soundcard(FILE *input, encoder_options *opt) {
     }
 
     size_t sample_buffer_size = 1<<14;
-    sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(sample_t));
+    quiet_sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(quiet_sample_t));
     PaStream *stream;
     PaDeviceIndex device = Pa_GetDefaultOutputDevice();
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
@@ -32,8 +32,8 @@ int encode_to_soundcard(FILE *input, encoder_options *opt) {
     }
 
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
-    encoder_opt_set_sample_rate(opt, info->sampleRate);
-    encoder *e = create_encoder(opt);
+    quiet_encoder_opt_set_sample_rate(opt, info->sampleRate);
+    quiet_encoder *e = quiet_encoder_create(opt);
 
     size_t read_buffer_size = 16384;
     uint8_t *read_buffer = malloc(read_buffer_size*sizeof(uint8_t));
@@ -53,11 +53,11 @@ int encode_to_soundcard(FILE *input, encoder_options *opt) {
             done = true;
         }
 
-        encoder_set_payload(e, read_buffer, nread);
+        quiet_encoder_set_payload(e, read_buffer, nread);
 
         size_t written = sample_buffer_size;
         while (written == sample_buffer_size) {
-            written = encode(e, sample_buffer, sample_buffer_size);
+            written = quiet_encoder_emit(e, sample_buffer, sample_buffer_size);
             err = Pa_WriteStream(stream, sample_buffer, written);
             if (err != paNoError) {
                 printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
@@ -70,7 +70,7 @@ int encode_to_soundcard(FILE *input, encoder_options *opt) {
     Pa_CloseStream(stream);
     Pa_Terminate();
 
-    destroy_encoder(e);
+    quiet_encoder_destroy(e);
     free(sample_buffer);
     free(read_buffer);
 
@@ -82,8 +82,8 @@ int main(int argc, char **argv) {
         printf("usage: encode_soundcard <profilename> [<input_source>]\n");
         exit(1);
     }
-    encoder_options *encodeopt =
-        get_encoder_profile_file("profiles.json", argv[1]);
+    quiet_encoder_options *encodeopt =
+        quiet_encoder_profile_file("profiles.json", argv[1]);
 
     FILE *input;
     if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {

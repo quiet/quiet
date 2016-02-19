@@ -6,18 +6,16 @@
 #include <complex.h>
 #include <math.h>
 
-#include <liquid/liquid.h>
+typedef float quiet_sample_t;
 
-typedef float sample_t;
-
-typedef struct { float alpha; } dc_filter_options;
+typedef struct { float alpha; } quiet_dc_filter_options;
 
 typedef struct {
     size_t delay;
     float bandwidth;
     float attenuation;
     size_t filter_bank_size;
-} resampler_options;
+} quiet_resampler_options;
 
 typedef struct {
     unsigned int samples_per_symbol;
@@ -25,28 +23,15 @@ typedef struct {
     float excess_bw;
     float center_rads;
     float gain;
-    dc_filter_options dc_filter_opt;
-} modulator_options;
+    quiet_dc_filter_options dc_filter_opt;
+} quiet_modulator_options;
 
 typedef struct {
     unsigned int samples_per_symbol;
     unsigned int symbol_delay;
     float excess_bw;
     float center_rads;
-} demodulator_options;
-
-typedef struct {
-    nco_crcf nco;
-    firinterp_crcf interp;
-    modulator_options opt;
-    iirfilt_crcf dcfilter;
-} modulator;
-
-typedef struct {
-    nco_crcf nco;
-    firdecim_crcf decim;
-    demodulator_options opt;
-} demodulator;
+} quiet_demodulator_options;
 
 typedef struct {
     unsigned int num_subcarriers;
@@ -54,9 +39,12 @@ typedef struct {
     unsigned int taper_len;
     size_t left_band;
     size_t right_band;
-} ofdm_options;
+} quiet_ofdm_options;
 
 typedef struct {
+    quiet_ofdm_options ofdmopt;
+    quiet_modulator_options modopt;
+    quiet_resampler_options resampler;
     unsigned int checksum_scheme;
     unsigned int inner_fec_scheme;
     unsigned int outer_fec_scheme;
@@ -65,95 +53,44 @@ typedef struct {
     size_t dummy_prefix;
     size_t noise_prefix;
     bool is_ofdm;
-    ofdm_options ofdmopt;
-    modulator_options modopt;
-    resampler_options resampler;
     float sample_rate;
     bool is_close_frame;
-} encoder_options;
+} quiet_encoder_options;
 
 typedef struct {
+    quiet_ofdm_options ofdmopt;
+    quiet_demodulator_options demodopt;
+    quiet_resampler_options resampler;
     bool is_ofdm;
     bool is_debug;
-    ofdm_options ofdmopt;
-    demodulator_options demodopt;
-    resampler_options resampler;
     float sample_rate;
-} decoder_options;
+} quiet_decoder_options;
 
-typedef struct { ofdmflexframegen framegen; } ofdm_encoder;
+typedef struct quiet_encoder_s quiet_encoder;
 
-typedef struct {
-    flexframegen framegen;
-    size_t symbols_remaining;
-} modem_encoder;
+typedef struct quiet_decoder_s quiet_decoder;
 
-typedef struct {
-    encoder_options opt;
-    union {
-        ofdm_encoder ofdm;
-        modem_encoder modem;
-    } frame;
-    modulator *mod;
-    float complex *symbolbuf;
-    size_t symbolbuf_len;
-    sample_t *samplebuf;
-    size_t samplebuf_cap;
-    size_t samplebuf_len;
-    size_t samplebuf_offset;
-    const uint8_t *payload;
-    size_t payload_length;
-    bool has_flushed;
-    size_t noise_prefix_remaining;
-    float resample_rate;
-    resamp_rrrf resampler;
-} encoder;
+quiet_encoder_options *quiet_encoder_profile_file(const char *fname,
+                                                  const char *profilename);
+quiet_encoder_options *quiet_encoder_profile_str(const char *input,
+                                                 const char *profilename);
+quiet_decoder_options *quiet_decoder_profile_file(const char *fname,
+                                                  const char *profilename);
+quiet_decoder_options *quiet_decoder_profile_str(const char *input,
+                                                 const char *profilename);
+void quiet_encoder_opt_set_sample_rate(quiet_encoder_options *opt, float sample_rate);
+void quiet_decoder_opt_set_sample_rate(quiet_decoder_options *opt, float sample_rate);
 
-typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
+quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt);
+size_t quiet_encoder_clamp_frame_len(quiet_encoder *e, size_t sample_len);
+int quiet_encoder_set_payload(quiet_encoder *e, const uint8_t *payload, size_t payload_length);
+size_t quiet_encoder_sample_len(quiet_encoder *e, size_t data_len);
+size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
+void quiet_encoder_destroy(quiet_encoder *e);
 
-typedef struct { flexframesync framesync; } modem_decoder;
-
-typedef struct {
-    decoder_options opt;
-    union {
-        ofdm_decoder ofdm;
-        modem_decoder modem;
-    } frame;
-    demodulator *demod;
-    uint8_t *writebuf;
-    size_t writebuf_len;
-    size_t writebuf_accum;
-    float complex *symbolbuf;
-    size_t symbolbuf_len;
-    unsigned int i;
-    float resample_rate;
-    resamp_rrrf resampler;
-    sample_t *baserate;
-    size_t baserate_offset;
-} decoder;
-
-encoder_options *get_encoder_profile_file(const char *fname,
-                                          const char *profilename);
-encoder_options *get_encoder_profile_str(const char *input,
-                                         const char *profilename);
-decoder_options *get_decoder_profile_file(const char *fname,
-                                          const char *profilename);
-decoder_options *get_decoder_profile_str(const char *input,
-                                         const char *profilename);
-void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate);
-void decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate);
-
-encoder *create_encoder(const encoder_options *opt);
-size_t encoder_clamp_frame_len(encoder *e, size_t sample_len);
-int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length);
-size_t encoder_sample_len(encoder *e, size_t data_len);
-size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len);
-void destroy_encoder(encoder *e);
-
-decoder *create_decoder(const decoder_options *opt);
-size_t decoder_readbuf(decoder *d, uint8_t *data, size_t data_len);
-size_t decode_max_len(decoder *d);
+quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt);
+size_t quiet_decoder_readbuf(quiet_decoder *d, uint8_t *data, size_t data_len);
 // returns number of uint8_ts accumulated in buf
-size_t decode(decoder *d, sample_t *samplebuf, size_t sample_len);
-size_t decode_flush(decoder *d);
-void destroy_decoder(decoder *d);
+size_t quiet_decoder_recv(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);
+size_t quiet_decoder_flush(quiet_decoder *d);
+void quiet_decoder_destroy(quiet_decoder *d);

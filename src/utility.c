@@ -1,6 +1,6 @@
 #include "quiet/common.h"
 
-unsigned char *create_ofdm_subcarriers(const ofdm_options *opt) {
+unsigned char *ofdm_subcarriers_create(const ofdm_options *opt) {
     unsigned char *subcarriers =
         malloc(opt->num_subcarriers * sizeof(unsigned char));
     // get the default subcarrier placement and then modify it slightly
@@ -24,4 +24,16 @@ unsigned char *create_ofdm_subcarriers(const ofdm_options *opt) {
     }
 
     return subcarriers;
+}
+
+size_t constrained_write(sample_t *src, size_t src_len, sample_t *dst,
+                         size_t dest_len) {
+    size_t len = src_len;
+    if (dest_len < src_len) {
+        len = dest_len;
+    }
+
+    memmove(dst, src, len * sizeof(sample_t));
+
+    return len;
 }
