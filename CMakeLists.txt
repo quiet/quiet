@@ -1,5 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
 project (Quiet)
+include(CheckLibraryExists)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -8,14 +9,35 @@ set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/e
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
+find_library(LIQUID liquid REQUIRED)
+if (LIQUID)
+    check_library_exists(LIQUID flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
+    if(NOT LIQUID_DEVEL_FUNCTIONS)
+        unset(LIQUID_DEVEL_FUNCTIONS CACHE)
+        message(FATAL_ERROR "
+libquiet requires the devel branch of libliquid but
+  found a different branch installed
+fetch the devel branch using
+    git clone https://github.com/brian-armstrong/liquid-dsp.git -b devel --single-branch
+and install it before continuing")
+    endif()
+else()
+    unset(LIQUID CACHE)
+    message(FATAL_ERROR "
+libquiet requires libliquid but cannot find it
+fetch the devel branch using
+    git clone https://github.com/brian-armstrong/liquid-dsp.git -b devel --single-branch
+and install it before continuing")
+endif()
+
 add_custom_target(quiet-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet.h ${CMAKE_BINARY_DIR}/include/quiet.h)
 
 add_custom_target(quiet-profiles ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/profiles.json ${CMAKE_BINARY_DIR}/share/quiet-profiles.json)
 
 add_library(quiet_static ${SRCFILES})
-target_link_libraries(quiet_static liquid jansson)
+target_link_libraries(quiet_static LIQUID jansson)
 add_library(quiet MODULE ${SRCFILES})
-target_link_libraries(quiet liquid jansson)
+target_link_libraries(quiet LIQUID jansson)
 
 add_custom_target(lib DEPENDS quiet quiet_static)
 
