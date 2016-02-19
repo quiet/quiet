@@ -30,30 +30,70 @@ fetch the devel branch using
 and install it before continuing")
 endif()
 
+find_library(JANSSON jansson REQUIRED)
+if (NOT JANSSON)
+    unset(JANSSON CACHE)
+    message(FATAL_ERROR "
+libquiet requires libjansson but cannot find it
+fetch the latest jansson release from
+    http://www.digip.org/jansson/
+and install it before continuing")
+endif()
+
 add_custom_target(quiet-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet.h ${CMAKE_BINARY_DIR}/include/quiet.h)
 
 add_custom_target(quiet-profiles ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/profiles.json ${CMAKE_BINARY_DIR}/share/quiet-profiles.json)
 
 add_library(quiet_static ${SRCFILES})
-target_link_libraries(quiet_static LIQUID jansson)
+target_link_libraries(quiet_static LIQUID JANSSON)
 add_library(quiet MODULE ${SRCFILES})
-target_link_libraries(quiet LIQUID jansson)
+target_link_libraries(quiet LIQUID JANSSON)
 
 add_custom_target(lib DEPENDS quiet quiet_static)
 
-add_executable(encode_file programs/encode_file.c)
-target_link_libraries(encode_file quiet_static sndfile)
+set(buildable_programs "")
 
-add_executable(decode_file programs/decode_file.c)
-target_link_libraries(decode_file quiet_static sndfile)
+find_library(SNDFILE sndfile)
+if (SNDFILE)
+    add_executable(encode_file programs/encode_file.c)
+    target_link_libraries(encode_file quiet_static SNDFILE)
+    set(buildable_programs ${buildable_programs} encode_file)
 
-add_executable(encode_soundcard programs/encode_soundcard.c)
-target_link_libraries(encode_soundcard quiet_static portaudio)
+    add_executable(decode_file programs/decode_file.c)
+    target_link_libraries(decode_file quiet_static SNDFILE)
+    set(buildable_programs ${buildable_programs} decode_file)
+else()
+    unset(SNDFILE CACHE)
+    message(WARNING "
 
-add_executable(decode_soundcard programs/decode_soundcard.c)
-target_link_libraries(decode_soundcard quiet_static portaudio)
+libquiet could not find libsndfile. this will prevent libquiet
+from building its file generating programs. you can get libsndfile from
+    http://www.mega-nerd.com/libsndfile/#Download
 
-add_custom_target(programs DEPENDS encode_file decode_file encode_soundcard decode_soundcard)
+")
+endif()
+
+find_library(PORTAUDIO portaudio)
+if (PORTAUDIO)
+    add_executable(encode_soundcard programs/encode_soundcard.c)
+    target_link_libraries(encode_soundcard quiet_static PORTAUDIO)
+    set(buildable_programs ${buildable_programs} encode_soundcard)
+
+    add_executable(decode_soundcard programs/decode_soundcard.c)
+    target_link_libraries(decode_soundcard quiet_static PORTAUDIO)
+    set(buildable_programs ${buildable_programs} decode_soundcard)
+else()
+    unset(PORTAUDIO CACHE)
+    message(WARNING "
+
+libquiet could not find portaudio. this will prevent libquiet
+from building its sound streaming programs. you can get portaudio from
+    http://www.portaudio.com/download.html
+
+")
+endif()
+
+add_custom_target(programs DEPENDS ${buildable_programs})
 
 add_custom_target(quiet-js COMMAND emcc -O2 $<TARGET_FILE:quiet_static> -o quiet-emscripten.js -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_recv', '_quiet_decoder_create', '_quiet_decoder_max_len', '_quiet_decoder_flush', '_quiet_decoder_readbuf', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_set_payload', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len']\" -lliquid -lfec -ljansson)
 
