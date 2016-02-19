@@ -94,7 +94,7 @@ encoder *create_encoder(const encoder_options *opt) {
     return e;
 }
 
-void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
+size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     e->opt.is_close_frame = true;
 
     // get sample_len in base rate (conservative estimate)
@@ -103,7 +103,9 @@ void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
 
     // subtract headroom for flushing mod & resamp
     baserate_sample_len -= modulate_flush_sample_len(e->mod);
-    baserate_sample_len -= e->opt.resampler.delay;
+    if (e->resampler) {
+        baserate_sample_len -= e->opt.resampler.delay;
+    }
 
     // do inverse calc from base rate sample len to frame length
     // this has to be iterative as we don't have inverse func for this
@@ -123,7 +125,7 @@ void encoder_clamp_frame_len(encoder *e, size_t sample_len) {
         frame_len = (max_frame_len - min_frame_len) / 2 + min_frame_len;
     }
     e->opt.frame_len = frame_len;
-    printf("new frame len clamped to %zu\n", e->opt.frame_len);
+    return frame_len;
 }
 
 int _encoder_assembled(encoder *e) {
@@ -293,7 +295,7 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
             bool do_close_frame = e->opt.is_close_frame && written > 0;
             if (e->payload_length == 0 || do_close_frame) {
                 if (e->has_flushed) {
-                    if (do_close_frame) {
+                    if (do_close_frame && e->payload_length) {
                         frame_closed = true;
                     }
                     break;
@@ -344,11 +346,13 @@ size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
     }
 
     if (frame_closed) {
-        for (size_t i = written; i < samplebuf_len; ++i) {
+        size_t zerolen = samplebuf_len - written;
+        for (size_t i = 0; i < zerolen; ++i) {
             samplebuf[i] = 0;
+            written++;
         }
 
-        return samplebuf_len;
+        return written;
     }
 
     return written;

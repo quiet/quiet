@@ -144,7 +144,7 @@ void encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate);
 void decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate);
 
 encoder *create_encoder(const encoder_options *opt);
-void encoder_clamp_frame_len(encoder *e, size_t sample_len);
+size_t encoder_clamp_frame_len(encoder *e, size_t sample_len);
 int encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length);
 size_t encoder_sample_len(encoder *e, size_t data_len);
 size_t encode(encoder *e, sample_t *samplebuf, size_t samplebuf_len);
