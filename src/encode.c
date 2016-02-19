@@ -107,9 +107,19 @@ size_t encoder_clamp_frame_len(encoder *e, size_t sample_len) {
         baserate_sample_len -= e->opt.resampler.delay;
     }
 
+    // first, let's see if the current length will still work
+    size_t projected_sample_len = encoder_sample_len(e, e->opt.frame_len);
+    if (projected_sample_len <= baserate_sample_len) {
+        return e->opt.frame_len;
+    }
+
+    // we need to reduce frame_len
+
     // do inverse calc from base rate sample len to frame length
     // this has to be iterative as we don't have inverse func for this
     // we'll start with the suggested length and then do binary search
+    // in this search, max_frame_len is known to be too long,
+    //      min_frame_len is known to be short enough to fit in sample_len
     size_t max_frame_len = e->opt.frame_len;
     size_t min_frame_len = 0;
     size_t frame_len = max_frame_len / 2;
