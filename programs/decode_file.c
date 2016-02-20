@@ -1,5 +1,7 @@
+#ifdef QUIET_DEBUG
 #define DEBUG_OFDMFLEXFRAMESYNC 1
 #define DEBUG_FLEXFRAMESYNC 1
+#endif
 #include "quiet.h"
 #include <sndfile.h>
 
@@ -95,7 +97,9 @@ int main(int argc, char **argv) {
     quiet_decoder_options *decodeopt =
         quiet_decoder_profile_file("profiles.json", argv[1]);
 
+#ifdef QUIET_DEBUG
     decodeopt->is_debug = true;
+#endif
 
     decode_wav("encoded.wav", "payload_out", decodeopt);
 
