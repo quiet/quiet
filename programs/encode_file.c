@@ -27,15 +27,8 @@ size_t wav_write(SNDFILE *wav, const quiet_sample_t *samples, size_t sample_len)
 
 void wav_close(SNDFILE *wav) { sf_close(wav); }
 
-int encode_to_wav(const char *payload_fname, const char *out_fname,
+int encode_to_wav(FILE *payload, const char *out_fname,
                   const quiet_encoder_options *opt) {
-    FILE *payload = fopen(payload_fname, "rb");
-
-    if (payload == NULL) {
-        printf("failed to open payload file for reading\n");
-        return 1;
-    }
-
     SNDFILE *wav = wav_open(out_fname, sample_rate);
 
     if (wav == NULL) {
@@ -103,16 +96,25 @@ int encode_to_wav(const char *payload_fname, const char *out_fname,
 }
 
 int main(int argc, char **argv) {
-    if (argc != 2) {
-        printf("usage: encodefile <profilename>\n");
+    if (argc < 2 || argc > 4) {
+        printf("usage: encode_file <profilename> [<input_source>]\n");
         exit(1);
     }
+
+    FILE *input;
+    if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {
+        input = stdin;
+    } else {
+        input = fopen(argv[2], "rb");
+    }
+
     quiet_encoder_options *encodeopt =
         quiet_encoder_profile_file("profiles.json", argv[1]);
     quiet_encoder_opt_set_sample_rate(encodeopt, sample_rate);
 
-    encode_to_wav("payload", "encoded.wav", encodeopt);
+    encode_to_wav(input, "encoded.wav", encodeopt);
 
+    fclose(input);
     free(encodeopt);
 
     return 0;
