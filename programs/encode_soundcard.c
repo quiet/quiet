@@ -11,15 +11,17 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
         return 1;
     }
 
+    size_t num_channels = 2;
     size_t sample_buffer_size = 1<<14;
-    quiet_sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(quiet_sample_t));
+    quiet_sample_t *sample_buffer = calloc(num_channels*sample_buffer_size, sizeof(quiet_sample_t));
+    quiet_sample_t *mono_buffer = malloc(sample_buffer_size*sizeof(quiet_sample_t));
     PaStream *stream;
     PaDeviceIndex device = Pa_GetDefaultOutputDevice();
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     unsigned int desired_sample_rate = deviceInfo->defaultSampleRate;
     PaStreamParameters param = {
         .device = device,
-        .channelCount = 1,
+        .channelCount = num_channels,
         .sampleFormat = paFloat32,
         .suggestedLatency = deviceInfo->defaultHighOutputLatency,
         .hostApiSpecificStreamInfo = NULL,
@@ -57,8 +59,11 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
 
         size_t written = sample_buffer_size;
         while (written == sample_buffer_size) {
-            written = quiet_encoder_emit(e, sample_buffer, sample_buffer_size);
-            err = Pa_WriteStream(stream, sample_buffer, written);
+            written = quiet_encoder_emit(e, mono_buffer, sample_buffer_size);
+            for (size_t i = 0; i < written; i++) {
+                sample_buffer[num_channels*i] = mono_buffer[i];
+            }
+            err = Pa_WriteStream(stream, sample_buffer, written*num_channels);
             if (err != paNoError) {
                 printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
                 return 1;
@@ -72,6 +77,7 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
 
     quiet_encoder_destroy(e);
     free(sample_buffer);
+    free(mono_buffer);
     free(read_buffer);
 
     return 0;
