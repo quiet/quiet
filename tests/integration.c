@@ -38,7 +38,7 @@ int read_and_check(const uint8_t *payload, size_t payload_len,
     return 0;
 }
 
-int test_profile(const char *profiles_fname, const char *profile_name,
+int test_payload(const char *profiles_fname, const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
                  unsigned int encode_rate, unsigned int decode_rate,
                  bool do_clamp) {
@@ -95,8 +95,8 @@ int test_profile(const char *profiles_fname, const char *profile_name,
     return 0;
 }
 
-int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
-    size_t payload_lens[] = { 1, 2, 4, 12, 320, 399, 400, 797, 798, 799, 800, 1023, 1<<16 };
+int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char *profile) {
+    size_t payload_lens[] = { 1, 2, 4, 12, 320, 399, 400, 797, 798, 799, 800, 1023 };
     size_t payload_lens_len = sizeof(payload_lens)/sizeof(size_t);
     bool do_close_frame[] = { false, true };
     size_t do_close_frame_len = sizeof(do_close_frame)/sizeof(bool);
@@ -109,7 +109,7 @@ int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
         for (size_t j = 0; j < do_close_frame_len; j++) {
             printf("testing encode_rate=%u, decode_rate=%u, payload_len=%6zu, close_frame=%s... ",
                    encode_rate, decode_rate, payload_len, (do_close_frame[j]?" true":"false"));
-            if (test_profile("test-profiles.json", "ofdm", payload, payload_len,
+            if (test_payload("test-profiles.json", profile, payload, payload_len,
                              encode_rate, decode_rate, do_close_frame[j])) {
                 printf("FAILED\n");
                 return -1;
@@ -117,6 +117,19 @@ int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
             printf("PASSED\n");
         }
         free(payload);
+    }
+    return 0;
+}
+
+int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
+    const char *profiles[] = { "ofdm", "robust" };
+    size_t num_profiles = 2;
+    for (size_t i = 0; i < num_profiles; i++) {
+        const char *profile = profiles[i];
+        printf("testing profile %s\n", profile);
+        if (test_profile(encode_rate, decode_rate, profile)) {
+            return -1;
+        }
     }
     return 0;
 }
