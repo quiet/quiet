@@ -4,11 +4,14 @@ include(CheckLibraryExists)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DQUIET_DEBUG)
+    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-g -O0")
+else()
+    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall -D_XOPEN_SOURCE=700 -O2")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall -D_XOPEN_SOURCE=700")
 set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/encoder.c src/profile.c)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
