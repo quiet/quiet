@@ -162,7 +162,7 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
     size_t stride_len = decoder_max_len(d);
 
     for (size_t i = 0; i < sample_len; ) {
-        size_t symbol_len;
+        size_t symbol_len, sample_chunk_len;
         if (d->resampler) {
             unsigned int resamp_read, resamp_write;
             resamp_rrrf_execute_output_block(d->resampler, samplebuf + i,
@@ -171,43 +171,36 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
                                              stride_len - d->baserate_offset,
                                              &resamp_write);
             i += resamp_read;
-            resamp_write += d->baserate_offset;
-
-            size_t leftover = 0;
-            if (resamp_write % d->demod->opt.samples_per_symbol) {
-                leftover = resamp_write % d->demod->opt.samples_per_symbol;
-                resamp_write -= leftover;
-            }
-
-            symbol_len =
-                demodulator_recv(d->demod, d->baserate, resamp_write, d->symbolbuf);
-
-            if (leftover) {
-                memmove(d->baserate, d->baserate + resamp_write, leftover * sizeof(sample_t));
-            }
-            d->baserate_offset = leftover;
+            sample_chunk_len = resamp_write + d->baserate_offset;
         } else {
-            size_t bufsize = stride_len;
+            sample_chunk_len = stride_len;
             size_t remaining = sample_len - i + d->baserate_offset;
-            if (remaining < bufsize) {
-                bufsize = remaining;
+            if (remaining < sample_chunk_len) {
+                sample_chunk_len = remaining;
             }
+
+            // copy the next chunk of samplebuf into d->baserate, starting just after
+            //   the last leftover samples
             memmove(d->baserate + d->baserate_offset, samplebuf + i,
-                    (bufsize - d->baserate_offset) * sizeof(sample_t));
-            i += bufsize - d->baserate_offset;
-
-            size_t leftover = 0;
-            if (bufsize % d->demod->opt.samples_per_symbol) {
-                leftover = bufsize % d->demod->opt.samples_per_symbol;
-                bufsize -= leftover;
-            }
-            symbol_len = demodulator_recv(d->demod, d->baserate, bufsize, d->symbolbuf);
-
-            if (leftover) {
-                memmove(d->baserate, d->baserate + bufsize, leftover * sizeof(sample_t));
-            }
-            d->baserate_offset = leftover;
+                    (sample_chunk_len - d->baserate_offset) * sizeof(sample_t));
+            i += sample_chunk_len - d->baserate_offset;
         }
+
+        // now that we have our next chunk of samples picked out, reshape them to
+        //    a multiple of samples_per_symbol
+        size_t leftover = 0;
+        if (sample_chunk_len % d->demod->opt.samples_per_symbol) {
+            leftover = sample_chunk_len % d->demod->opt.samples_per_symbol;
+            sample_chunk_len -= leftover;
+        }
+
+        symbol_len =
+            demodulator_recv(d->demod, d->baserate, sample_chunk_len, d->symbolbuf);
+
+        if (leftover) {
+            memmove(d->baserate, d->baserate + sample_chunk_len, leftover * sizeof(sample_t));
+        }
+        d->baserate_offset = leftover;
 
         if (d->opt.is_ofdm) {
             ofdmflexframesync_execute(d->frame.ofdm.framesync, d->symbolbuf,
@@ -239,15 +232,58 @@ size_t quiet_decoder_flush(decoder *d) {
         return 0;
     }
 
-    // XXX flush the resampler here
+    size_t symbol_len = 0;
+
+    if (d->resampler) {
+        sample_t *flusher = calloc(d->opt.resampler.delay, sizeof(sample_t));
+        size_t stride_len = decoder_max_len(d);
+        unsigned int resamp_read, resamp_write;
+        resamp_rrrf_execute_output_block(d->resampler, flusher,
+                                         d->opt.resampler.delay, &resamp_read,
+                                         d->baserate + d->baserate_offset,
+                                         stride_len - d->baserate_offset,
+                                         &resamp_write);
+        resamp_write += d->baserate_offset;
+
+        size_t leftover = 0;
+        if (resamp_write % d->demod->opt.samples_per_symbol) {
+            leftover = resamp_write % d->demod->opt.samples_per_symbol;
+            resamp_write -= leftover;
+        }
+
+        symbol_len +=
+            demodulator_recv(d->demod, d->baserate, resamp_write, d->symbolbuf + symbol_len);
+
+        if (leftover) {
+            memmove(d->baserate, d->baserate + resamp_write, leftover * sizeof(sample_t));
+        }
+        d->baserate_offset = leftover;
+    }
+
+    if (d->baserate_offset) {
+        size_t baserate_flush_len = d->demod->opt.samples_per_symbol - d->baserate_offset;
+        for (size_t i = 0; i < baserate_flush_len; i++) {
+            d->baserate[i] = 0;
+        }
+        symbol_len += demodulator_recv(d->demod, d->baserate, d->demod->opt.samples_per_symbol, d->symbolbuf + symbol_len);
+    }
 
     assert(demodulator_flush_symbol_len(d->demod) < d->symbolbuf_len);
-    size_t symbol_len = demodulator_flush(d->demod, d->symbolbuf);
+    symbol_len += demodulator_flush(d->demod, d->symbolbuf + symbol_len);
 
     if (d->opt.is_ofdm) {
         ofdmflexframesync_execute(d->frame.ofdm.framesync, d->symbolbuf,
                                   symbol_len);
     } else {
+        // big heaping TODO -- figure out why we do this and what this number comes from
+        // this has been empirically determined as necessary to get flexframesync to work
+        // on very short payloads (< ~18 bytes).
+        size_t framesync_flush_len = 60;
+        assert(symbol_len + framesync_flush_len < d->symbolbuf_len);
+        for (size_t i = 0; i < framesync_flush_len; i++) {
+            d->symbolbuf[symbol_len + i] = 0;
+            symbol_len++;
+        }
         flexframesync_execute(d->frame.modem.framesync, d->symbolbuf,
                               symbol_len);
     }
