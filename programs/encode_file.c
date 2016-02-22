@@ -53,11 +53,6 @@ int encode_to_wav(FILE *payload, const char *out_fname,
         return 1;
     }
 
-    quiet_sample_t *pad = calloc((sample_rate / 1000), sizeof(quiet_sample_t));  // ~1ms
-    for (size_t i = 0; i < 5; i++) {
-        wav_write(wav, pad, 18);
-    }
-
     while (!done) {
         size_t nread = fread(readbuf, sizeof(uint8_t), block_len, payload);
         if (nread == 0) {
@@ -82,14 +77,9 @@ int encode_to_wav(FILE *payload, const char *out_fname,
         }
     }
 
-    for (size_t i = 0; i < 9; i++) {
-        wav_write(wav, pad, 18);
-    }
-
     quiet_encoder_destroy(e);
     free(readbuf);
     free(samplebuf);
-    free(pad);
     wav_close(wav);
     fclose(payload);
     return 0;
