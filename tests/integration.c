@@ -122,8 +122,8 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
 }
 
 int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
-    const char *profiles[] = { "ofdm", "robust" };
-    size_t num_profiles = 2;
+    const char *profiles[] = { "ofdm", "modem", "robust" };
+    size_t num_profiles = 3;
     for (size_t i = 0; i < num_profiles; i++) {
         const char *profile = profiles[i];
         printf("  profile=%s\n", profile);
