@@ -107,8 +107,8 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
             payload[j] = rand() & 0xff;
         }
         for (size_t j = 0; j < do_close_frame_len; j++) {
-            printf("testing encode_rate=%u, decode_rate=%u, payload_len=%6zu, close_frame=%s... ",
-                   encode_rate, decode_rate, payload_len, (do_close_frame[j]?" true":"false"));
+            printf("    payload_len=%6zu, close_frame=%s... ",
+                   payload_len, (do_close_frame[j]?" true":"false"));
             if (test_payload("test-profiles.json", profile, payload, payload_len,
                              encode_rate, decode_rate, do_close_frame[j])) {
                 printf("FAILED\n");
@@ -126,7 +126,7 @@ int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
     size_t num_profiles = 2;
     for (size_t i = 0; i < num_profiles; i++) {
         const char *profile = profiles[i];
-        printf("testing profile %s\n", profile);
+        printf("  profile=%s\n", profile);
         if (test_profile(encode_rate, decode_rate, profile)) {
             return -1;
         }
