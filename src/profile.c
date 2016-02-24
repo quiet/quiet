@@ -254,3 +254,65 @@ decoder_options *quiet_decoder_profile_str(const char *input,
     json_decref(root);
     return opt;
 }
+
+char **profile_keys(json_t *root, size_t *size) {
+    size_t numkeys = json_object_size(root);
+    *size = numkeys;
+    char **keys = malloc(numkeys*sizeof(char*));
+    size_t i = 0;
+
+    void *iter = json_object_iter(root);
+    while (iter) {
+        const char *nextkey = json_object_iter_key(iter);
+        size_t keylen = strlen(nextkey) + 1;
+        char *key = malloc(keylen*sizeof(char));
+        strncpy(key, nextkey, keylen);
+        keys[i] = key;
+        i++;
+        iter = json_object_iter_next(root, iter);
+    }
+
+    return keys;
+}
+
+char **quiet_profile_keys_file(FILE *f, size_t *size) {
+    json_error_t error;
+    json_t *root = json_loadf(f, 0, &error);
+
+    if (!root) {
+        printf("failed to read profiles\n");
+        return NULL;
+    }
+
+    char **keys = profile_keys(root, size);
+    json_decref(root);
+    return keys;
+}
+
+char **quiet_profile_keys_filename(const char *filename, size_t *size) {
+    json_error_t error;
+    json_t *root = json_load_file(filename, 0, &error);
+
+    if (!root) {
+        printf("failed to read profiles\n");
+        return NULL;
+    }
+
+    char **keys = profile_keys(root, size);
+    json_decref(root);
+    return keys;
+}
+
+char **quiet_profile_keys_str(const char *input, size_t *size) {
+    json_error_t error;
+    json_t *root = json_loads(input, 0, &error);
+
+    if (!root) {
+        printf("failed to read profiles\n");
+        return NULL;
+    }
+
+    char **keys = profile_keys(root, size);
+    json_decref(root);
+    return keys;
+}

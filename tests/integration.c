@@ -2,7 +2,7 @@
 
 #include "quiet.h"
 
-FILE *profiles;
+FILE *profiles_f;
 
 int compare_chunk(const uint8_t *l, const uint8_t *r, size_t len) {
     for (size_t i = 0; i < len; i++) {
@@ -43,14 +43,14 @@ int test_payload(const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
                  unsigned int encode_rate, unsigned int decode_rate,
                  bool do_clamp) {
-    fseek(profiles, 0, 0);
+    fseek(profiles_f, 0, 0);
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_file(profiles, profile_name);
+        quiet_encoder_profile_file(profiles_f, profile_name);
     quiet_encoder *e = quiet_encoder_create(encodeopt, encode_rate);
 
-    fseek(profiles, 0, 0);
+    fseek(profiles_f, 0, 0);
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_file(profiles, profile_name);
+        quiet_decoder_profile_file(profiles_f, profile_name);
     quiet_decoder *d = quiet_decoder_create(decodeopt, decode_rate);
 
     size_t samplebuf_len = 16384;
@@ -123,20 +123,23 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
 }
 
 int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
-    const char *profiles[] = { "ofdm", "modem", "robust" };
-    size_t num_profiles = 3;
+    size_t num_profiles;
+    fseek(profiles_f, 0, 0);
+    char **profiles = quiet_profile_keys_file(profiles_f, &num_profiles);
     for (size_t i = 0; i < num_profiles; i++) {
         const char *profile = profiles[i];
         printf("  profile=%s\n", profile);
         if (test_profile(encode_rate, decode_rate, profile)) {
             return -1;
         }
+        free(profiles[i]);
     }
+    free(profiles);
     return 0;
 }
 
 int main(int argc, char **argv) {
-    profiles = fopen("test-profiles.json", "rb");
+    profiles_f = fopen("test-profiles.json", "rb");
 
     unsigned int rates[][2]={ {44100, 44100}, {48000, 48000} };
     size_t rates_len = sizeof(rates)/(2 * sizeof(unsigned int));
@@ -149,6 +152,6 @@ int main(int argc, char **argv) {
         }
     }
 
-    fclose(profiles);
+    fclose(profiles_f);
     return 0;
 }

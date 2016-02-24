@@ -80,6 +80,10 @@ quiet_decoder_options *quiet_decoder_profile_filename(const char *fname,
 quiet_decoder_options *quiet_decoder_profile_str(const char *input,
                                                  const char *profilename);
 
+char **quiet_profile_keys_file(FILE *f, size_t *numkeys);
+char **quiet_profile_keys_filename(const char *fname, size_t *numkeys);
+char **quiet_profile_keys_string(const char *input, size_t *numkeys);
+
 quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt, float sample_rate);
 size_t quiet_encoder_clamp_frame_len(quiet_encoder *e, size_t sample_len);
 int quiet_encoder_set_payload(quiet_encoder *e, const uint8_t *payload, size_t payload_length);
