@@ -1,9 +1,5 @@
 #include "quiet/decoder.h"
 
-void quiet_decoder_opt_set_sample_rate(decoder_options *opt, float sample_rate) {
-    opt->sample_rate = sample_rate;
-}
-
 static int decoder_resize_buffer(decoder *d) {
     if (!d) {
         return 1;
@@ -122,9 +118,8 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     d->resample_rate = 1;
     d->baserate = NULL;
     d->resampler = NULL;
-    d->opt.sample_rate = sample_rate;
-    if (d->opt.sample_rate != SAMPLE_RATE) {
-        float rate =  (float)SAMPLE_RATE / (float)opt->sample_rate;
+    if (sample_rate != SAMPLE_RATE) {
+        float rate =  (float)SAMPLE_RATE / (float)sample_rate;
         d->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
                                           opt->resampler.bandwidth, opt->resampler.attenuation,
                                           opt->resampler.filter_bank_size);

@@ -53,7 +53,6 @@ typedef struct {
     size_t dummy_prefix;
     size_t noise_prefix;
     bool is_ofdm;
-    float sample_rate;
     bool is_close_frame;
 } quiet_encoder_options;
 
@@ -63,7 +62,6 @@ typedef struct {
     quiet_resampler_options resampler;
     bool is_ofdm;
     bool is_debug;
-    float sample_rate;
 } quiet_decoder_options;
 
 typedef struct quiet_encoder_s quiet_encoder;

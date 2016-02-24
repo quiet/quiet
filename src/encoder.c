@@ -78,10 +78,8 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     e->resample_rate = 1;
     e->resampler = NULL;
 
-    e->opt.sample_rate = sample_rate;
-
-    if (e->opt.sample_rate != SAMPLE_RATE) {
-        float rate = (float)opt->sample_rate / (float)SAMPLE_RATE;
+    if (sample_rate != SAMPLE_RATE) {
+        float rate = (float)sample_rate / (float)SAMPLE_RATE;
         e->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
                                           opt->resampler.bandwidth, opt->resampler.attenuation,
                                           opt->resampler.filter_bank_size);

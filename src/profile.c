@@ -95,8 +95,6 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         }
     }
 
-    opt->sample_rate = SAMPLE_RATE;
-
     return opt;
 }
 
