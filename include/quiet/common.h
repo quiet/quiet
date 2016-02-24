@@ -80,7 +80,7 @@ struct quiet_decoder_s {
     unsigned int checksum_fails;
 };
 
-static const unsigned int SAMPLE_RATE = 44100;
+static const float SAMPLE_RATE = 44100;
 unsigned char *ofdm_subcarriers_create(const ofdm_options *opt);
 size_t constrained_write(sample_t *src, size_t src_len, sample_t *dst,
                          size_t dest_len);

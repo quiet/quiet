@@ -10,13 +10,13 @@
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27p23",
         "outer_fec_scheme": "rs8",
-        "mod_scheme": "qam256",
-        "frame_length": 400,
+        "mod_scheme": "qam1024",
+        "frame_length": 2200,
         "modulation": {
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35,
-            "center_radians": 1.5708,
+            "center_frequency": 11025,
             "gain": 0.15
         },
         "encoder_filters": {
@@ -34,12 +34,12 @@
         "inner_fec_scheme": "v27p23",
         "outer_fec_scheme": "rs8",
         "mod_scheme": "qam256",
-        "frame_length": 400,
+        "frame_length": 1200,
         "modulation": {
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35,
-            "center_radians": 1.5708,
+            "center_frequency": 11025,
             "gain": 0.15
         },
         "resampler": {
@@ -59,7 +59,7 @@
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35,
-            "center_radians": 2.581,
+            "center_frequency": 18115,
             "gain": 0.15
         },
         "encoder_filters": {

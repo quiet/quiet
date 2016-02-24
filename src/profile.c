@@ -66,8 +66,9 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->modopt.excess_bw = json_number_value(vv);
         }
-        if ((vv = json_object_get(v, "center_radians"))) {
-            opt->modopt.center_rads = json_number_value(vv);
+        if ((vv = json_object_get(v, "center_frequency"))) {
+            float center_frequency = json_number_value(vv);
+            opt->modopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
         }
         if ((vv = json_object_get(v, "gain"))) {
             opt->modopt.gain = json_number_value(vv);
@@ -188,8 +189,9 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->demodopt.excess_bw = json_number_value(vv);
         }
-        if ((vv = json_object_get(v, "center_radians"))) {
-            opt->demodopt.center_rads = json_number_value(vv);
+        if ((vv = json_object_get(v, "center_frequency"))) {
+            float center_frequency = json_number_value(vv);
+            opt->demodopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
         }
     }
     if ((v = json_object_get(profile, "resampler"))) {
