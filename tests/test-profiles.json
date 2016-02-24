@@ -13,11 +13,13 @@
         "mod_scheme": "qam256",
         "frame_length": 400,
         "modulation": {
-            "samples_per_symbol": 2,
-            "symbol_delay": 4,
-            "excess_bandwidth": 0.35,
             "center_frequency": 11025,
             "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 2,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.1
@@ -36,11 +38,13 @@
         "mod_scheme": "qam256",
         "frame_length": 400,
         "modulation": {
-            "samples_per_symbol": 2,
-            "symbol_delay": 4,
-            "excess_bandwidth": 0.35,
             "center_frequency": 11025,
             "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 2,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
         },
         "resampler": {
             "delay": 13,
@@ -56,11 +60,13 @@
         "mod_scheme": "psk2",
         "frame_length": 25,
         "modulation": {
-            "samples_per_symbol": 10,
-            "symbol_delay": 4,
-            "excess_bandwidth": 0.35,
             "center_frequency": 18115,
             "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 10,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.01

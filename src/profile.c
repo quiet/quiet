@@ -57,6 +57,16 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "modulation"))) {
         json_t *vv;
+        if ((vv = json_object_get(v, "center_frequency"))) {
+            float center_frequency = json_number_value(vv);
+            opt->modopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
+        }
+        if ((vv = json_object_get(v, "gain"))) {
+            opt->modopt.gain = json_number_value(vv);
+        }
+    }
+    if ((v = json_object_get(profile, "interpolation"))) {
+        json_t *vv;
         if ((vv = json_object_get(v, "samples_per_symbol"))) {
             opt->modopt.samples_per_symbol = json_integer_value(vv);
         }
@@ -65,13 +75,6 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         }
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->modopt.excess_bw = json_number_value(vv);
-        }
-        if ((vv = json_object_get(v, "center_frequency"))) {
-            float center_frequency = json_number_value(vv);
-            opt->modopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
-        }
-        if ((vv = json_object_get(v, "gain"))) {
-            opt->modopt.gain = json_number_value(vv);
         }
     }
     if ((v = json_object_get(profile, "encoder_filters"))) {
@@ -180,6 +183,13 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "modulation"))) {
         json_t *vv;
+        if ((vv = json_object_get(v, "center_frequency"))) {
+            float center_frequency = json_number_value(vv);
+            opt->demodopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
+        }
+    }
+    if ((v = json_object_get(profile, "interpolation"))) {
+        json_t *vv;
         if ((vv = json_object_get(v, "samples_per_symbol"))) {
             opt->demodopt.samples_per_symbol = json_integer_value(vv);
         }
@@ -188,10 +198,6 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         }
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->demodopt.excess_bw = json_number_value(vv);
-        }
-        if ((vv = json_object_get(v, "center_frequency"))) {
-            float center_frequency = json_number_value(vv);
-            opt->demodopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
         }
     }
     if ((v = json_object_get(profile, "resampler"))) {
