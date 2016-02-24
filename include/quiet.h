@@ -68,12 +68,15 @@ typedef struct quiet_encoder_s quiet_encoder;
 
 typedef struct quiet_decoder_s quiet_decoder;
 
-quiet_encoder_options *quiet_encoder_profile_file(const char *fname,
-                                                  const char *profilename);
+quiet_encoder_options *quiet_encoder_profile_file(FILE *f, const char *profilename);
+quiet_encoder_options *quiet_encoder_profile_filename(const char *fname,
+                                                      const char *profilename);
 quiet_encoder_options *quiet_encoder_profile_str(const char *input,
                                                  const char *profilename);
-quiet_decoder_options *quiet_decoder_profile_file(const char *fname,
-                                                  const char *profilename);
+
+quiet_decoder_options *quiet_decoder_profile_file(FILE *f, const char *profilename);
+quiet_decoder_options *quiet_decoder_profile_filename(const char *fname,
+                                                      const char *profilename);
 quiet_decoder_options *quiet_decoder_profile_str(const char *input,
                                                  const char *profilename);
 

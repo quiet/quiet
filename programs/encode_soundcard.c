@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_file("profiles.json", argv[1]);
+        quiet_encoder_profile_filename("profiles.json", argv[1]);
 
     FILE *input;
     if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {

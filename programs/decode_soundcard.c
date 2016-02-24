@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
         exit(1);
     }
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_file("profiles.json", argv[1]);
+        quiet_decoder_profile_filename("profiles.json", argv[1]);
 
     FILE *output;
     if ((argc == 2) || strncmp(argv[2], "-", 2) == 0) {

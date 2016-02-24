@@ -98,8 +98,22 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     return opt;
 }
 
-encoder_options *quiet_encoder_profile_file(const char *fname,
-                                            const char *profilename) {
+encoder_options *quiet_encoder_profile_file(FILE *f, const char *profilename) {
+    json_error_t error;
+    json_t *root = json_loadf(f, 0, &error);
+
+    if (!root) {
+        printf("failed to read profiles\n");
+        return NULL;
+    }
+
+    encoder_options *opt = encoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
+}
+
+encoder_options *quiet_encoder_profile_filename(const char *fname,
+                                                const char *profilename) {
     json_error_t error;
     json_t *root = json_load_file(fname, 0, &error);
 
@@ -197,8 +211,22 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
     return opt;
 }
 
-decoder_options *quiet_decoder_profile_file(const char *fname,
-                                            const char *profilename) {
+decoder_options *quiet_decoder_profile_file(FILE *f, const char *profilename) {
+    json_error_t error;
+    json_t *root = json_loadf(f, 0, &error);
+
+    if (!root) {
+        printf("failed to read profiles\n");
+        return NULL;
+    }
+
+    decoder_options *opt = decoder_profile(root, profilename);
+    json_decref(root);
+    return opt;
+}
+
+decoder_options *quiet_decoder_profile_filename(const char *fname,
+                                                const char *profilename) {
     json_error_t error;
     json_t *root = json_load_file(fname, 0, &error);
 

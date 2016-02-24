@@ -2,6 +2,7 @@
 
 #include "quiet.h"
 
+FILE *profiles;
 
 int compare_chunk(const uint8_t *l, const uint8_t *r, size_t len) {
     for (size_t i = 0; i < len; i++) {
@@ -38,16 +39,18 @@ int read_and_check(const uint8_t *payload, size_t payload_len,
     return 0;
 }
 
-int test_payload(const char *profiles_fname, const char *profile_name,
+int test_payload(const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
                  unsigned int encode_rate, unsigned int decode_rate,
                  bool do_clamp) {
+    fseek(profiles, 0, 0);
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_file(profiles_fname, profile_name);
+        quiet_encoder_profile_file(profiles, profile_name);
     quiet_encoder *e = quiet_encoder_create(encodeopt, encode_rate);
 
+    fseek(profiles, 0, 0);
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_file(profiles_fname, profile_name);
+        quiet_decoder_profile_file(profiles, profile_name);
     quiet_decoder *d = quiet_decoder_create(decodeopt, decode_rate);
 
     size_t samplebuf_len = 16384;
@@ -107,7 +110,7 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
         for (size_t j = 0; j < do_close_frame_len; j++) {
             printf("    payload_len=%6zu, close_frame=%s... ",
                    payload_len, (do_close_frame[j]?" true":"false"));
-            if (test_payload("test-profiles.json", profile, payload, payload_len,
+            if (test_payload(profile, payload, payload_len,
                              encode_rate, decode_rate, do_close_frame[j])) {
                 printf("FAILED\n");
                 return -1;
@@ -133,6 +136,8 @@ int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
 }
 
 int main(int argc, char **argv) {
+    profiles = fopen("test-profiles.json", "rb");
+
     unsigned int rates[][2]={ {44100, 44100}, {48000, 48000} };
     size_t rates_len = sizeof(rates)/(2 * sizeof(unsigned int));
     for (size_t i = 0; i < rates_len; i++) {
@@ -143,5 +148,7 @@ int main(int argc, char **argv) {
             return 1;
         }
     }
+
+    fclose(profiles);
     return 0;
 }

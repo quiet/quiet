@@ -99,7 +99,7 @@ int main(int argc, char **argv) {
     }
 
     quiet_encoder_options *encodeopt =
-        quiet_encoder_profile_file("profiles.json", argv[1]);
+        quiet_encoder_profile_filename("profiles.json", argv[1]);
 
     encode_to_wav(input, "encoded.wav", encodeopt);
 
