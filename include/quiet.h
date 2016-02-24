@@ -93,4 +93,5 @@ size_t quiet_decoder_readbuf(quiet_decoder *d, uint8_t *data, size_t data_len);
 // returns number of uint8_ts accumulated in buf
 size_t quiet_decoder_recv(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);
 size_t quiet_decoder_flush(quiet_decoder *d);
+unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
 void quiet_decoder_destroy(quiet_decoder *d);

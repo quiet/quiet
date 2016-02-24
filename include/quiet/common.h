@@ -77,6 +77,7 @@ struct quiet_decoder_s {
     resamp_rrrf resampler;
     sample_t *baserate;
     size_t baserate_offset;
+    unsigned int checksum_fails;
 };
 
 static const unsigned int SAMPLE_RATE = 44100;

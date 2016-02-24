@@ -21,10 +21,14 @@ static int decoder_resize_buffer(decoder *d) {
     return 0;
 }
 
+unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d) {
+    return d->checksum_fails;
+}
+
 static int decoder_on_decode(unsigned char *header, int header_valid, unsigned char *payload,
                              unsigned int payload_len, int payload_valid,
                              framesyncstats_s stats, void *dvoid) {
-    if (!header_valid || !payload_valid) {
+    if (!header_valid) {
         // XXX
         return 1;
     }
@@ -34,6 +38,11 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
     }
 
     decoder *d = dvoid;
+
+    if (!payload_valid) {
+        d->checksum_fails++;
+        return 1;
+    }
 
     while (payload_len > (d->writebuf_len - d->writebuf_accum)) {
         if (!decoder_resize_buffer(d)) {
@@ -124,6 +133,8 @@ decoder *quiet_decoder_create(const decoder_options *opt) {
     size_t stride_len = decoder_max_len(d);
     d->baserate = malloc(stride_len * sizeof(sample_t));
     d->baserate_offset = 0;
+
+    d->checksum_fails = 0;
 
     return d;
 }
