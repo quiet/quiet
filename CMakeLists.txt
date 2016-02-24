@@ -102,7 +102,7 @@ endif()
 
 add_custom_target(programs DEPENDS ${buildable_programs})
 
-add_custom_target(quiet-js COMMAND emcc -O2 $<TARGET_FILE:quiet_static> -o quiet-emscripten.js -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_recv', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_readbuf', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_set_payload', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len']\" -lliquid -lfec -ljansson)
+add_custom_target(quiet-js COMMAND emcc -v -O2 $<TARGET_FILE:quiet> -o quiet-emscripten.js -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_recv', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_readbuf', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_set_payload', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len']\" -lliquid -ljansson)
 
 add_executable(integration_test_runner EXCLUDE_FROM_ALL tests/integration.c)
 target_link_libraries(integration_test_runner quiet_static)
