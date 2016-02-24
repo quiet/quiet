@@ -192,10 +192,12 @@ size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
                                   data_len);  // TODO actual calculation?
         size_t num_ofdm_blocks =
             ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
+        free(empty);
         return modulator_sample_len(e->mod, num_ofdm_blocks * e->symbolbuf_len);
     } else {
         flexframegen_assemble(e->frame.modem.framegen, header, empty, data_len);
         size_t num_symbols = flexframegen_getframelen(e->frame.modem.framegen);
+        free(empty);
         return modulator_sample_len(e->mod, num_symbols);
     }
 }

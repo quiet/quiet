@@ -265,6 +265,7 @@ size_t quiet_decoder_flush(decoder *d) {
             memmove(d->baserate, d->baserate + resamp_write, leftover * sizeof(sample_t));
         }
         d->baserate_offset = leftover;
+        free(flusher);
     }
 
     if (d->baserate_offset) {
