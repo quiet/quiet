@@ -44,13 +44,11 @@ int test_payload(const char *profiles_fname, const char *profile_name,
                  bool do_clamp) {
     quiet_encoder_options *encodeopt =
         quiet_encoder_profile_file(profiles_fname, profile_name);
-    quiet_encoder_opt_set_sample_rate(encodeopt, encode_rate);
-    quiet_encoder *e = quiet_encoder_create(encodeopt);
+    quiet_encoder *e = quiet_encoder_create(encodeopt, encode_rate);
 
     quiet_decoder_options *decodeopt =
         quiet_decoder_profile_file(profiles_fname, profile_name);
-    quiet_decoder_opt_set_sample_rate(decodeopt, decode_rate);
-    quiet_decoder *d = quiet_decoder_create(decodeopt);
+    quiet_decoder *d = quiet_decoder_create(decodeopt, decode_rate);
 
     size_t samplebuf_len = 16384;
     quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));

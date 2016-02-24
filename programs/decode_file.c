@@ -34,9 +34,8 @@ int decode_wav(FILE *payload, const char *wav_fname,
         printf("failed to open wav file for reading\n");
         return 1;
     }
-    quiet_decoder_opt_set_sample_rate(opt, sample_rate);
 
-    quiet_decoder *d = quiet_decoder_create(opt);
+    quiet_decoder *d = quiet_decoder_create(opt, sample_rate);
     size_t wantread = 16384;
     quiet_sample_t *samplebuf = malloc(wantread * sizeof(quiet_sample_t));
     if (samplebuf == NULL) {

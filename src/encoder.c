@@ -1,9 +1,5 @@
 #include "quiet/encoder.h"
 
-void quiet_encoder_opt_set_sample_rate(encoder_options *opt, float sample_rate) {
-    opt->sample_rate = sample_rate;
-}
-
 void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
     ofdm_encoder ofdm;
 
@@ -51,7 +47,7 @@ void encoder_modem_create(const encoder_options *opt, encoder *e) {
     e->frame.modem = modem;
 }
 
-encoder *quiet_encoder_create(const encoder_options *opt) {
+encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     if (!opt) {
         return NULL;
     }
@@ -81,7 +77,10 @@ encoder *quiet_encoder_create(const encoder_options *opt) {
 
     e->resample_rate = 1;
     e->resampler = NULL;
-    if (opt->sample_rate != SAMPLE_RATE) {
+
+    e->opt.sample_rate = sample_rate;
+
+    if (e->opt.sample_rate != SAMPLE_RATE) {
         float rate = (float)opt->sample_rate / (float)SAMPLE_RATE;
         e->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
                                           opt->resampler.bandwidth, opt->resampler.attenuation,

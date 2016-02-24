@@ -78,17 +78,15 @@ quiet_decoder_options *quiet_decoder_profile_file(const char *fname,
                                                   const char *profilename);
 quiet_decoder_options *quiet_decoder_profile_str(const char *input,
                                                  const char *profilename);
-void quiet_encoder_opt_set_sample_rate(quiet_encoder_options *opt, float sample_rate);
-void quiet_decoder_opt_set_sample_rate(quiet_decoder_options *opt, float sample_rate);
 
-quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt);
+quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt, float sample_rate);
 size_t quiet_encoder_clamp_frame_len(quiet_encoder *e, size_t sample_len);
 int quiet_encoder_set_payload(quiet_encoder *e, const uint8_t *payload, size_t payload_length);
 size_t quiet_encoder_sample_len(quiet_encoder *e, size_t data_len);
 size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
 void quiet_encoder_destroy(quiet_encoder *e);
 
-quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt);
+quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt, float sample_rate);
 size_t quiet_decoder_readbuf(quiet_decoder *d, uint8_t *data, size_t data_len);
 // returns number of uint8_ts accumulated in buf
 size_t quiet_decoder_recv(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);

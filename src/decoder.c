@@ -95,7 +95,7 @@ static void decoder_modem_create(const decoder_options *opt, decoder *d) {
     d->frame.modem = modem;
 }
 
-decoder *quiet_decoder_create(const decoder_options *opt) {
+decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     if (!opt) {
         return NULL;
     }
@@ -122,7 +122,8 @@ decoder *quiet_decoder_create(const decoder_options *opt) {
     d->resample_rate = 1;
     d->baserate = NULL;
     d->resampler = NULL;
-    if (opt->sample_rate != SAMPLE_RATE) {
+    d->opt.sample_rate = sample_rate;
+    if (d->opt.sample_rate != SAMPLE_RATE) {
         float rate =  (float)SAMPLE_RATE / (float)opt->sample_rate;
         d->resampler = resamp_rrrf_create(rate, opt->resampler.delay,
                                           opt->resampler.bandwidth, opt->resampler.attenuation,

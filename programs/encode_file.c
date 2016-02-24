@@ -36,7 +36,7 @@ int encode_to_wav(FILE *payload, const char *out_fname,
         return 1;
     }
 
-    quiet_encoder *e = quiet_encoder_create(opt);
+    quiet_encoder *e = quiet_encoder_create(opt, sample_rate);
 
     printf("created\n");
 
@@ -100,7 +100,6 @@ int main(int argc, char **argv) {
 
     quiet_encoder_options *encodeopt =
         quiet_encoder_profile_file("profiles.json", argv[1]);
-    quiet_encoder_opt_set_sample_rate(encodeopt, sample_rate);
 
     encode_to_wav(input, "encoded.wav", encodeopt);
 

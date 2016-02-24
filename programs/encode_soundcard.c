@@ -34,8 +34,7 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
     }
 
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
-    quiet_encoder_opt_set_sample_rate(opt, info->sampleRate);
-    quiet_encoder *e = quiet_encoder_create(opt);
+    quiet_encoder *e = quiet_encoder_create(opt, info->sampleRate);
 
     size_t read_buffer_size = 16384;
     uint8_t *read_buffer = malloc(read_buffer_size*sizeof(uint8_t));
