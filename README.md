@@ -1,33 +1,30 @@
 Quiet
 ===========
 
-This library uses liquid SDR to encode and decode data through 44.1kHz. This makes it suitable for sending data across a 3.5mm headphone jack from one device to another. It can also be built using emscripten to generate a .js file which can do transmission and reception from the browser.
+This library uses liquid SDR to transmit data through sound. This makes it suitable for sending data across a 3.5mm headphone jack or via speaker and mic. Quiet can build standalone binaries for encoding/decoding data via .wav files or through your soundcard via PortAudio. It can also be built as a library to be consumed by other C programs.
 
 Build
 -----------
-Building this project on a modern computer is somewhat tricky as libfec does not know about 64-bit architectures. I have a customized version which can handle this case which should be coming soon.
 
-Once the dependencies are installed, `cd` to this project's dir and run `cmake .` and `make`.
-
-Javascript
------------
-Generating the emscripten build requires that all dependencies be built with emscripten (e.g. `emconfigure ./configure; emmake make; make install`) for each dependency. After the emscripten-compiled dependencies are installed, run this project's `./build_js`.
-
-Alternately, you may use the precompiled `web/encode.js` provided by this project. Be sure to include the third party license information in `web/LICENSE-3RD-PARTY.txt`.
+With the [dependencies](#dependencies) installed, run `./bootstrap` provided by this library, which will create a `build` directory and invoke cmake.
 
 Profiles
 -----------
-The encoding and decoding process are controlled by the profiles in `web/profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction. This project uses libjansson to read the profiles and then select one based on a given profile name.
+The encoding and decoding processes are controlled by the profiles in `profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction.
 
-Ultrasonic
------------
-The `highfreq` profile encodes data into a very low bitrate, but the audio content falls entirely between 18.5kHz and 19.5kHz, which should pass through audio equipment relatively well while being inaudible to the average person. This is a good option for sending data through a channel where you would prefer not to disrupt or notify human listeners.
+### Cable
+For cable transmission, use the `cable-` profiles. These will attempt to use nearly the full spectrum provided by your soundcard. As such, they contain many audible frequencies and should not be used on channels that could be heard by people.
+
+### Ultrasonic
+The `ultrasonic-` profiles encode data through a very low bitrate, but the audio content lies above 16kHz, which should pass through audio equipment relatively well while being inaudible to the average person. This is a good option for sending data through a channel where you would prefer not to disrupt human listeners.
 
 Dependencies
 -----------
-* [Liquid DSP](https://github.com/jgaeddert/liquid-dsp)
-* [libfec](http://www.ka9q.net/code/fec/)
+* [Liquid DSP](https://github.com/brian-armstrong/liquid-dsp/tree/devel) Be sure to work from the devel branch
+* [libfec](https://github.com/brian-armstrong/libfec) (optional but strongly recommended)
 * [Jansson](https://github.com/akheron/jansson)
+* [libsndfile](http://www.mega-nerd.com/libsndfile/) (optional)
+* [PortAudio](http://www.portaudio.com/) (optional)
 
 Acknowledgements
 -----------
@@ -36,4 +33,5 @@ I'd like to thank the people who provided feedback and helped me with pull reque
 * Joseph Gaeddert, for his excellent SDR library, encouragement, and feedback on all things DSP
 * Alon Zakai and @juj for advising me on emscripten and for taking my PRs
 * Jan-Ivar Bruaroey and Maire Reavy for helping me patch the echo cancellation behavior of Firefox's getUserMedia
+* Josh Gao for advising me on API design and C idioms.
 * Fabrice Bellard for thoughtfully answering a stranger's question out of the blue about digital communications

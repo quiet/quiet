@@ -1,5 +1,5 @@
 {
-    "main": {
+    "cable-highspeed": {
         "ofdm": {
             "num_subcarriers": 128,
             "cyclic_prefix_length": 16,
@@ -31,29 +31,7 @@
             "filter_bank_size": 64
         }
     },
-    "modem": {
-        "checksum_scheme": "crc32",
-        "inner_fec_scheme": "v27p23",
-        "outer_fec_scheme": "rs8",
-        "mod_scheme": "qam256",
-        "frame_length": 1200,
-        "modulation": {
-            "center_frequency": 11025,
-            "gain": 0.15
-        },
-        "interpolation": {
-            "samples_per_symbol": 2,
-            "symbol_delay": 4,
-            "excess_bandwidth": 0.35
-        },
-        "resampler": {
-            "delay": 13,
-            "bandwidth": 0.45,
-            "attenuation": 60,
-            "filter_bank_size": 64
-        }
-    },
-    "robust": {
+    "ultrasonic-robust": {
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27",
         "outer_fec_scheme": "rs8",
@@ -70,6 +48,28 @@
         },
         "encoder_filters": {
             "dc_filter_alpha": 0.01
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
+        }
+    },
+    "experimental-modem": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27p23",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "qam256",
+        "frame_length": 1200,
+        "modulation": {
+            "center_frequency": 11025,
+            "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 2,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
         },
         "resampler": {
             "delay": 13,
