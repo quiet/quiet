@@ -47,6 +47,22 @@ void encoder_modem_create(const encoder_options *opt, encoder *e) {
     e->frame.modem = modem;
 }
 
+void encoder_gmsk_create(const encoder_options *opt, encoder *e) {
+    gmsk_encoder gmsk;
+
+    gmsk.framegen = gmskframegen_create();
+    gmskframegen_set_header_len(gmsk.framegen, 0);
+
+    // we should eventually try to get gmskframegen to tell us about this
+    // tldr gmskframegen writes *always* happen in lengths of 2 samples
+    gmsk.stride = 2;
+
+    e->symbolbuf = NULL;
+    e->symbolbuf_len = 0;
+
+    e->frame.gmsk = gmsk;
+}
+
 encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     if (!opt) {
         return NULL;
@@ -56,10 +72,16 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
 
     e->opt = *opt;
 
-    if (opt->is_ofdm) {
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         encoder_ofdm_create(opt, e);
-    } else {
+        break;
+    case modem_encoding:
         encoder_modem_create(opt, e);
+        break;
+    case gmsk_encoding:
+        encoder_gmsk_create(opt, e);
+        break;
     }
 
     e->mod = modulator_create(&(opt->modopt));
@@ -135,10 +157,13 @@ size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
 }
 
 static int encoder_is_assembled(encoder *e) {
-    if (e->opt.is_ofdm) {
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         return ofdmflexframegen_is_assembled(e->frame.ofdm.framegen);
-    } else {
+    case modem_encoding:
         return flexframegen_is_assembled(e->frame.modem.framegen);
+    case gmsk_encoding:
+        return gmskframegen_is_assembled(e->frame.gmsk.framegen);
     }
 }
 
@@ -154,11 +179,17 @@ int quiet_encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload
 
     modulator_reset(e->mod);
 
-    if (e->opt.is_ofdm) {
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframegen_reset(e->frame.ofdm.framegen);
-    } else {
+        break;
+    case modem_encoding:
         flexframegen_reset(e->frame.modem.framegen);
         e->frame.modem.symbols_remaining = 0;
+        break;
+    case gmsk_encoding:
+        gmskframegen_reset(e->frame.gmsk.framegen);
+        break;
     }
 
     return had_payload;
@@ -169,46 +200,62 @@ static void encoder_consume(encoder *e) {
     const uint8_t *payload = e->payload;
     e->payload += payload_length;
     e->payload_length -= payload_length;
-    if (e->opt.is_ofdm) {
-        uint8_t *header = calloc(sizeof(uint8_t), 1);
+    uint8_t *header = calloc(1, sizeof(uint8_t));
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, payload,
                                   payload_length);
-        free(header);
-    } else {
-        uint8_t *header = calloc(sizeof(uint8_t), 1);
+        break;
+    case modem_encoding:
         flexframegen_assemble(e->frame.modem.framegen, header, payload,
                               payload_length);
         e->frame.modem.symbols_remaining =
             flexframegen_getframelen(e->frame.modem.framegen);
-        free(header);
+        break;
+    case gmsk_encoding:
+        gmskframegen_assemble(e->frame.gmsk.framegen, header, payload,
+                              payload_length, e->opt.checksum_scheme,
+                              e->opt.inner_fec_scheme, e->opt.outer_fec_scheme);
+        break;
     }
+    free(header);
 }
 
 size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
     uint8_t *empty = calloc(data_len, sizeof(uint8_t));
     uint8_t header[1];
-    if (e->opt.is_ofdm) {
+    size_t num_symbols;
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, empty,
                                   data_len);  // TODO actual calculation?
         size_t num_ofdm_blocks =
             ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
-        free(empty);
-        return modulator_sample_len(e->mod, num_ofdm_blocks * e->symbolbuf_len);
-    } else {
+        num_symbols = num_ofdm_blocks * e->symbolbuf_len;
+        break;
+    case modem_encoding:
         flexframegen_assemble(e->frame.modem.framegen, header, empty, data_len);
-        size_t num_symbols = flexframegen_getframelen(e->frame.modem.framegen);
-        free(empty);
-        return modulator_sample_len(e->mod, num_symbols);
+        num_symbols = flexframegen_getframelen(e->frame.modem.framegen);
+        break;
+    case gmsk_encoding:
+        gmskframegen_assemble(e->frame.gmsk.framegen, header, empty, data_len,
+                              e->opt.checksum_scheme, e->opt.inner_fec_scheme,
+                              e->opt.outer_fec_scheme);
+        num_symbols = gmskframegen_getframelen(e->frame.gmsk.framegen);
+        break;
     }
+    free(empty);
+    return modulator_sample_len(e->mod, num_symbols);
 }
 
 static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
-    if (e->opt.is_ofdm) {
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         // ofdm can't control the size of its blocks, so it ignores
         // requested_length
         ofdmflexframegen_writesymbol(e->frame.ofdm.framegen, e->symbolbuf);
         return e->opt.ofdmopt.num_subcarriers + e->opt.ofdmopt.cyclic_prefix_len;
-    } else {
+    case modem_encoding:
         if (requested_length > e->frame.modem.symbols_remaining) {
             requested_length = e->frame.modem.symbols_remaining;
         }
@@ -225,6 +272,27 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
                                    requested_length);
         e->frame.modem.symbols_remaining -= requested_length;
         return requested_length;
+    case gmsk_encoding:
+        if (requested_length % e->frame.gmsk.stride) {
+            requested_length += (e->frame.gmsk.stride - (requested_length % e->frame.gmsk.stride));
+        }
+
+        if (requested_length > e->symbolbuf_len) {
+            e->symbolbuf =
+                realloc(e->symbolbuf,
+                        requested_length *
+                            sizeof(float complex));  // XXX check malloc result
+            e->symbolbuf_len = requested_length;
+        }
+
+        size_t i;
+        for (i = 0; i < requested_length; i += e->frame.gmsk.stride) {
+            int finished = gmskframegen_write_samples(e->frame.gmsk.framegen, e->symbolbuf + i);
+            if (finished) {
+                break;
+            }
+        }
+        return i;
     }
 }
 
@@ -337,10 +405,16 @@ void quiet_encoder_destroy(encoder *e) {
         return;
     }
 
-    if (e->opt.is_ofdm) {
+    switch (e->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframegen_destroy(e->frame.ofdm.framegen);
-    } else {
+        break;
+    case modem_encoding:
         flexframegen_destroy(e->frame.modem.framegen);
+        break;
+    case gmsk_encoding:
+        gmskframegen_destroy(e->frame.gmsk.framegen);
+        break;
     }
     if (e->resampler) {
         resamp_rrrf_destroy(e->resampler);

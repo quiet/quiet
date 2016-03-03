@@ -41,10 +41,17 @@ typedef struct {
     size_t right_band;
 } quiet_ofdm_options;
 
+typedef enum {
+    ofdm_encoding,
+    modem_encoding,
+    gmsk_encoding,
+} encoding_t;
+
 typedef struct {
     quiet_ofdm_options ofdmopt;
     quiet_modulator_options modopt;
     quiet_resampler_options resampler;
+    encoding_t encoding;
     unsigned int checksum_scheme;
     unsigned int inner_fec_scheme;
     unsigned int outer_fec_scheme;
@@ -52,7 +59,6 @@ typedef struct {
     size_t frame_len;
     size_t dummy_prefix;
     size_t noise_prefix;
-    bool is_ofdm;
     bool is_close_frame;
 } quiet_encoder_options;
 
@@ -60,7 +66,7 @@ typedef struct {
     quiet_ofdm_options ofdmopt;
     quiet_demodulator_options demodopt;
     quiet_resampler_options resampler;
-    bool is_ofdm;
+    encoding_t encoding;
     bool is_debug;
 } quiet_decoder_options;
 

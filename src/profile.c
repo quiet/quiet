@@ -29,14 +29,23 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "mod_scheme"))) {
         const char *scheme = json_string_value(v);
-        opt->mod_scheme = liquid_getopt_str2mod(scheme);
+        if (strcmp(scheme, "gmsk") == 0) {
+            opt->encoding = gmsk_encoding;
+        } else {
+            opt->encoding = modem_encoding; // this will be overriden later if ofdm
+            opt->mod_scheme = liquid_getopt_str2mod(scheme);
+        }
     }
     if ((v = json_object_get(profile, "frame_length"))) {
         opt->frame_len = json_integer_value(v);
     }
     if ((v = json_object_get(profile, "ofdm"))) {
+        if (opt->encoding == gmsk_encoding) {
+            printf("gmsk cannot be used with ofdm, profile invalid\n");
+            return NULL;
+        }
         json_t *vv;
-        opt->is_ofdm = true;
+        opt->encoding = ofdm_encoding;
         if ((vv = json_object_get(v, "num_subcarriers"))) {
             opt->ofdmopt.num_subcarriers = json_integer_value(vv);
         }
@@ -52,8 +61,6 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "right_band"))) {
             opt->ofdmopt.right_band = json_integer_value(vv);
         }
-    } else {
-        opt->is_ofdm = false;
     }
     if ((v = json_object_get(profile, "modulation"))) {
         json_t *vv;
@@ -76,6 +83,8 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->modopt.excess_bw = json_number_value(vv);
         }
+    } else {
+        opt->modopt.samples_per_symbol = 1;
     }
     if ((v = json_object_get(profile, "encoder_filters"))) {
         json_t *vv;
@@ -158,11 +167,24 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         printf("allocation of decoder_options failed\n");
         return NULL;
     }
-
     json_t *v;
+
+    // we check mod_scheme only to find out if we are gmsk
+    if ((v = json_object_get(profile, "mod_scheme"))) {
+        const char *scheme = json_string_value(v);
+        if (strcmp(scheme, "gmsk") == 0) {
+            opt->encoding = gmsk_encoding;
+        } else {
+            opt->encoding = modem_encoding; // this will be overriden later if ofdm
+        }
+    }
     if ((v = json_object_get(profile, "ofdm"))) {
+        if (opt->encoding == gmsk_encoding) {
+            printf("gmsk cannot be used with ofdm, profile invalid\n");
+            return NULL;
+        }
         json_t *vv;
-        opt->is_ofdm = true;
+        opt->encoding = ofdm_encoding;
         if ((vv = json_object_get(v, "num_subcarriers"))) {
             opt->ofdmopt.num_subcarriers = json_integer_value(vv);
         }
@@ -178,8 +200,6 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "right_band"))) {
             opt->ofdmopt.right_band = json_integer_value(vv);
         }
-    } else {
-        opt->is_ofdm = false;
     }
     if ((v = json_object_get(profile, "modulation"))) {
         json_t *vv;
@@ -199,6 +219,8 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "excess_bandwidth"))) {
             opt->demodopt.excess_bw = json_number_value(vv);
         }
+    } else { 
+        opt->demodopt.samples_per_symbol = 1;
     }
     if ((v = json_object_get(profile, "resampler"))) {
         json_t *vv;

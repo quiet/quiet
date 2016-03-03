@@ -56,6 +56,56 @@
             "filter_bank_size": 64
         }
     },
+    "ultrasonic-gmsk": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "gmsk",
+        "frame_length": 25,
+        "modulation": {
+            "center_frequency": 18115,
+            "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 10,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.01
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
+        }
+    },
+    "audible-gmsk": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "gmsk",
+        "frame_length": 25,
+        "modulation": {
+            "center_frequency": 4000,
+            "gain": 0.15
+        },
+        "interpolation": {
+            "samples_per_symbol": 10,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.01
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
+        }
+    },
     "experimental-modem": {
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27p23",

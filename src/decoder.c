@@ -91,6 +91,23 @@ static void decoder_modem_create(const decoder_options *opt, decoder *d) {
     d->frame.modem = modem;
 }
 
+static void decoder_gmsk_create(const decoder_options *opt, decoder *d) {
+    gmsk_decoder gmsk;
+
+    gmsk.framesync = gmskframesync_create(decoder_on_decode, d);
+    gmskframesync_set_header_len(gmsk.framesync, 0);
+
+    if (opt->is_debug) {
+        gmskframesync_debug_enable(gmsk.framesync);
+    }
+
+    size_t symbolbuf_len = 256;
+    d->symbolbuf = malloc(symbolbuf_len * sizeof(float complex));
+    d->symbolbuf_len = symbolbuf_len;
+
+    d->frame.gmsk = gmsk;
+}
+
 decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     if (!opt) {
         return NULL;
@@ -106,10 +123,16 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     d->writebuf_len = writebuf_len;
     d->writebuf_accum = 0;
 
-    if (opt->is_ofdm) {
+    switch (d->opt.encoding) {
+    case ofdm_encoding:
         decoder_ofdm_create(opt, d);
-    } else {
+        break;
+    case modem_encoding:
         decoder_modem_create(opt, d);
+        break;
+    case gmsk_encoding:
+        decoder_gmsk_create(opt, d);
+        break;
     }
 
     d->demod = demodulator_create(&(opt->demodopt));
@@ -209,7 +232,8 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
         }
         d->baserate_offset = leftover;
 
-        if (d->opt.is_ofdm) {
+        switch (d->opt.encoding) {
+        case ofdm_encoding:
             ofdmflexframesync_execute(d->frame.ofdm.framesync, d->symbolbuf,
                                       symbol_len);
 
@@ -219,7 +243,9 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
                 ofdmflexframesync_debug_print(d->frame.ofdm.framesync, fname);
                 d->i++;
             }
-        } else {
+
+            break;
+        case modem_encoding:
             flexframesync_execute(d->frame.modem.framesync, d->symbolbuf,
                                   symbol_len);
             if (d->opt.is_debug) {
@@ -228,6 +254,19 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
                 flexframesync_debug_print(d->frame.modem.framesync, fname);
                 d->i++;
             }
+
+            break;
+        case gmsk_encoding:
+            gmskframesync_execute(d->frame.gmsk.framesync, d->symbolbuf,
+                                  symbol_len);
+            if (d->opt.is_debug) {
+                char fname[50];
+                sprintf(fname, "framesync_%u.out", d->i);
+                gmskframesync_debug_print(d->frame.gmsk.framesync, fname);
+                d->i++;
+            }
+
+            break;
         }
     }
 
@@ -279,14 +318,17 @@ size_t quiet_decoder_flush(decoder *d) {
     assert(demodulator_flush_symbol_len(d->demod) < d->symbolbuf_len);
     symbol_len += demodulator_flush(d->demod, d->symbolbuf + symbol_len);
 
-    if (d->opt.is_ofdm) {
+    size_t framesync_flush_len;
+    switch (d->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframesync_execute(d->frame.ofdm.framesync, d->symbolbuf,
                                   symbol_len);
-    } else {
+        break;
+    case modem_encoding:
         // big heaping TODO -- figure out why we do this and what this number comes from
         // this has been empirically determined as necessary to get flexframesync to work
         // on very short payloads (< ~18 bytes).
-        size_t framesync_flush_len = 60;
+        framesync_flush_len = 60;
         assert(symbol_len + framesync_flush_len < d->symbolbuf_len);
         for (size_t i = 0; i < framesync_flush_len; i++) {
             d->symbolbuf[symbol_len + i] = 0;
@@ -294,6 +336,11 @@ size_t quiet_decoder_flush(decoder *d) {
         }
         flexframesync_execute(d->frame.modem.framesync, d->symbolbuf,
                               symbol_len);
+        break;
+    case gmsk_encoding:
+        gmskframesync_execute(d->frame.gmsk.framesync, d->symbolbuf,
+                              symbol_len);
+        break;
     }
 
     return d->writebuf_accum;
@@ -304,10 +351,16 @@ void quiet_decoder_destroy(decoder *d) {
         return;
     }
 
-    if (d->opt.is_ofdm) {
+    switch (d->opt.encoding) {
+    case ofdm_encoding:
         ofdmflexframesync_destroy(d->frame.ofdm.framesync);
-    } else {
+        break;
+    case modem_encoding:
         flexframesync_destroy(d->frame.modem.framesync);
+        break;
+    case gmsk_encoding:
+        gmskframesync_destroy(d->frame.gmsk.framesync);
+        break;
     }
     if (d->resampler) {
         resamp_rrrf_destroy(d->resampler);

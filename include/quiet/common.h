@@ -35,11 +35,17 @@ typedef struct {
     size_t symbols_remaining;
 } modem_encoder;
 
+typedef struct {
+    gmskframegen framegen;
+    size_t stride;
+} gmsk_encoder;
+
 struct quiet_encoder_s {
     encoder_options opt;
     union {
         ofdm_encoder ofdm;
         modem_encoder modem;
+        gmsk_encoder gmsk;
     } frame;
     modulator *mod;
     float complex *symbolbuf;
@@ -60,11 +66,14 @@ typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
 
 typedef struct { flexframesync framesync; } modem_decoder;
 
+typedef struct { gmskframesync framesync; } gmsk_decoder;
+
 struct quiet_decoder_s {
     decoder_options opt;
     union {
         ofdm_decoder ofdm;
         modem_decoder modem;
+        gmsk_decoder gmsk;
     } frame;
     demodulator *demod;
     uint8_t *writebuf;

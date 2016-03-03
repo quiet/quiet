@@ -106,7 +106,9 @@ size_t modulator_flush(modulator *m, sample_t *samples) {
 }
 
 void modulator_reset(modulator *m) {
-    firinterp_crcf_reset(m->interp);
+    if (m->interp) {
+        firinterp_crcf_reset(m->interp);
+    }
     if (m->dcfilter) {
         iirfilt_crcf_reset(m->dcfilter);
     }
