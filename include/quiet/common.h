@@ -16,6 +16,13 @@ typedef quiet_encoder encoder;
 typedef quiet_decoder decoder;
 
 typedef struct {
+    size_t length;
+    uint8_t *base;
+    uint8_t *reader; // reader points to next block to be read
+    uint8_t *writer; // writer points to next block to be written
+} ring;
+
+typedef struct {
     modulator_options opt;
     nco_crcf nco;
     firinterp_crcf interp;
