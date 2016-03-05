@@ -1,22 +1,5 @@
 #include "quiet/decoder.h"
 
-static int decoder_resize_buffer(decoder *d) {
-    if (!d) {
-        return 1;
-    }
-
-    size_t newlen = d->writebuf_len * 2;
-    uint8_t *newbuf = realloc(d->writebuf, newlen);
-    if (!newbuf) {
-        return 1;
-    }
-
-    d->writebuf = newbuf;
-    d->writebuf_len = newlen;
-
-    return 0;
-}
-
 unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d) {
     return d->checksum_fails;
 }
@@ -40,15 +23,17 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
         return 1;
     }
 
-    while (payload_len > (d->writebuf_len - d->writebuf_accum)) {
-        if (!decoder_resize_buffer(d)) {
-            return 1;
-        }
+    size_t framelen = payload_len + sizeof(size_t);
+    if (framelen > d->writeframe_len) {
+        d->writeframe = realloc(d->writeframe, framelen);
+        d->writeframe_len = framelen;
     }
 
-    memmove(d->writebuf + d->writebuf_accum, payload, payload_len);
-    d->writebuf_accum += payload_len;
+    size_t len = payload_len;
+    memcpy(d->writeframe, &len, sizeof(size_t));
+    memcpy(d->writeframe + (sizeof(size_t)), payload, len);
 
+    ring_write(d->buf, d->writeframe, framelen);
     return 0;
 }
 
@@ -117,12 +102,6 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
 
     d->opt = *opt;
 
-    size_t writebuf_len = decoder_writebuf_initial_len;
-    uint8_t *writebuf = malloc(writebuf_len);
-    d->writebuf = writebuf;
-    d->writebuf_len = writebuf_len;
-    d->writebuf_accum = 0;
-
     switch (d->opt.encoding) {
     case ofdm_encoding:
         decoder_ofdm_create(opt, d);
@@ -155,24 +134,31 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
 
     d->checksum_fails = 0;
 
+    d->buf = ring_create(decoder_default_buffer_len);
+    d->writeframe_len = 0;
+    d->writeframe = NULL;
+
     return d;
 }
 
-size_t quiet_decoder_readbuf(decoder *d, uint8_t *data, size_t data_len) {
-    if (!d) {
-        return 0;
+ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
+    size_t framelen;
+    if (ring_read(d->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+        return -1;
     }
 
-    if (data_len > d->writebuf_accum) {
-        return 0;
+    // we will throw away part of the frame if len < framelen here
+    // this mirrors the unix recv() spec
+    len = (len > framelen) ? framelen : len;
+
+    if (ring_read(d->buf, data, len) < 0) {
+        assert(false && "ring buffer failed: frame not written atomically?");
+        return -1;
     }
 
-    memmove(data, d->writebuf, data_len);
+    ring_advance_reader(d->buf, framelen - len);
 
-    d->writebuf_accum -= data_len;
-    memmove(d->writebuf, d->writebuf + data_len, d->writebuf_accum);
-
-    return data_len;
+    return len;
 }
 
 static size_t decoder_max_len(decoder *d) {
@@ -183,10 +169,9 @@ static size_t decoder_max_len(decoder *d) {
     return d->symbolbuf_len * d->demod->opt.samples_per_symbol;
 }
 
-// returns number of uint8_ts accumulated in buf
-size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
+void quiet_decoder_consume(decoder *d, sample_t *samplebuf, size_t sample_len) {
     if (!d) {
-        return 0;
+        return;
     }
 
     size_t stride_len = decoder_max_len(d);
@@ -269,13 +254,11 @@ size_t quiet_decoder_recv(decoder *d, sample_t *samplebuf, size_t sample_len) {
             break;
         }
     }
-
-    return d->writebuf_accum;
 }
 
-size_t quiet_decoder_flush(decoder *d) {
+void quiet_decoder_flush(decoder *d) {
     if (!d) {
-        return 0;
+        return;
     }
 
     size_t symbol_len = 0;
@@ -342,8 +325,6 @@ size_t quiet_decoder_flush(decoder *d) {
                               symbol_len);
         break;
     }
-
-    return d->writebuf_accum;
 }
 
 void quiet_decoder_destroy(decoder *d) {
@@ -368,8 +349,9 @@ void quiet_decoder_destroy(decoder *d) {
     if (d->baserate) {
         free(d->baserate);
     }
+    ring_destroy(d->buf);
+    free(d->writeframe);
     demodulator_destroy(d->demod);
     free(d->symbolbuf);
-    free(d->writebuf);
     free(d);
 }

@@ -25,6 +25,17 @@ size_t wav_read(SNDFILE *wav, float *samples, size_t sample_len) {
 
 void wav_close(SNDFILE *wav) { sf_close(wav); }
 
+void recv_all(quiet_decoder *d, uint8_t *buf,
+              size_t bufsize, FILE *payload) {
+    for (;;) {
+        ssize_t read = quiet_decoder_recv(d, buf, bufsize);
+        if (read < 0) {
+            break;
+        }
+        fwrite(buf, 1, read, payload);
+    }
+}
+
 int decode_wav(FILE *payload, const char *wav_fname,
                quiet_decoder_options *opt) {
     unsigned int sample_rate;
@@ -42,7 +53,7 @@ int decode_wav(FILE *payload, const char *wav_fname,
         return 1;
     }
     bool done = false;
-    size_t bufsize = 4096;
+    size_t bufsize = 1 << 13;
     uint8_t *buf = malloc(bufsize);
     while (!done) {
         size_t nread = wav_read(wav, samplebuf, wantread);
@@ -53,25 +64,12 @@ int decode_wav(FILE *payload, const char *wav_fname,
             done = true;
         }
 
-        size_t accum = quiet_decoder_recv(d, samplebuf, nread);
-
-        if (accum > 0) {
-            if (accum > bufsize) {
-                bufsize = accum;
-                buf = realloc(buf, bufsize);
-            }
-            size_t nquiet_decoderread = quiet_decoder_readbuf(d, buf, accum);
-            fwrite(buf, 1, nquiet_decoderread, payload);
-        }
+        quiet_decoder_consume(d, samplebuf, nread);
+        recv_all(d, buf, bufsize, payload);
     }
 
-    size_t accum = quiet_decoder_flush(d);
-
-    if (accum) {
-        // XXX buffer overrun!!!
-        size_t nquiet_decoderread = quiet_decoder_readbuf(d, buf, accum);
-        fwrite(buf, 1, nquiet_decoderread, payload);
-    }
+    quiet_decoder_flush(d);
+    recv_all(d, buf, bufsize, payload);
 
     free(samplebuf);
     free(buf);

@@ -94,14 +94,12 @@ quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt, float samp
 size_t quiet_encoder_get_frame_len(const quiet_encoder *e);
 size_t quiet_encoder_clamp_frame_len(quiet_encoder *e, size_t sample_len);
 ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len);
-size_t quiet_encoder_sample_len(quiet_encoder *e, size_t data_len);
 size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
 void quiet_encoder_destroy(quiet_encoder *e);
 
 quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt, float sample_rate);
-size_t quiet_decoder_readbuf(quiet_decoder *d, uint8_t *data, size_t data_len);
-// returns number of uint8_ts accumulated in buf
-size_t quiet_decoder_recv(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);
-size_t quiet_decoder_flush(quiet_decoder *d);
+ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len);
+void quiet_decoder_consume(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);
+void quiet_decoder_flush(quiet_decoder *d);
 unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
 void quiet_decoder_destroy(quiet_decoder *d);

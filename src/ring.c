@@ -79,3 +79,7 @@ ssize_t ring_read(ring *r, uint8_t *dst, size_t len) {
     r->reader = ring_calculate_advance(r, r->reader, len);
     return len;
 }
+
+void ring_advance_reader(ring *r, size_t len) {
+    r->reader = ring_calculate_advance(r, r->reader, len);
+}

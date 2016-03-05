@@ -50,11 +50,13 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
             printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
             return 1;
         }
-        size_t accum = quiet_decoder_recv(d, sample_buffer, sample_buffer_size);
+        quiet_decoder_consume(d, sample_buffer, sample_buffer_size);
 
-        if (accum > 0) {
-            size_t want = (accum > write_buffer_size) ? write_buffer_size : accum;
-            size_t read = quiet_decoder_readbuf(d, write_buffer, want);
+        for (;;) {
+            ssize_t read = quiet_decoder_recv(d, write_buffer, write_buffer_size);
+            if (read < 0) {
+                break;
+            }
             fwrite(write_buffer, 1, read, output);
         }
     }

@@ -86,9 +86,6 @@ struct quiet_decoder_s {
         gmsk_decoder gmsk;
     } frame;
     demodulator *demod;
-    uint8_t *writebuf;
-    size_t writebuf_len;
-    size_t writebuf_accum;
     float complex *symbolbuf;
     size_t symbolbuf_len;
     unsigned int i;
@@ -97,6 +94,9 @@ struct quiet_decoder_s {
     sample_t *baserate;
     size_t baserate_offset;
     unsigned int checksum_fails;
+    ring *buf;
+    uint8_t *writeframe;
+    size_t writeframe_len;
 };
 
 static const float SAMPLE_RATE = 44100;

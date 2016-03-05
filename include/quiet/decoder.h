@@ -2,10 +2,10 @@
 
 #include "quiet/common.h"
 #include "quiet/demodulator.h"
+#include "quiet/ring.h"
 
-static const size_t decoder_writebuf_initial_len = 2 << 12;
+const size_t decoder_default_buffer_len = 1 << 16;
 
-static int decoder_resize_buffer(decoder *d);
 static int decoder_on_decode(unsigned char *header, int header_valid, unsigned char *payload,
                              unsigned int payload_len, int payload_valid,
                              framesyncstats_s stats, void *dvoid);

@@ -14,17 +14,16 @@ int compare_chunk(const uint8_t *l, const uint8_t *r, size_t len) {
 }
 
 int read_and_check(const uint8_t *payload, size_t payload_len,
-                   size_t accum, quiet_decoder *d, uint8_t *payload_decoded,
+                   size_t *accum, quiet_decoder *d, uint8_t *payload_decoded,
                    size_t payload_blocklen) {
-    while (accum > 0) {
-        size_t want = (payload_blocklen < accum) ? payload_blocklen : accum;
-        size_t read = quiet_decoder_readbuf(d, payload_decoded, want);
-        if (want != read) {
-            printf("failed, read less from decoder than asked for, want=%zu, read=%zu\n", want, read);
-            return 1;
+    *accum = 0;
+    for (;;) {
+        ssize_t read = quiet_decoder_recv(d, payload_decoded, payload_blocklen);
+        if (read < 0) {
+            break;
         }
         if (read > payload_len) {
-            printf("failed, decoded more payload than encoded, read=%zu, remaining payload=%zu\n", read, payload_len);
+            printf("failed, decoded more payload than encoded, read=%zd, remaining payload=%zu\n", read, payload_len);
             return 1;
         }
         if (compare_chunk(payload, payload_decoded, read)) {
@@ -33,7 +32,7 @@ int read_and_check(const uint8_t *payload, size_t payload_len,
         }
         payload += read;
         payload_len -= read;
-        accum -= read;
+        *accum += read;
     }
 
     return 0;
@@ -66,22 +65,23 @@ int test_payload(const char *profile_name,
         quiet_encoder_send(e, payload + sent, frame_len);
     }
 
-    size_t payload_blocklen = 4096;
+    size_t payload_blocklen = 1 << 14;
     uint8_t *payload_decoded = malloc(payload_blocklen * sizeof(uint8_t));
 
     size_t written = samplebuf_len;
+    size_t accum;
     while (written == samplebuf_len) {
         written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
-        size_t accum = quiet_decoder_recv(d, samplebuf, written);
-        if (read_and_check(payload, payload_len, accum, d, payload_decoded, payload_blocklen)) {
+        quiet_decoder_consume(d, samplebuf, written);
+        if (read_and_check(payload, payload_len, &accum, d, payload_decoded, payload_blocklen)) {
             return 1;
         }
         payload += accum;
         payload_len -= accum;
     }
 
-    size_t accum = quiet_decoder_flush(d);
-    if (read_and_check(payload, payload_len, accum, d, payload_decoded, payload_blocklen)) {
+    quiet_decoder_flush(d);
+    if (read_and_check(payload, payload_len, &accum, d, payload_decoded, payload_blocklen)) {
         return 1;
     }
     payload += accum;
