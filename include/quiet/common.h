@@ -67,6 +67,9 @@ struct quiet_encoder_s {
     size_t noise_prefix_remaining;
     float resample_rate;
     resamp_rrrf resampler;
+    ring *buf;
+    uint8_t *tempframe;
+    uint8_t *readframe;
 };
 
 typedef struct { ofdmflexframesync framesync; } ofdm_decoder;

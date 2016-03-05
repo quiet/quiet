@@ -59,7 +59,12 @@ int test_payload(const char *profile_name,
         quiet_encoder_clamp_frame_len(e, samplebuf_len);
     }
 
-    quiet_encoder_set_payload(e, payload, payload_len);
+    size_t frame_len = quiet_encoder_get_frame_len(e);
+
+    for (size_t sent = 0; sent < payload_len; sent += frame_len) {
+        frame_len = (frame_len > (payload_len - sent)) ? (payload_len - sent) : frame_len;
+        quiet_encoder_send(e, payload + sent, frame_len);
+    }
 
     size_t payload_blocklen = 4096;
     uint8_t *payload_decoded = malloc(payload_blocklen * sizeof(uint8_t));

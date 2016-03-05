@@ -108,8 +108,15 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
         e->resample_rate = rate;
     }
 
+    e->buf = ring_create(encoder_default_buffer_len);
+    e->tempframe = malloc(sizeof(size_t) + e->opt.frame_len);
+    e->readframe = malloc(e->opt.frame_len);
 
     return e;
+}
+
+size_t quiet_encoder_get_frame_len(const encoder *e) {
+    return e->opt.frame_len;
 }
 
 size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
@@ -167,58 +174,48 @@ static int encoder_is_assembled(encoder *e) {
     }
 }
 
-int quiet_encoder_set_payload(encoder *e, const uint8_t *payload, size_t payload_length) {
-    int had_payload = (e->payload_length != 0) || (encoder_is_assembled(e)) ||
-                      (e->samplebuf_len != 0);
-
-    e->payload = payload;
-    e->payload_length = payload_length;
-    e->samplebuf_len = 0;
-    e->samplebuf_offset = 0;
-    e->has_flushed = false;
-
-    modulator_reset(e->mod);
-
-    switch (e->opt.encoding) {
-    case ofdm_encoding:
-        ofdmflexframegen_reset(e->frame.ofdm.framegen);
-        break;
-    case modem_encoding:
-        flexframegen_reset(e->frame.modem.framegen);
-        e->frame.modem.symbols_remaining = 0;
-        break;
-    case gmsk_encoding:
-        gmskframegen_reset(e->frame.gmsk.framegen);
-        break;
+ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len) {
+    if (len > e->opt.frame_len) {
+        return -1;
     }
 
-    return had_payload;
+    // it's painful to do this copy which could then fail, but we need to write atomically
+    // TODO peek, decide if we have room, then abort if not
+    memcpy(e->tempframe, &len, sizeof(size_t));
+    memcpy(e->tempframe + (sizeof(size_t)), buf, len);
+
+    return ring_write(e->buf, e->tempframe, sizeof(size_t) + len);
 }
 
-static void encoder_consume(encoder *e) {
-    size_t payload_length = (e->opt.frame_len < e->payload_length) ? e->opt.frame_len : e->payload_length;
-    const uint8_t *payload = e->payload;
-    e->payload += payload_length;
-    e->payload_length -= payload_length;
-    uint8_t *header = calloc(1, sizeof(uint8_t));
+static bool encoder_read_next_frame(encoder *e) {
+    size_t framelen;
+    if (ring_read(e->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+        return false;
+    }
+    if (ring_read(e->buf, e->readframe, framelen) < 0) {
+        assert(false && "ring buffer failed: frame not written atomically?");
+    }
+
     switch (e->opt.encoding) {
     case ofdm_encoding:
-        ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, payload,
-                                  payload_length);
+        ofdmflexframegen_assemble(e->frame.ofdm.framegen, NULL, e->readframe,
+                                  framelen);
         break;
     case modem_encoding:
-        flexframegen_assemble(e->frame.modem.framegen, header, payload,
-                              payload_length);
+        flexframegen_assemble(e->frame.modem.framegen, NULL, e->readframe,
+                              framelen);
         e->frame.modem.symbols_remaining =
             flexframegen_getframelen(e->frame.modem.framegen);
         break;
     case gmsk_encoding:
-        gmskframegen_assemble(e->frame.gmsk.framegen, header, payload,
-                              payload_length, e->opt.checksum_scheme,
+        gmskframegen_assemble(e->frame.gmsk.framegen, NULL, e->readframe,
+                              framelen, e->opt.checksum_scheme,
                               e->opt.inner_fec_scheme, e->opt.outer_fec_scheme);
         break;
     }
-    free(header);
+
+    e->has_flushed = false;
+    return true;
 }
 
 size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
@@ -232,16 +229,19 @@ size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
         size_t num_ofdm_blocks =
             ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
         num_symbols = num_ofdm_blocks * e->symbolbuf_len;
+        ofdmflexframegen_reset(e->frame.ofdm.framegen);
         break;
     case modem_encoding:
         flexframegen_assemble(e->frame.modem.framegen, header, empty, data_len);
         num_symbols = flexframegen_getframelen(e->frame.modem.framegen);
+        flexframegen_reset(e->frame.modem.framegen);
         break;
     case gmsk_encoding:
         gmskframegen_assemble(e->frame.gmsk.framegen, header, empty, data_len,
                               e->opt.checksum_scheme, e->opt.inner_fec_scheme,
                               e->opt.outer_fec_scheme);
         num_symbols = gmskframegen_getframelen(e->frame.gmsk.framegen);
+        gmskframegen_reset(e->frame.gmsk.framegen);
         break;
     }
     free(empty);
@@ -335,11 +335,13 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
         if (!(encoder_is_assembled(e))) {
             // if we are in close-frame mode, and we've already written this time, then
             //    close out the buffer
-            // also close it out if payload is emptied out
+            // also close it out if we are out of frames to write
             bool do_close_frame = e->opt.is_close_frame && written > 0;
-            if (e->payload_length == 0 || do_close_frame) {
+            bool have_another_frame = encoder_read_next_frame(e);
+
+            if (do_close_frame || !have_another_frame) {
                 if (e->has_flushed) {
-                    if (do_close_frame && e->payload_length) {
+                    if (do_close_frame && have_another_frame) {
                         frame_closed = true;
                     }
                     break;
@@ -355,8 +357,6 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
                 e->has_flushed = true;
                 continue;
             }
-            encoder_consume(e);
-            continue;
         }
 
         // now we get to the steady state, writing one block of symbols at a
@@ -422,5 +422,8 @@ void quiet_encoder_destroy(encoder *e) {
     modulator_destroy(e->mod);
     free(e->symbolbuf);
     free(e->samplebuf);
+    ring_destroy(e->buf);
+    free(e->tempframe);
+    free(e->readframe);
     free(e);
 }

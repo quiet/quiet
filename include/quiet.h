@@ -91,8 +91,9 @@ char **quiet_profile_keys_filename(const char *fname, size_t *numkeys);
 char **quiet_profile_keys_string(const char *input, size_t *numkeys);
 
 quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt, float sample_rate);
+size_t quiet_encoder_get_frame_len(const quiet_encoder *e);
 size_t quiet_encoder_clamp_frame_len(quiet_encoder *e, size_t sample_len);
-int quiet_encoder_set_payload(quiet_encoder *e, const uint8_t *payload, size_t payload_length);
+ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len);
 size_t quiet_encoder_sample_len(quiet_encoder *e, size_t data_len);
 size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
 void quiet_encoder_destroy(quiet_encoder *e);

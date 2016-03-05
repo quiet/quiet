@@ -38,8 +38,6 @@ int encode_to_wav(FILE *payload, const char *out_fname,
 
     quiet_encoder *e = quiet_encoder_create(opt, sample_rate);
 
-    printf("created\n");
-
     size_t block_len = 16384;
     uint8_t *readbuf = malloc(block_len * sizeof(uint8_t));
     size_t samplebuf_len = 16384;
@@ -61,18 +59,15 @@ int encode_to_wav(FILE *payload, const char *out_fname,
             done = true;
         }
 
-        quiet_encoder_set_payload(e, readbuf, nread);
-
-        printf("payload set\n");
+        size_t frame_len = quiet_encoder_get_frame_len(e);
+        for (size_t i = 0; i < nread; i += frame_len) {
+            frame_len = (frame_len > (nread - i)) ? (nread - i) : frame_len;
+            quiet_encoder_send(e, readbuf + i, frame_len);
+        }
 
         size_t written = samplebuf_len;
         while (written == samplebuf_len) {
             written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
-            for (size_t i = 0; i < written; i++) {
-                if (samplebuf[i] > 1 || samplebuf[i] < -1) {
-                    printf("%f\n", samplebuf[i]);
-                }
-            }
             wav_write(wav, samplebuf, written);
         }
     }

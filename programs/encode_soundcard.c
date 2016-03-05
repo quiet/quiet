@@ -54,7 +54,11 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
             done = true;
         }
 
-        quiet_encoder_set_payload(e, read_buffer, nread);
+        size_t frame_len = quiet_encoder_get_frame_len(e);
+        for (size_t i = 0; i < nread; i += frame_len) {
+            frame_len = (frame_len > (nread - i)) ? (nread - i) : frame_len;
+            quiet_encoder_send(e, read_buffer + i, frame_len);
+        }
 
         size_t written = sample_buffer_size;
         while (written == sample_buffer_size) {
