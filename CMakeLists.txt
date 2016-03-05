@@ -5,8 +5,10 @@ include(CheckLibraryExists)
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DQUIET_DEBUG)
     set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-g -O0")
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Wl,-no_pie")
 else()
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
+    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Ofast -flto -g")
+    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Ofast -flto -g")
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -102,7 +104,7 @@ endif()
 
 add_custom_target(programs DEPENDS ${buildable_programs})
 
-add_custom_target(quiet-js COMMAND emcc -v -O2 $<TARGET_FILE:quiet> -o quiet-emscripten.js -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_recv', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_readbuf', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_set_payload', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails']\" -lliquid -ljansson)
+add_custom_target(quiet-js COMMAND emcc -v -O3 $<TARGET_FILE:quiet> -o quiet-emscripten.js --llvm-lto 3 -s SIMD=1 -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_recv', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_readbuf', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_set_payload', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails']\" -lliquid -ljansson)
 
 add_executable(integration_test_runner EXCLUDE_FROM_ALL tests/integration.c)
 target_link_libraries(integration_test_runner quiet_static)
