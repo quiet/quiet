@@ -4,7 +4,7 @@
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }
 
-const int sample_rate = 48000;
+const int sample_rate = 44100;
 
 float normalize_freq(float freq, float sample_rate) {
     return freq2rad(freq / (float)(sample_rate));
