@@ -1,3 +1,6 @@
+#include <math.h>
+#include <string.h>
+
 #include "quiet.h"
 
 #include <sndfile.h>

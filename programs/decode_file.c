@@ -3,6 +3,8 @@
 #define DEBUG_FLEXFRAMESYNC 1
 #endif
 #include "quiet.h"
+#include <math.h>
+#include <string.h>
 #include <sndfile.h>
 
 float freq2rad(float freq) { return freq * 2 * M_PI; }

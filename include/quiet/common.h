@@ -1,5 +1,9 @@
 #ifndef QUIET_COMMON_H
 #define QUIET_COMMON_H
+#include <string.h>
+#include <complex.h>
+#include <math.h>
+
 #include "quiet.h"
 
 #include <liquid/liquid.h>
@@ -47,7 +51,7 @@ typedef struct {
     size_t stride;
 } gmsk_encoder;
 
-struct quiet_encoder_s {
+struct quiet_encoder {
     encoder_options opt;
     union {
         ofdm_encoder ofdm;
@@ -64,7 +68,7 @@ struct quiet_encoder_s {
     const uint8_t *payload;
     size_t payload_length;
     bool has_flushed;
-    size_t noise_prefix_remaining;
+    bool is_close_frame;
     float resample_rate;
     resamp_rrrf resampler;
     ring *buf;
@@ -78,7 +82,7 @@ typedef struct { flexframesync framesync; } modem_decoder;
 
 typedef struct { gmskframesync framesync; } gmsk_decoder;
 
-struct quiet_decoder_s {
+struct quiet_decoder {
     decoder_options opt;
     union {
         ofdm_decoder ofdm;

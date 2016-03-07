@@ -95,7 +95,7 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     e->payload_length = 0;
     e->has_flushed = true;
 
-    e->opt.is_close_frame = false;
+    e->is_close_frame = false;
 
     e->resample_rate = 1;
     e->resampler = NULL;
@@ -120,7 +120,7 @@ size_t quiet_encoder_get_frame_len(const encoder *e) {
 }
 
 size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
-    e->opt.is_close_frame = true;
+    e->is_close_frame = true;
 
     // get sample_len in base rate (conservative estimate)
     // assume we can also get ceil(resample_rate) samples out plus "linear" count
@@ -218,7 +218,7 @@ static bool encoder_read_next_frame(encoder *e) {
     return true;
 }
 
-size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
+static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
     uint8_t *empty = calloc(data_len, sizeof(uint8_t));
     uint8_t header[1];
     size_t num_symbols;
@@ -336,7 +336,7 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
             // if we are in close-frame mode, and we've already written this time, then
             //    close out the buffer
             // also close it out if we are out of frames to write
-            bool do_close_frame = e->opt.is_close_frame && written > 0;
+            bool do_close_frame = e->is_close_frame && written > 0;
             bool have_another_frame = encoder_read_next_frame(e);
 
             if (do_close_frame || !have_another_frame) {
