@@ -95,7 +95,7 @@ int main(int argc, char **argv) {
     }
 
     quiet_decoder_options *decodeopt =
-        quiet_decoder_profile_filename("profiles.json", argv[1]);
+        quiet_decoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
 
 #ifdef QUIET_DEBUG
     decodeopt->is_debug = true;
