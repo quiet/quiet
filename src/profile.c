@@ -69,7 +69,12 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
             opt->modopt.center_rads = (center_frequency/SAMPLE_RATE) * M_PI * 2;
         }
         if ((vv = json_object_get(v, "gain"))) {
-            opt->modopt.gain = json_number_value(vv);
+            float gain = json_number_value(vv);
+            if (gain < 0 || gain > 0.5) {
+                printf("gain must be between 0 and 0.5, is %f\n", gain);
+                return NULL;
+            }
+            opt->modopt.gain = gain;
         }
     }
     if ((v = json_object_get(profile, "interpolation"))) {

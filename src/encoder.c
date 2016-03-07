@@ -68,6 +68,11 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
         return NULL;
     }
 
+    if (opt->modopt.gain < 0 || opt->modopt.gain > 0.5) {
+        printf("gain must be between 0 and 0.5, is %f\n", opt->modopt.gain);
+        return NULL;
+    }
+
     encoder *e = malloc(sizeof(encoder));
 
     e->opt = *opt;
