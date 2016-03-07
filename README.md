@@ -6,11 +6,11 @@ This library uses liquid SDR to transmit data through sound. This makes it suita
 Build
 -----------
 
-With the [dependencies](#dependencies) installed, run `./bootstrap` provided by this library, which will create a `build` directory and invoke cmake.
+With the [dependencies](#dependencies) installed, run `./bootstrap` provided by this library, which will create a `build` directory and invoke cmake. If you would like to install it after building, do `cd build && make install`.
 
 Profiles
 -----------
-The encoding and decoding processes are controlled by the profiles in `profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction.
+The encoding and decoding processes are controlled by the profiles in `quiet-profiles.json`. Each profile contains a complete set of parameters such as modem type and error correction.
 
 ### Cable
 For cable transmission, use the `cable-` profiles. These will attempt to use nearly the full spectrum provided by your soundcard. As such, they contain many audible frequencies and should not be used on channels that could be heard by people.
