@@ -1,4 +1,5 @@
 #include <math.h>
+#include <time.h>
 
 #include "quiet.h"
 
@@ -27,7 +28,7 @@ int read_and_check(const uint8_t *payload, size_t payload_len,
             return 1;
         }
         if (compare_chunk(payload, payload_decoded, read)) {
-            printf("failed, decoded chunk differs from encoded payload\n");
+            printf("failed, decoded chunk differs from encoded payload, %zu payload remains\n", payload_len);
             return 1;
         }
         payload += read;
@@ -54,6 +55,7 @@ int test_payload(const char *profile_name,
 
     size_t samplebuf_len = 16384;
     quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));
+    quiet_sample_t *silence = calloc(samplebuf_len, sizeof(quiet_sample_t));
     if (do_clamp) {
         quiet_encoder_clamp_frame_len(e, samplebuf_len);
     }
@@ -73,6 +75,9 @@ int test_payload(const char *profile_name,
     while (written == samplebuf_len) {
         written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
         quiet_decoder_consume(d, samplebuf, written);
+        if (do_clamp) {
+            quiet_decoder_consume(d, silence, samplebuf_len);
+        }
         if (read_and_check(payload, payload_len, &accum, d, payload_decoded, payload_blocklen)) {
             return 1;
         }
@@ -94,6 +99,7 @@ int test_payload(const char *profile_name,
 
     free(payload_decoded);
     free(samplebuf);
+    free(silence);
     free(encodeopt);
     free(decodeopt);
     quiet_encoder_destroy(e);
@@ -145,6 +151,7 @@ int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
 
 int main(int argc, char **argv) {
     profiles_f = fopen("test-profiles.json", "rb");
+    srand(time(NULL));
 
     unsigned int rates[][2]={ {44100, 44100}, {48000, 48000} };
     size_t rates_len = sizeof(rates)/(2 * sizeof(unsigned int));

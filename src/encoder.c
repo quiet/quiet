@@ -217,6 +217,7 @@ static bool encoder_read_next_frame(encoder *e) {
             flexframegen_getframelen(e->frame.modem.framegen);
         break;
     case gmsk_encoding:
+        gmskframegen_reset(e->frame.gmsk.framegen);
         gmskframegen_assemble(e->frame.gmsk.framegen, NULL, e->readframe,
                               framelen, e->opt.checksum_scheme,
                               e->opt.inner_fec_scheme, e->opt.outer_fec_scheme);
@@ -341,6 +342,10 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
 
         e->samplebuf_offset = 0;
 
+        if (frame_closed) {
+            break;
+        }
+
         if (!(encoder_is_assembled(e))) {
             // if we are in close-frame mode, and we've already written this time, then
             //    close out the buffer
@@ -350,9 +355,6 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
 
             if (do_close_frame || !have_another_frame) {
                 if (e->has_flushed) {
-                    if (do_close_frame && have_another_frame) {
-                        frame_closed = true;
-                    }
                     break;
                 }
                 e->samplebuf_len = modulator_flush(e->mod, e->samplebuf);
@@ -362,8 +364,13 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
                     }
                     e->samplebuf_len += e->opt.resampler.delay;
                 }
-                // XXX reset modulator or resampler?
+                modulator_reset(e->mod);
                 e->has_flushed = true;
+                if (do_close_frame && have_another_frame) {
+                    // set this flag here so that we don't re-attempt the next frame check
+                    // this is hacky and this logic needs cleanup
+                    frame_closed = true;
+                }
                 continue;
             }
         }
