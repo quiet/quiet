@@ -1,7 +1,7 @@
 Quiet
 ===========
 
-This library uses liquid SDR to transmit data through sound. This makes it suitable for sending data across a 3.5mm headphone jack or via speaker and mic. Quiet can build standalone binaries for encoding/decoding data via .wav files or through your soundcard via PortAudio. It can also be built as a library to be consumed by other C programs.
+This library uses liquid SDR to transmit data through sound. This makes it suitable for sending data across a 3.5mm headphone jack or via speaker and mic. Quiet can build standalone binaries for encoding/decoding data via .wav files or for streaming through your soundcard via PortAudio. It can also be built as a library to be consumed by other C programs.
 
 Build
 -----------
