@@ -5,13 +5,21 @@ include(CheckLibraryExists)
 set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/share/quiet/")
 add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}/quiet-profiles.json")
 
+if (EMSCRIPTEN)
+  set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{EMSCRIPTEN}/system/local/lib/")
+endif()
+
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DQUIET_DEBUG)
     set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-g -O0")
     set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Wl,-no_pie")
 else()
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Ofast -flto -g")
-    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Ofast -flto -g")
+    if("$CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
+      set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Ofast -flto")
+      set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Ofast -flto")
+    else()
+      set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
+    endif()
 endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
@@ -63,6 +71,9 @@ target_link_libraries(quiet LIQUID JANSSON)
 
 add_custom_target(lib DEPENDS quiet quiet_static)
 
+if(EMSCRIPTEN)
+add_custom_target(quiet-js COMMAND emcc -v -O2 $<TARGET_FILE:quiet> -o quiet-emscripten.js -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_consume', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_recv', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_send', '_quiet_encoder_get_frame_len', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails']\" -lliquid -ljansson)
+else() # EMSCRIPTEN
 set(buildable_programs "")
 
 find_library(SNDFILE sndfile)
@@ -129,5 +140,4 @@ add_dependencies(integration_test_runner cp-test-profiles)
 add_custom_target(test_runners DEPENDS integration_test_runner)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_runners)
 enable_testing()
-
-add_custom_target(quiet-js COMMAND emcc -v -O3 $<TARGET_FILE:quiet> -o quiet-emscripten.js --llvm-lto 3 -s SIMD=1 -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_consume', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_recv', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_send', '_quiet_encoder_get_frame_len', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails']\" -lliquid -ljansson)
+endif() # EMSCRIPTEN
