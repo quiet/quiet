@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<struct id="options::quiet_demodulator_options" name="quiet_demodulator_options" typedef="yes" xmlns="http://jessevdk.github.com/cldoc/1.0">
+  <brief> Demodulator options</brief>
+  <doc>This set of options is used only by the decoder
+
+The demodulator is a combination element which inverts the operations of the
+modulator. It first mixes down from the carrier and then performs decimation
+to recover the signal.
+</doc>
+  <field id="options::quiet_demodulator_options::samples_per_symbol" name="samples_per_symbol">
+    <brief>decimation factor</brief>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_demodulator_options::symbol_delay" name="symbol_delay">
+    <brief>decimation filter delay</brief>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_demodulator_options::excess_bw" name="excess_bw">
+    <brief>decimation roll-off factor</brief>
+    <type builtin="yes" name="float" />
+  </field>
+  <field id="options::quiet_demodulator_options::center_rads" name="center_rads">
+    <brief>carrier frequency, [0, 2*pi)</brief>
+    <type builtin="yes" name="float" />
+  </field>
+</struct>
