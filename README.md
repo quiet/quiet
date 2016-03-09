@@ -1,5 +1,8 @@
+<!--
 #<cldoc:index>
-
+Quiet
+<!--
+-->
 Quiet
 ===========
 
@@ -37,4 +40,3 @@ I'd like to thank the people who provided feedback and helped me with pull reque
 * Jan-Ivar Bruaroey and Maire Reavy for helping me patch the echo cancellation behavior of Firefox's getUserMedia
 * Josh Gao for advising me on API design and C idioms.
 * Fabrice Bellard for thoughtfully answering a stranger's question out of the blue about digital communications
-
