@@ -1,0 +1,204 @@
+<?xml version='1.0' encoding='utf-8'?>
+<category id="profile" name="profile" xmlns="http://jessevdk.github.com/cldoc/1.0">
+  <function id="quiet_decoder_profile_file" name="quiet_decoder_profile_file">
+    <brief> Get decoder profile from file</brief>
+    <doc>libquiet's configuration options are fairly numerous, and testing can be
+frustrating when configuration requires recompilation. For this reason,
+libquiet provides a JSON file containing multiple sets of configuration
+-- profiles -- and functions to read and validate them.
+
+Each profile provides access to every option contained in
+quiet_encoder_options/quiet_decoder_options. It is hoped that this will
+give good default options and provide a starting place for users to
+tune new profiles.
+
+quiet_decoder_profile_file reads the profile given by profilename
+from the file pointer and returns the corresponding quiet_decoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_decoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_decoder_options" qualifier="*" ref="options::quiet_decoder_options#options::quiet_decoder_options" />
+    </return>
+    <argument id="quiet_decoder_profile_file::f" name="f">
+      <doc>file pointer which contains a valid JSON libquiet profile set</doc>
+      <type name="FILE" qualifier="*" />
+    </argument>
+    <argument id="quiet_decoder_profile_file::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_decoder_profile_filename" name="quiet_decoder_profile_filename">
+    <brief> Get decoder profile from filename</brief>
+    <doc>quiet_decoder_profile_filename reads the profile given by profilename
+from the file located at filename and returns the corresponding
+quiet_decoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_decoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_decoder_options" qualifier="*" ref="options::quiet_decoder_options#options::quiet_decoder_options" />
+    </return>
+    <argument id="quiet_decoder_profile_filename::fname" name="fname">
+      <doc>path to a file which will be opened and read, must contain a
+ valid JSON liquiet profile set</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_decoder_profile_filename::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_decoder_profile_str" name="quiet_decoder_profile_str">
+    <brief> Get decoder profile from string</brief>
+    <doc>quiet_decoder_profile_str reads the profile given by profilename from
+the input and returns the corresponding quiet_decoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_decoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_decoder_options" qualifier="*" ref="options::quiet_decoder_options#options::quiet_decoder_options" />
+    </return>
+    <argument id="quiet_decoder_profile_str::input" name="input">
+      <doc>a string containing a valid JSON libquiet profile set</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_decoder_profile_str::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_encoder_profile_file" name="quiet_encoder_profile_file">
+    <brief> Get encoder profile from file</brief>
+    <doc>quiet_encoder_profile_file reads the profile given by profilename
+from the file pointer and returns the corresponding quiet_encoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_encoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_encoder_options" qualifier="*" ref="options::quiet_encoder_options#options::quiet_encoder_options" />
+    </return>
+    <argument id="quiet_encoder_profile_file::f" name="f">
+      <doc>file pointer which contains a valid JSON libquiet profile set</doc>
+      <type name="FILE" qualifier="*" />
+    </argument>
+    <argument id="quiet_encoder_profile_file::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_encoder_profile_filename" name="quiet_encoder_profile_filename">
+    <brief> Get encoder profile from filename</brief>
+    <doc>quiet_encoder_profile_filename reads the profile given by profilename
+from the file located at filename and returns the corresponding
+quiet_encoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_encoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_encoder_options" qualifier="*" ref="options::quiet_encoder_options#options::quiet_encoder_options" />
+    </return>
+    <argument id="quiet_encoder_profile_filename::fname" name="fname">
+      <doc>path to a file which will be opened and read, must contain a
+ valid JSON liquiet profile set</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_encoder_profile_filename::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_encoder_profile_str" name="quiet_encoder_profile_str">
+    <brief> Get encoder profile from string</brief>
+    <doc>quiet_encoder_profile_str reads the profile given by profilename from
+the input and returns the corresponding quiet_encoder_options.
+
+</doc>
+    <return>
+      <doc>a pointer to an initialized quiet_encoder_options or NULL if
+ decoding failed. must be freed by caller (with free()).</doc>
+      <type name="quiet_encoder_options" qualifier="*" ref="options::quiet_encoder_options#options::quiet_encoder_options" />
+    </return>
+    <argument id="quiet_encoder_profile_str::input" name="input">
+      <doc>a string containing a valid JSON libquiet profile set</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_encoder_profile_str::profilename" name="profilename">
+      <doc>the string key of the profile to fetch</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+  </function>
+  <function id="quiet_profile_keys_file" name="quiet_profile_keys_file">
+    <brief> Get list of profile keys from file</brief>
+    <doc>quiet_profile_keys_file reads the JSON file and fetches the keys from the
+top-level dictionary. It does not perform validation on the profiles
+themselves, which could be invalid.
+
+</doc>
+    <return>
+      <doc>an array of strings with key names or NULL if JSON parsing failed.
+ must be freed by caller (with free()). the length of this array will be
+ written to numkeys.</doc>
+      <type builtin="yes" name="char" qualifier="**" />
+    </return>
+    <argument id="quiet_profile_keys_file::f" name="f">
+      <doc>file pointer which contains a valid JSON file</doc>
+      <type name="FILE" qualifier="*" />
+    </argument>
+    <argument id="quiet_profile_keys_file::numkeys" name="numkeys">
+      <doc>return value for number of keys found</doc>
+      <type name="size_t" qualifier="*" />
+    </argument>
+  </function>
+  <function id="quiet_profile_keys_filename" name="quiet_profile_keys_filename">
+    <brief> Get list of profile keys from filename</brief>
+    <doc>quiet_profile_keys_filename reads the JSON file found at fname and fetches
+the keys from the top-level dictionary. It does not perform validation on
+the profiles themselves, which could be invalid.
+
+</doc>
+    <return>
+      <doc>an array of strings with key names or NULL if JSON parsing failed.
+ must be freed by caller (with free()). the length of this array will be
+ written to numkeys.</doc>
+      <type builtin="yes" name="char" qualifier="**" />
+    </return>
+    <argument id="quiet_profile_keys_filename::fname" name="fname">
+      <doc>path to a file which will be opened and read, must contain a
+ valid JSON file</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_profile_keys_filename::numkeys" name="numkeys">
+      <doc>return value for number of keys found</doc>
+      <type name="size_t" qualifier="*" />
+    </argument>
+  </function>
+  <function id="quiet_profile_keys_str" name="quiet_profile_keys_str">
+    <brief> Get list of profile keys from string</brief>
+    <doc>quiet_profile_keys_str reads the JSON in input and fetches the keys from the
+top-level dictionary. It does not perform validation on the profiles
+themselves, which could be invalid.
+
+</doc>
+    <return>
+      <doc>an array of strings with key names or NULL if JSON parsing failed.
+ must be freed by caller (with free()). the length of this array will be
+ written to numkeys.</doc>
+      <type builtin="yes" name="char" qualifier="**" />
+    </return>
+    <argument id="quiet_profile_keys_str::input" name="input">
+      <doc>a string containing a valid JSON file</doc>
+      <type builtin="yes" name="char" qualifier=" const *" />
+    </argument>
+    <argument id="quiet_profile_keys_str::numkeys" name="numkeys">
+      <doc>return value for number of keys found</doc>
+      <type name="size_t" qualifier="*" />
+    </argument>
+  </function>
+</category>

@@ -1,0 +1,35 @@
+<?xml version='1.0' encoding='utf-8'?>
+<struct id="options::quiet_modulator_options" name="quiet_modulator_options" typedef="yes" xmlns="http://jessevdk.github.com/cldoc/1.0">
+  <brief> Modulator options</brief>
+  <doc>This set of options is used only by the encoder
+
+The modulator is a combination element which interpolates the encoded signal
+(rescaling in frequency domain) and then mixes it onto a carrier of a given
+frequency. Finally, a gain is applied, and an optional DC blocker removes DC
+components.
+</doc>
+  <field id="options::quiet_modulator_options::samples_per_symbol" name="samples_per_symbol">
+    <brief>interpolation factor</brief>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_modulator_options::symbol_delay" name="symbol_delay">
+    <brief>interpolation filter delay</brief>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_modulator_options::excess_bw" name="excess_bw">
+    <brief>interpolation roll-off factor</brief>
+    <type builtin="yes" name="float" />
+  </field>
+  <field id="options::quiet_modulator_options::center_rads" name="center_rads">
+    <brief>carrier frequency, [0, 2*pi)</brief>
+    <type builtin="yes" name="float" />
+  </field>
+  <field id="options::quiet_modulator_options::gain" name="gain">
+    <brief>gain, [0, 0.5]</brief>
+    <type builtin="yes" name="float" />
+  </field>
+  <field id="options::quiet_modulator_options::dc_filter_opt" name="dc_filter_opt">
+    <brief>dc blocker options</brief>
+    <type name="quiet_dc_filter_options" ref="options::quiet_dc_filter_options#options::quiet_dc_filter_options" />
+  </field>
+</struct>

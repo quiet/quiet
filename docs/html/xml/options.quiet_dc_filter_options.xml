@@ -1,0 +1,13 @@
+<?xml version='1.0' encoding='utf-8'?>
+<struct id="options::quiet_dc_filter_options" name="quiet_dc_filter_options" typedef="yes" xmlns="http://jessevdk.github.com/cldoc/1.0">
+  <brief> DC-blocking filter options</brief>
+  <doc>This DC blocker is applied near the end of the signal chain so that any
+leftover DC component is removed. This is important for audio signals as we
+do not want to send any DC out to speakers
+
+transfer function H(z)=(1 - (z^-1))/(1 - (1-alpha)*(z^-1))
+</doc>
+  <field id="options::quiet_dc_filter_options::alpha" name="alpha">
+    <type builtin="yes" name="float" />
+  </field>
+</struct>

@@ -1,0 +1,248 @@
+<?xml version='1.0' encoding='utf-8'?>
+<struct id="options::quiet_encoder_options" name="quiet_encoder_options" typedef="yes" xmlns="http://jessevdk.github.com/cldoc/1.0">
+  <brief> Encoder options</brief>
+  <doc>This specifies a complete set of options for the encoder in libquiet.
+</doc>
+  <field id="options::quiet_encoder_options::ofdmopt" name="ofdmopt">
+    <brief>OFDM options, used only by OFDM mode</brief>
+    <type name="quiet_ofdm_options" ref="options::quiet_ofdm_options#options::quiet_ofdm_options" />
+  </field>
+  <field id="options::quiet_encoder_options::modopt" name="modopt">
+    <brief>Interpolation filter and carrier frequency options</brief>
+    <type name="quiet_modulator_options" ref="options::quiet_modulator_options#options::quiet_modulator_options" />
+  </field>
+  <field id="options::quiet_encoder_options::resampler" name="resampler">
+    <brief>Resampler configuration (if specified frequency is not 44.1kHz)</brief>
+    <type name="quiet_resampler_options" ref="options::quiet_resampler_options#options::quiet_resampler_options" />
+  </field>
+  <field id="options::quiet_encoder_options::encoding" name="encoding">
+    <brief>Encoder mode, one of {ofdm_encoding, modem_encoding, gmsk_encoding}</brief>
+    <type name="encoding_t" ref="options#options::encoding_t" />
+  </field>
+  <field id="options::quiet_encoder_options::checksum_scheme" name="checksum_scheme">
+    <brief> Numerical value for checksum scheme used to confirm integrity of frame</brief>
+    <doc>These values correspond to those used by liquid DSP. In particular,
+
+1: no error-detection
+
+2: 8-bit checksum
+
+3: 8-bit CRC
+
+4: 16-bit CRC
+
+5: 24-bit CRC
+
+6: 32-bit CRC
+
+All other values invalid
+</doc>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_encoder_options::inner_fec_scheme" name="inner_fec_scheme">
+    <brief> Numerical value for inner FEC (forward error correction) scheme</brief>
+    <doc>These values correspond to those used by liquid DSP. In particular,
+
+1: no error-correction
+
+2: simple repeat code, r1/3
+
+3: simple repeat code, r1/5
+
+4: Hamming (7,4) block code, r1/2 (really 4/7)
+
+5: Hamming (7,4) with extra parity bit, r1/2
+
+6: Hamming (12,8) block code, r2/3
+
+7: Golay (24,12) block code, r1/2
+
+8: SEC-DED (22,16) block code, r8/11
+
+9: SEC-DED (39,32) block code
+
+10: SEC-DED (72,64) block code, r8/9
+
+11: convolutional code r1/2, K=7, dfree=10
+
+12: convolutional code r1/2, K=9, dfree=12
+
+13; convolutional code r1/3, K=9, dfree=18
+
+14: convolutional code 1/6, K=15, dfree&lt;=57 (Heller 1968)
+
+15: perforated convolutional code r2/3, K=7, dfree=6
+
+16: perforated convolutional code r3/4, K=7, dfree=5
+
+17: perforated convolutional code r4/5, K=7, dfree=4
+
+18: perforated convolutional code r5/6, K=7, dfree=4
+
+19: perforated convolutional code r6/7, K=7, dfree=3
+
+20: perforated convolutional code r7/8, K=7, dfree=3
+
+21: perforated convolutional code r2/3, K=9, dfree=7
+
+22: perforated convolutional code r3/4, K=9, dfree=6
+
+23: perforated convolutional code r4/5, K=9, dfree=5
+
+24: perforated convolutional code r5/6, K=9, dfree=5
+
+25: perforated convolutional code r6/7, K=9, dfree=4
+
+26: perforated convolutional code r7/8, K=9, dfree=4
+
+27: Reed-Solomon m=8, n=255, k=223
+
+All other values invalid
+</doc>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_encoder_options::outer_fec_scheme" name="outer_fec_scheme">
+    <brief> Numerical value for outer FEC (forward error correction) scheme</brief>
+    <doc>This uses the same set of values as inner_fec_scheme
+</doc>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_encoder_options::mod_scheme" name="mod_scheme">
+    <brief> Numerical value for modulation scheme.</brief>
+    <doc>This value is ignored in GMSK mode
+
+These values correspond to those used by liquid DSP. In particular,
+
+1: phase-shift keying-2
+
+2: phase-shift keying-4
+
+3: phase-shift keying-8
+
+4: phase-shift keying-16
+
+5: phase-shift keying-32
+
+6: phase-shift keying-64
+
+7: phase-shift keying-128
+
+8: phase-shift keying-256
+
+9: differential phase-shift keying-2
+
+10: differential phase-shift keying-4
+
+11: differential phase-shift keying-8
+
+12: differential phase-shift keying-16
+
+13: differential phase-shift keying-32
+
+14: differential phase-shift keying-64
+
+15: differential phase-shift keying-128
+
+16: differential phase-shift keying-256
+
+17: amplitude-shift keying-2
+
+18: amplitude-shift keying-4
+
+19: amplitude-shift keying-8
+
+20: amplitude-shift keying-16
+
+21: amplitude-shift keying-32
+
+22: amplitude-shift keying-64
+
+23: amplitude-shift keying-128
+
+24: amplitude-shift keying-256
+
+25: quadrature amplitude-shift keying-4
+
+26: quadrature amplitude-shift keying-8
+
+27: quadrature amplitude-shift keying-16
+
+28: quadrature amplitude-shift keying-32
+
+29: quadrature amplitude-shift keying-64
+
+30: quadrature amplitude-shift keying-128
+
+31: quadrature amplitude-shift keying-256
+
+32: quadrature amplitude-shift keying-512
+
+33: quadrature amplitude-shift keying-1024
+
+34: quadrature amplitude-shift keying-2048
+
+35: quadrature amplitude-shift keying-4096
+
+36: quadrature amplitude-shift keying-8192
+
+37: quadrature amplitude-shift keying-16384
+
+38: quadrature amplitude-shift keying-32768
+
+39: quadrature amplitude-shift keying-65536
+
+40: amplitude phase-shift keying-4
+
+41: amplitude phase-shift keying-8
+
+42: amplitude phase-shift keying-16
+
+43: amplitude phase-shift keying-32
+
+44: amplitude phase-shift keying-64
+
+45: amplitude phase-shift keying-128
+
+46: amplitude phase-shift keying-256
+
+47: binary phase-shift keying
+
+48: quaternary phase-shift keying
+
+49: on-off keying
+
+50: square quadrature amplitude-shift keying-32
+
+51: square quadrature amplitude-shift keying-128
+
+52: V.29 star constellation
+
+53: optimal quadrature amplitude-shift keying-16
+
+54: optimal quadrature amplitude-shift keying-32
+
+55: optimal quadrature amplitude-shift keying-64
+
+56: optimal quadrature amplitude-shift keying-128
+
+57: optimal quadrature amplitude-shift keying-256
+
+58: Virginia Tech logo constellation
+
+All other values invalid
+</doc>
+    <type builtin="yes" name="unsigned int" />
+  </field>
+  <field id="options::quiet_encoder_options::frame_len" name="frame_len">
+    <brief> Maximum frame length</brief>
+    <doc>This value controls the maximum length of the user-controlled
+section of the frame. There is overhead in starting new frames,
+and each frame performs its own CRC check which either accepts or
+rejects the frame. A frame begins with a synchronization section
+which the decoder uses to detect and lock on to the frame. Over time,
+the synchronization will drift, which makes shorter frames easier to
+decode than longer frames.
+</doc>
+    <type name="size_t" />
+  </field>
+</struct>
