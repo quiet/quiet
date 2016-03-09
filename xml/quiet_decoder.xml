@@ -37,7 +37,7 @@ reception at the cost of longer latencies.
     </argument>
     <argument id="quiet_decoder_consume::samplebuf" name="samplebuf">
       <doc>array of samples received from sound card</doc>
-      <type name="quiet_sample_t" qualifier=" const *" ref="index#quiet_sample_t" />
+      <type name="quiet_sample_t" qualifier="*" ref="index#quiet_sample_t" />
     </argument>
     <argument id="quiet_decoder_consume::sample_len" name="sample_len">
       <doc>number of samples in samplebuf</doc>
