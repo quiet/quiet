@@ -37,4 +37,5 @@ I'd like to thank the people who provided feedback and helped me with pull reque
 * Alon Zakai and @juj for advising me on emscripten and for taking my PRs
 * Jan-Ivar Bruaroey and Maire Reavy for helping me patch the echo cancellation behavior of Firefox's getUserMedia
 * Josh Gao for advising me on API design and C idioms.
+* Ryan Hitchman for extensive testing on Android Chrome
 * Fabrice Bellard for thoughtfully answering a stranger's question out of the blue about digital communications
