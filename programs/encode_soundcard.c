@@ -67,7 +67,7 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
             for (size_t i = 0; i < written; i++) {
                 sample_buffer[num_channels*i] = mono_buffer[i];
             }
-            err = Pa_WriteStream(stream, sample_buffer, written*num_channels);
+            err = Pa_WriteStream(stream, sample_buffer, written);
             if (err != paNoError) {
                 printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
                 return 1;
