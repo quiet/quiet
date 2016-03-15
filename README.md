@@ -1,7 +1,7 @@
-[Quiet](https://github.com/brian-armstrong/quiet/)
+[Quiet](https://github.com/quiet/quiet/)
 ===========
 
-**[Documentation](http://brian-armstrong.github.io/quiet/)**
+**[Documentation](http://quiet.github.io/quiet/)**
 
 
 This library uses liquid SDR to transmit data through sound. This makes it suitable for sending data across a 3.5mm headphone jack or via speaker and mic. Quiet can build standalone binaries for encoding/decoding data via .wav files or for streaming through your soundcard via PortAudio. It can also be built as a library to be consumed by other C programs.
@@ -23,8 +23,8 @@ The `ultrasonic-` profiles encode data through a very low bitrate, but the audio
 
 Dependencies
 -----------
-* [Liquid DSP](https://github.com/brian-armstrong/liquid-dsp/tree/devel) Be sure to work from the devel branch
-* [libfec](https://github.com/brian-armstrong/libfec) (optional but strongly recommended)
+* [Liquid DSP](https://github.com/quiet/liquid-dsp/tree/devel) Be sure to work from the devel branch
+* [libfec](https://github.com/quiet/libfec) (optional but strongly recommended)
 * [Jansson](https://github.com/akheron/jansson)
 * [libsndfile](http://www.mega-nerd.com/libsndfile/) (optional)
 * [PortAudio](http://www.portaudio.com/) (optional)

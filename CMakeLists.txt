@@ -38,7 +38,7 @@ if (LIQUID)
 libquiet requires the devel branch of libliquid but
   found a different branch installed
 fetch the devel branch using
-    git clone https://github.com/brian-armstrong/liquid-dsp.git -b devel --single-branch
+    git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch
 and install it before continuing")
     endif()
 else()
@@ -46,7 +46,7 @@ else()
     message(FATAL_ERROR "
 libquiet requires libliquid but cannot find it
 fetch the devel branch using
-    git clone https://github.com/brian-armstrong/liquid-dsp.git -b devel --single-branch
+    git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch
 and install it before continuing")
 endif()
 
