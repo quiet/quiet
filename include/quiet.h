@@ -706,7 +706,7 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len);
  * reception at the cost of longer latencies.
  *
  */
-void quiet_decoder_consume(quiet_decoder *d, quiet_sample_t *samplebuf, size_t sample_len);
+void quiet_decoder_consume(quiet_decoder *d, const quiet_sample_t *samplebuf, size_t sample_len);
 
 /* Flush existing state through decoder
  * @d decoder object

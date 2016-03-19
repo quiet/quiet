@@ -169,7 +169,7 @@ static size_t decoder_max_len(decoder *d) {
     return d->symbolbuf_len * d->demod->opt.samples_per_symbol;
 }
 
-void quiet_decoder_consume(decoder *d, sample_t *samplebuf, size_t sample_len) {
+void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_len) {
     if (!d) {
         return;
     }
