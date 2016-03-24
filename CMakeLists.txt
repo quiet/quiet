@@ -69,7 +69,7 @@ add_custom_target(lib DEPENDS quiet quiet_static)
 
 if(EMSCRIPTEN)
   add_custom_target(quiet-profiles ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/quiet-profiles.json ${CMAKE_BINARY_DIR}/quiet-profiles.json)
-  add_custom_target(quiet-js ALL COMMAND emcc -v -O2 $<TARGET_FILE:quiet> -o quiet-emscripten.js -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_consume', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_recv', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_send', '_quiet_encoder_get_frame_len', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_opt_set_sample_rate', '_quiet_decoder_opt_set_sample_rate', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails']\" -lliquid -ljansson)
+  add_custom_target(quiet-js ALL COMMAND emcc -v -O2 $<TARGET_FILE:quiet> -o quiet-emscripten.js -g -s ASSERTIONS=1 -s MAIN_MODULE=2 -s EXPORTED_FUNCTIONS=\"['_quiet_decoder_consume', '_quiet_decoder_create', '_quiet_decoder_flush', '_quiet_decoder_recv', '_quiet_decoder_destroy', '_quiet_encoder_emit', '_quiet_encoder_create', '_quiet_encoder_destroy', '_quiet_encoder_send', '_quiet_encoder_get_frame_len', '_quiet_encoder_profile_str', '_quiet_decoder_profile_str', '_quiet_encoder_clamp_frame_len', '_quiet_decoder_checksum_fails', '_quiet_decoder_enable_stats', '_quiet_decoder_disable_stats', '_quiet_decoder_consume_stats']\" -lliquid -ljansson)
 else() # EMSCRIPTEN
 add_custom_target(quiet-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet.h ${CMAKE_BINARY_DIR}/include/quiet.h)
 

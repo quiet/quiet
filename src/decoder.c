@@ -18,6 +18,31 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
 
     decoder *d = dvoid;
 
+    if (d->stats_enabled) {
+        size_t stats_index = d->num_frames_collected;
+        if (stats_index < num_frames_stats) {
+            float complex *sym = d->stats_symbols[stats_index];
+            size_t sym_cap = d->stats_symbol_caps[stats_index];
+
+            if (sym_cap < stats.num_framesyms) {
+                d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(float complex));
+                d->stats_symbol_caps[stats_index] = stats.num_framesyms;
+            }
+            memcpy(d->stats_symbols[stats_index], stats.framesyms, stats.num_framesyms * sizeof(float complex));
+
+            quiet_decoder_frame_stats *fstats = d->stats + stats_index;
+
+            fstats->symbols = d->stats_symbols[stats_index];
+            fstats->num_symbols = stats.num_framesyms;
+            fstats->error_vector_magnitude = stats.evm;
+            fstats->received_signal_strength_indicator = stats.rssi;
+            fstats->checksum_passed = payload_valid;
+
+            d->num_frames_collected++;
+        }
+    }
+
+
     if (!payload_valid) {
         d->checksum_fails++;
         return 1;
@@ -138,7 +163,37 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     d->writeframe_len = 0;
     d->writeframe = NULL;
 
+    d->stats_enabled = false;
+
     return d;
+}
+
+void quiet_decoder_enable_stats(quiet_decoder *d) {
+    d->stats_enabled = true;
+
+    for (size_t i = 0; i < num_frames_stats; i++) {
+        d->stats_symbols[i] = NULL;
+        d->stats_symbol_caps[i] = 0;
+    }
+    d->num_frames_collected = 0;
+}
+
+void quiet_decoder_disable_stats(quiet_decoder *d) {
+    d->stats_enabled = false;
+
+    for (size_t i = 0; i < num_frames_stats; i++) {
+        if (d->stats_symbols[i]) {
+            free(d->stats_symbols[i]);
+            d->stats_symbols[i] = NULL;
+        }
+    }
+    d->num_frames_collected = 0;
+}
+
+const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, size_t *num_frames) {
+    *num_frames = d->num_frames_collected;
+
+    return d->stats;
 }
 
 ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
@@ -175,6 +230,10 @@ void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_
     }
 
     size_t stride_len = decoder_max_len(d);
+
+    if (d->stats_enabled) {
+        d->num_frames_collected = 0;
+    }
 
     for (size_t i = 0; i < sample_len; ) {
         size_t symbol_len, sample_chunk_len;
@@ -348,6 +407,11 @@ void quiet_decoder_destroy(decoder *d) {
     }
     if (d->baserate) {
         free(d->baserate);
+    }
+    for (size_t i = 0; i < num_frames_stats; i++) {
+        if (d->stats_symbols[i]) {
+            free(d->stats_symbols[i]);
+        }
     }
     ring_destroy(d->buf);
     free(d->writeframe);

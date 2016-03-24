@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <complex.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
@@ -418,6 +419,26 @@ typedef struct {
     bool is_debug;
 } quiet_decoder_options;
 
+/* Decoder frame stats
+ *
+ * This contains information about the decoding process related to a
+ * single frame. The frame may have been detected but failed to
+ * pass checksum or may have been successfully received.
+ */
+typedef struct {
+    // Raw symbols, in complex plane, as seen after decimation and downmixing
+    const float complex *symbols;
+    size_t num_symbols;
+
+    // Magnitude of vector from received symbols to reference symbols, in dB
+    float error_vector_magnitude;
+
+    // Power level of received signal after decimation and downmixing, in dB
+    float received_signal_strength_indicator;
+
+    bool checksum_passed;
+} quiet_decoder_frame_stats;
+
 /* cldoc:end-category() */
 /* cldoc:begin-category(profile) */
 
@@ -729,6 +750,46 @@ void quiet_decoder_flush(quiet_decoder *d);
  * @return Total number of frames received with failed checksums
  */
 unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
+
+/* Fetch stats from last call to quiet_decoder_consume
+ * @d decoder object
+ * @num_frames number of frames at returned pointer
+ *
+ * quiet_decoder_consume_stats returns detailed info about the decoding
+ * process from the last call to quiet_decoder_consume_stats. It will
+ * save information on up to 8 frames. This includes frames which failed
+ * checksum. If quiet_decoder_consume found more than 8 frames, then
+ * information on only the first 8 frames will be saved.
+ *
+ * In order to use this functionality, quiet_decoder_enable_stats
+ * must be called on the decoder object before calling
+ * quiet_decoder_consume.
+ *
+ * @return quiet_decoder_frame_stats which is an array of structs containing
+ *  stats info, num_frames long
+ */
+const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, size_t *num_frames);
+
+/* Enable stats collection
+ * @d decoder object
+ *
+ * quiet_decoder_enable_stats allocates the required memory needed to save
+ * symbol and other information on each frame decode. Italso adds a small
+ * overhead needed to copy this information into an internal buffer.
+ *
+ * By default, stats collection is disabled. Therefore, if the user would like
+ * to use quiet_decoder_consume_stats, then they must first call
+ * quiet_decoder_enable_stats.
+ */
+void quiet_decoder_enable_stats(quiet_decoder *d);
+
+/* Disable stats collection
+ * @d decoder object
+ *
+ * quiet_decoder_disable_stats frees all memory associated with
+ * stats collection.
+ */
+void quiet_decoder_disable_stats(quiet_decoder *d);
 
 /* Destroy decoder
  * @d decoder object
