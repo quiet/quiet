@@ -164,6 +164,10 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     d->writeframe = NULL;
 
     d->stats_enabled = false;
+    for (size_t i = 0; i < num_frames_stats; i++) {
+        d->stats_symbols[i] = NULL;
+        d->stats_symbol_caps[i] = 0;
+    }
 
     return d;
 }
@@ -185,6 +189,7 @@ void quiet_decoder_disable_stats(quiet_decoder *d) {
         if (d->stats_symbols[i]) {
             free(d->stats_symbols[i]);
             d->stats_symbols[i] = NULL;
+            d->stats_symbol_caps[i] = 0;
         }
     }
     d->num_frames_collected = 0;
