@@ -50,6 +50,44 @@ typedef struct {
  * components.
  */
 typedef struct {
+    /* Numerical value for shape of interpolation filter
+     *
+     * These values correspond to those used by liquid DSP. In particular,
+     *
+     * 1: Nyquist Kaiser
+     *
+     * 2: Parks-McClellan
+     *
+     * 3: Raised Cosine
+     *
+     * 4: Flipped Exponential (Nyquist)
+     *
+     * 5: Flipped Hyperbolic Secant (Nyquist)
+     *
+     * 6: Flipped Arc-Hyperbolic Secant (Nyquist)
+     *
+     * 7: Root-Nyquist Kaiser (Approximate Optimum)
+     *
+     * 8: Root-Nyquist Kaiser (True Optimum)
+     *
+     * 9: Root Raised Cosine
+     *
+     * 10: Harris-Moerder-3
+     *
+     * 11: GMSK Transmit
+     *
+     * 12: GMSK Receive
+     *
+     * 13: Flipped Exponential (root-Nyquist)
+     *
+     * 14: Flipped Hyperbolic Secant (root-Nyquist)
+     *
+     * 15: Flipped Arc-Hyperbolic Secant (root-Nyquist)
+     *
+     * All other values invalid
+     */
+    unsigned int shape;
+
     // interpolation factor
     unsigned int samples_per_symbol;
 
@@ -78,6 +116,12 @@ typedef struct {
  * to recover the signal.
  */
 typedef struct {
+    /* Numerical value for shape of decimation filter
+     *
+     * This uses the same set of values as quiet_modulator_options.shape
+     */
+    unsigned int shape;
+
     // decimation factor
     unsigned int samples_per_symbol;
 
