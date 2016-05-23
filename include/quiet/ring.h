@@ -1,5 +1,12 @@
 #include "quiet/common.h"
 
+typedef struct {
+    size_t length;
+    uint8_t *base;
+    uint8_t *reader; // reader points to next block to be read
+    uint8_t *writer; // writer points to next block to be written
+} ring;
+
 ring *ring_create(size_t length);
 void ring_destroy(ring *r);
 size_t ring_calculate_distance(const ring *r, const uint8_t *src, const uint8_t *dst);

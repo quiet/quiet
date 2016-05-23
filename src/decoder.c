@@ -203,7 +203,15 @@ const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, s
 
 ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
     size_t framelen;
-    if (ring_read(d->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+    ssize_t framelen_written;
+#if LOCKABLE_RING_BUFFER
+    ring_reader_lock(d->buf);
+#endif
+    framelen_written = ring_read(d->buf, (uint8_t*)(&framelen), sizeof(size_t));
+    if (framelen_written < 0) {
+#if LOCKABLE_RING_BUFFER
+        ring_reader_unlock(d->buf);
+#endif
         return -1;
     }
 
@@ -212,12 +220,18 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
     len = (len > framelen) ? framelen : len;
 
     if (ring_read(d->buf, data, len) < 0) {
+#if LOCKABLE_RING_BUFFER
+        ring_reader_unlock(d->buf);
+#endif
         assert(false && "ring buffer failed: frame not written atomically?");
         return -1;
     }
 
     ring_advance_reader(d->buf, framelen - len);
 
+#if LOCKABLE_RING_BUFFER
+    ring_reader_unlock(d->buf);
+#endif
     return len;
 }
 
