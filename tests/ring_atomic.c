@@ -118,7 +118,7 @@ int main() {
     arg_t args = {
         .buf = buf,
         .write_len = 1 << 22,
-        .multi = true,
+        .multi = false,
     };
     pthread_create(&w, NULL, write_sequence, &args);
     pthread_create(&r, NULL, read_sequence, &args);
