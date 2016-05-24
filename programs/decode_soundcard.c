@@ -1,9 +1,6 @@
-#include <math.h>
 #include <string.h>
 
-#include "quiet.h"
-
-#include <PortAudio.h>
+#include "quiet-portaudio.h"
 
 int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     PaError err = Pa_Initialize();
@@ -11,50 +8,18 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
         printf("failed to initialize port audio, %s\n", Pa_GetErrorText(err));
         return 1;
     }
-
-    size_t sample_buffer_size = 1<<14;
-    quiet_sample_t *sample_buffer = malloc(sample_buffer_size*sizeof(quiet_sample_t));
-    PaStream *stream;
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
-    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
-    unsigned int desired_sample_rate = deviceInfo->defaultSampleRate;
-    PaStreamParameters param = {
-        .device = device,
-        .channelCount = 1,
-        .sampleFormat = paFloat32,
-        .suggestedLatency = deviceInfo->defaultHighInputLatency,
-        .hostApiSpecificStreamInfo = NULL,
-    };
-    err = Pa_OpenStream(&stream, &param, NULL, desired_sample_rate,
-                        sample_buffer_size, paNoFlag, NULL, NULL);
-    if (err != paNoError) {
-        printf("failed to open port audio stream, %s\n", Pa_GetErrorText(err));
-        return 1;
-    }
 
-    const PaStreamInfo *info = Pa_GetStreamInfo(stream);
-    quiet_decoder *d = quiet_decoder_create(opt, info->sampleRate);
+    quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, 16384);
 
     size_t write_buffer_size = 16384;
     uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));
     bool done = false;
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
-        return 1;
-    }
-
     while (!done) {
-        err = Pa_ReadStream(stream, sample_buffer, sample_buffer_size);
-        if (err != paNoError) {
-            printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
-            return 1;
-        }
-        quiet_decoder_consume(d, sample_buffer, sample_buffer_size);
 
         for (;;) {
-            ssize_t read = quiet_decoder_recv(d, write_buffer, write_buffer_size);
+            ssize_t read = quiet_portaudio_decoder_recv(d, write_buffer, write_buffer_size);
             if (read < 0) {
                 break;
             }
@@ -62,13 +27,8 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
         }
     }
 
-    Pa_StopStream(stream);
-    Pa_CloseStream(stream);
-    Pa_Terminate();
-
-    quiet_decoder_destroy(d);
-    free(sample_buffer);
     free(write_buffer);
+    quiet_portaudio_decoder_destroy(d);
 
     return 0;
 }

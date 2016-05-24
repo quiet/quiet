@@ -42,6 +42,8 @@ else()
 endif()
 
 
+set(CORE_DEPENDENCIES LIQUID JANSSON)
+
 find_library(LIQUID liquid REQUIRED)
 if (LIQUID)
     check_library_exists(LIQUID flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
@@ -73,10 +75,27 @@ fetch the latest jansson release from
 and install it before continuing")
 endif()
 
+find_library(PORTAUDIO portaudio)
+if (PORTAUDIO)
+  set(SRCFILES ${SRCFILES} src/portaudio_encoder.c src/portaudio_decoder.c)
+  add_definitions(-DQUIET_PORTAUDIO=1)
+  set(CORE_DEPENDENCIES ${CORE_DEPENDENCIES} PORTAUDIO)
+else()
+    unset(PORTAUDIO CACHE)
+    message(WARNING "
+
+libquiet could not find portaudio. this will prevent libquiet
+from building its sound streaming programs. you can get portaudio from
+    http://www.portaudio.com/download.html
+
+")
+endif()
+
+
 add_library(quiet_static ${SRCFILES})
-target_link_libraries(quiet_static LIQUID JANSSON)
-add_library(quiet MODULE ${SRCFILES})
-target_link_libraries(quiet LIQUID JANSSON)
+target_link_libraries(quiet_static ${CORE_DEPENDENCIES})
+add_library(quiet SHARED ${SRCFILES})
+target_link_libraries(quiet ${CORE_DEPENDENCIES})
 
 add_custom_target(lib DEPENDS quiet quiet_static)
 
@@ -110,24 +129,14 @@ from building its file generating programs. you can get libsndfile from
 ")
 endif()
 
-find_library(PORTAUDIO portaudio)
 if (PORTAUDIO)
     add_executable(quiet_encode_soundcard programs/encode_soundcard.c)
-    target_link_libraries(quiet_encode_soundcard quiet_static PORTAUDIO)
+    target_link_libraries(quiet_encode_soundcard quiet_static)
     set(buildable_programs ${buildable_programs} quiet_encode_soundcard)
 
     add_executable(quiet_decode_soundcard programs/decode_soundcard.c)
-    target_link_libraries(quiet_decode_soundcard quiet_static PORTAUDIO)
+    target_link_libraries(quiet_decode_soundcard quiet_static)
     set(buildable_programs ${buildable_programs} quiet_decode_soundcard)
-else()
-    unset(PORTAUDIO CACHE)
-    message(WARNING "
-
-libquiet could not find portaudio. this will prevent libquiet
-from building its sound streaming programs. you can get portaudio from
-    http://www.portaudio.com/download.html
-
-")
 endif()
 
 add_custom_target(programs DEPENDS ${buildable_programs})

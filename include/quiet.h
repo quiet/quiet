@@ -1,3 +1,5 @@
+#ifndef QUIET_H
+#define QUIET_H
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -843,3 +845,4 @@ void quiet_decoder_disable_stats(quiet_decoder *d);
  * functions on the decoder.
  */
 void quiet_decoder_destroy(quiet_decoder *d);
+#endif
