@@ -14,8 +14,9 @@ modulator *modulator_create(const modulator_options *opt) {
     nco_crcf_set_frequency(m->nco, opt->center_rads);
 
     if (opt->samples_per_symbol > 1) {
-        m->interp = firinterp_crcf_create_kaiser(opt->samples_per_symbol,
-                                                 opt->symbol_delay, 60.0f);
+        m->interp = firinterp_crcf_create_prototype(opt->shape, opt->samples_per_symbol,
+                                                    opt->symbol_delay, opt->excess_bw, 0);
+
     } else {
         m->opt.samples_per_symbol = 1;
         m->opt.symbol_delay = 0;
@@ -84,7 +85,7 @@ size_t modulator_flush_sample_len(modulator *m) {
         return 0;
     }
 
-    return m->opt.samples_per_symbol * 2 * m->opt.symbol_delay;
+    return m->opt.samples_per_symbol * (2 * m->opt.symbol_delay + 50);
 }
 
 size_t modulator_flush(modulator *m, sample_t *samples) {
@@ -96,7 +97,7 @@ size_t modulator_flush(modulator *m, sample_t *samples) {
         return 0;
     }
 
-    size_t symbol_len = 2 * m->opt.symbol_delay;
+    size_t symbol_len = 2 * m->opt.symbol_delay + 50;
     float complex terminate[symbol_len];
     for (size_t i = 0; i < symbol_len; i++) {
         terminate[i] = 0;

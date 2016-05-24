@@ -1,7 +1,10 @@
+#ifndef QUIET_H
+#define QUIET_H
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <complex.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
@@ -49,6 +52,44 @@ typedef struct {
  * components.
  */
 typedef struct {
+    /* Numerical value for shape of interpolation filter
+     *
+     * These values correspond to those used by liquid DSP. In particular,
+     *
+     * 1: Nyquist Kaiser
+     *
+     * 2: Parks-McClellan
+     *
+     * 3: Raised Cosine
+     *
+     * 4: Flipped Exponential (Nyquist)
+     *
+     * 5: Flipped Hyperbolic Secant (Nyquist)
+     *
+     * 6: Flipped Arc-Hyperbolic Secant (Nyquist)
+     *
+     * 7: Root-Nyquist Kaiser (Approximate Optimum)
+     *
+     * 8: Root-Nyquist Kaiser (True Optimum)
+     *
+     * 9: Root Raised Cosine
+     *
+     * 10: Harris-Moerder-3
+     *
+     * 11: GMSK Transmit
+     *
+     * 12: GMSK Receive
+     *
+     * 13: Flipped Exponential (root-Nyquist)
+     *
+     * 14: Flipped Hyperbolic Secant (root-Nyquist)
+     *
+     * 15: Flipped Arc-Hyperbolic Secant (root-Nyquist)
+     *
+     * All other values invalid
+     */
+    unsigned int shape;
+
     // interpolation factor
     unsigned int samples_per_symbol;
 
@@ -77,6 +118,12 @@ typedef struct {
  * to recover the signal.
  */
 typedef struct {
+    /* Numerical value for shape of decimation filter
+     *
+     * This uses the same set of values as quiet_modulator_options.shape
+     */
+    unsigned int shape;
+
     // decimation factor
     unsigned int samples_per_symbol;
 
@@ -418,6 +465,26 @@ typedef struct {
     bool is_debug;
 } quiet_decoder_options;
 
+/* Decoder frame stats
+ *
+ * This contains information about the decoding process related to a
+ * single frame. The frame may have been detected but failed to
+ * pass checksum or may have been successfully received.
+ */
+typedef struct {
+    // Raw symbols, in complex plane, as seen after decimation and downmixing
+    const float complex *symbols;
+    size_t num_symbols;
+
+    // Magnitude of vector from received symbols to reference symbols, in dB
+    float error_vector_magnitude;
+
+    // Power level of received signal after decimation and downmixing, in dB
+    float received_signal_strength_indicator;
+
+    bool checksum_passed;
+} quiet_decoder_frame_stats;
+
 /* cldoc:end-category() */
 /* cldoc:begin-category(profile) */
 
@@ -730,6 +797,46 @@ void quiet_decoder_flush(quiet_decoder *d);
  */
 unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
 
+/* Fetch stats from last call to quiet_decoder_consume
+ * @d decoder object
+ * @num_frames number of frames at returned pointer
+ *
+ * quiet_decoder_consume_stats returns detailed info about the decoding
+ * process from the last call to quiet_decoder_consume_stats. It will
+ * save information on up to 8 frames. This includes frames which failed
+ * checksum. If quiet_decoder_consume found more than 8 frames, then
+ * information on only the first 8 frames will be saved.
+ *
+ * In order to use this functionality, quiet_decoder_enable_stats
+ * must be called on the decoder object before calling
+ * quiet_decoder_consume.
+ *
+ * @return quiet_decoder_frame_stats which is an array of structs containing
+ *  stats info, num_frames long
+ */
+const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, size_t *num_frames);
+
+/* Enable stats collection
+ * @d decoder object
+ *
+ * quiet_decoder_enable_stats allocates the required memory needed to save
+ * symbol and other information on each frame decode. Italso adds a small
+ * overhead needed to copy this information into an internal buffer.
+ *
+ * By default, stats collection is disabled. Therefore, if the user would like
+ * to use quiet_decoder_consume_stats, then they must first call
+ * quiet_decoder_enable_stats.
+ */
+void quiet_decoder_enable_stats(quiet_decoder *d);
+
+/* Disable stats collection
+ * @d decoder object
+ *
+ * quiet_decoder_disable_stats frees all memory associated with
+ * stats collection.
+ */
+void quiet_decoder_disable_stats(quiet_decoder *d);
+
 /* Destroy decoder
  * @d decoder object
  *
@@ -738,3 +845,4 @@ unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
  * functions on the decoder.
  */
 void quiet_decoder_destroy(quiet_decoder *d);
+#endif

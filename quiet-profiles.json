@@ -17,6 +17,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -42,6 +43,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -67,6 +69,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -92,6 +95,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -117,9 +121,36 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
+        },
+        "resampler": {
+            "delay": 13,
+            "bandwidth": 0.45,
+            "attenuation": 60,
+            "filter_bank_size": 64
+        }
+    },
+    "voice-gmsk": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "v27",
+        "outer_fec_scheme": "rs8",
+        "mod_scheme": "gmsk",
+        "frame_length": 25,
+        "modulation": {
+            "center_frequency": 2200,
+            "gain": 0.15
+        },
+        "interpolation": {
+            "shape": "kaiser",
+            "samples_per_symbol": 10,
+            "symbol_delay": 4,
+            "excess_bandwidth": 0.35
+        },
+        "encoder_filters": {
+            "dc_filter_alpha": 0.01
         },
         "resampler": {
             "delay": 13,

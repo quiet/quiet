@@ -14,8 +14,8 @@ demodulator *demodulator_create(const demodulator_options *opt) {
     nco_crcf_set_frequency(d->nco, opt->center_rads);
 
     if (opt->samples_per_symbol > 1) {
-        d->decim = firdecim_crcf_create_kaiser(opt->samples_per_symbol,
-                                               opt->symbol_delay, 60.0f);
+        d->decim = firdecim_crcf_create_prototype(opt->shape, opt->samples_per_symbol,
+                                                  opt->symbol_delay, opt->excess_bw, 0);
     } else {
         d->opt.samples_per_symbol = 1;
         d->opt.symbol_delay = 0;
@@ -25,8 +25,8 @@ demodulator *demodulator_create(const demodulator_options *opt) {
     return d;
 }
 
-size_t demodulator_recv(demodulator *d, sample_t *samples, size_t sample_len,
-                  float complex *symbols) {
+size_t demodulator_recv(demodulator *d, const sample_t *samples, size_t sample_len,
+                        float complex *symbols) {
     if (!d) {
         return 0;
     }

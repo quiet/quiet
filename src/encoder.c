@@ -189,7 +189,13 @@ ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len) {
     memcpy(e->tempframe, &len, sizeof(size_t));
     memcpy(e->tempframe + (sizeof(size_t)), buf, len);
 
+#if LOCKABLE_RING_BUFFER
+    ring_writer_lock(e->buf);
+#endif
     ssize_t written = ring_write(e->buf, e->tempframe, sizeof(size_t) + len);
+#if LOCKABLE_RING_BUFFER
+    ring_writer_unlock(e->buf);
+#endif
     if (written == -1) {
         return -1;
     }

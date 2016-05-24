@@ -79,6 +79,15 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "interpolation"))) {
         json_t *vv;
+        if ((vv = json_object_get(v, "shape"))) {
+            const char *shape = json_string_value(vv);
+            if (strcmp(shape, "gmsk") == 0) {
+                shape = "gmsktx";
+            }
+            opt->modopt.shape = liquid_getopt_str2firfilt(shape);
+        } else {
+            opt->modopt.shape = LIQUID_FIRFILT_KAISER;
+        }
         if ((vv = json_object_get(v, "samples_per_symbol"))) {
             opt->modopt.samples_per_symbol = json_integer_value(vv);
         }
@@ -215,6 +224,15 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "interpolation"))) {
         json_t *vv;
+        if ((vv = json_object_get(v, "shape"))) {
+            const char *shape = json_string_value(vv);
+            if (strcmp(shape, "gmsk") == 0) {
+                shape = "gmskrx";
+            }
+            opt->demodopt.shape = liquid_getopt_str2firfilt(shape);
+        } else {
+            opt->demodopt.shape = LIQUID_FIRFILT_KAISER;
+        }
         if ((vv = json_object_get(v, "samples_per_symbol"))) {
             opt->demodopt.samples_per_symbol = json_integer_value(vv);
         }
