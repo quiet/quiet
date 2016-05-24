@@ -105,6 +105,10 @@ if(EMSCRIPTEN)
 else() # EMSCRIPTEN
 add_custom_target(quiet-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet.h ${CMAKE_BINARY_DIR}/include/quiet.h)
 
+if (PORTAUDIO)
+  add_custom_target(quiet-portaudio-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet-portaudio.h ${CMAKE_BINARY_DIR}/include/quiet-portaudio.h)
+endif()
+
 add_custom_target(quiet-profiles ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/quiet-profiles.json ${CMAKE_BINARY_DIR}/share/quiet-profiles.json)
 
 set(buildable_programs "")
@@ -142,6 +146,7 @@ endif()
 add_custom_target(programs DEPENDS ${buildable_programs})
 
 install(FILES ${CMAKE_BINARY_DIR}/share/quiet-profiles.json DESTINATION ${QUIET_PROFILES_LOCATION})
+install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
 install(TARGETS quiet_encode_soundcard quiet_encode_file
                 quiet_decode_soundcard quiet_decode_file
                 quiet quiet_static
