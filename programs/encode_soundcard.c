@@ -66,7 +66,7 @@ int main(int argc, char **argv) {
     fclose(input);
     free(encodeopt);
 
-    PaTerminate();
+    Pa_Terminate();
 
     return code;
 }

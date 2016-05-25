@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
     fclose(output);
     free(decodeopt);
 
-    PaTerminate();
+    Pa_Terminate();
 
     return code;
 }
