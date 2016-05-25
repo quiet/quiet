@@ -69,7 +69,6 @@ void quiet_portaudio_decoder_disable_stats(quiet_portaudio_decoder *d) {
 void quiet_portaudio_decoder_destroy(quiet_portaudio_decoder *d) {
     Pa_StopStream(d->stream);
     Pa_CloseStream(d->stream);
-    Pa_Terminate();
 
     quiet_decoder_destroy(d->dec);
     free(d->sample_buffer);

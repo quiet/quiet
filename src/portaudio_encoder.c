@@ -74,7 +74,6 @@ ssize_t quiet_portaudio_encoder_emit(portaudio_encoder *enc) {
 void quiet_portaudio_encoder_destroy(portaudio_encoder *enc) {
     Pa_StopStream(enc->stream);
     Pa_CloseStream(enc->stream);
-    Pa_Terminate();
 
     free(enc->sample_buffer);
     free(enc->mono_buffer);
