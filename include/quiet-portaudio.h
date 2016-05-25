@@ -6,7 +6,7 @@
 struct quiet_portaudio_encoder;
 typedef struct quiet_portaudio_encoder quiet_portaudio_encoder;
 
-quiet_portaudio_encoder *quiet_portaudio_encoder_create(quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size);
+quiet_portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size);
 
 size_t quiet_portaudio_encoder_get_frame_len(const quiet_portaudio_encoder *e);
 

@@ -1,6 +1,6 @@
 #include "quiet/portaudio_encoder.h"
 
-portaudio_encoder *quiet_portaudio_encoder_create(quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size) {
+portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size) {
     size_t num_channels = 2;
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     unsigned int desired_sample_rate = deviceInfo->defaultSampleRate;
