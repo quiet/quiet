@@ -22,6 +22,13 @@ typedef struct {
     size_t stride;
 } gmsk_encoder;
 
+typedef enum {
+    frame_no_replay,
+    frame_flush,
+    frame_pause,
+    frame_replay,
+} frame_replay_t;
+
 struct quiet_encoder {
     encoder_options opt;
     union {
@@ -45,6 +52,8 @@ struct quiet_encoder {
     ring *buf;
     uint8_t *tempframe;
     uint8_t *readframe;
+    size_t readframelen;
+    frame_replay_t replay;
 };
 
 static void encoder_ofdm_create(const encoder_options *opt, encoder *e);

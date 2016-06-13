@@ -55,6 +55,10 @@ ssize_t quiet_portaudio_encoder_send(portaudio_encoder *enc, uint8_t *buf, size_
     return quiet_encoder_send(enc->enc, buf, len);
 }
 
+void quiet_portaudio_encoder_replay_frame(quiet_portaudio_encoder *enc) {
+    quiet_encoder_replay_frame(enc->enc);
+}
+
 ssize_t quiet_portaudio_encoder_emit(portaudio_encoder *enc) {
     memset(enc->sample_buffer, 0, enc->sample_buffer_size * enc->num_channels * sizeof(quiet_sample_t));
     memset(enc->mono_buffer, 0, enc->sample_buffer_size * sizeof(quiet_sample_t));

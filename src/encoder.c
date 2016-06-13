@@ -118,6 +118,9 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     e->buf = ring_create(encoder_default_buffer_len);
     e->tempframe = malloc(sizeof(size_t) + e->opt.frame_len);
     e->readframe = malloc(e->opt.frame_len);
+    e->readframelen = 0;
+
+    e->replay = frame_no_replay;
 
     return e;
 }
@@ -171,6 +174,9 @@ size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
 }
 
 static int encoder_is_assembled(encoder *e) {
+    if (e->replay == frame_flush) {
+        return false;
+    }
     switch (e->opt.encoding) {
     case ofdm_encoding:
         return ofdmflexframegen_is_assembled(e->frame.ofdm.framegen);
@@ -204,35 +210,55 @@ ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len) {
     return written - sizeof(size_t);
 }
 
+void quiet_encoder_replay_frame(encoder *e) {
+    // TODO figure out right state if frame clamping is engaged
+    e->replay = frame_flush;
+}
+
 static bool encoder_read_next_frame(encoder *e) {
-    size_t framelen;
-    if (ring_read(e->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+    if (e->replay == frame_flush) {
+        e->replay = frame_pause;
         return false;
     }
-    if (ring_read(e->buf, e->readframe, framelen) < 0) {
-        assert(false && "ring buffer failed: frame not written atomically?");
+
+    if (e->replay == frame_pause) {
+        e->replay = frame_replay;
+        return false;
+    }
+
+    if (e->replay == frame_no_replay) {
+        size_t framelen;
+        if (ring_read(e->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+            return false;
+        }
+        if (ring_read(e->buf, e->readframe, framelen) < 0) {
+            // assert(false && "ring buffer failed: frame not written atomically?");
+            assert(false);
+        }
+        e->readframelen = framelen;
     }
 
     switch (e->opt.encoding) {
     case ofdm_encoding:
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, NULL, e->readframe,
-                                  framelen);
+                                  e->readframelen);
         break;
     case modem_encoding:
         flexframegen_assemble(e->frame.modem.framegen, NULL, e->readframe,
-                              framelen);
+                              e->readframelen);
         e->frame.modem.symbols_remaining =
             flexframegen_getframelen(e->frame.modem.framegen);
         break;
     case gmsk_encoding:
         gmskframegen_reset(e->frame.gmsk.framegen);
         gmskframegen_assemble(e->frame.gmsk.framegen, NULL, e->readframe,
-                              framelen, e->opt.checksum_scheme,
+                              e->readframelen, e->opt.checksum_scheme,
                               e->opt.inner_fec_scheme, e->opt.outer_fec_scheme);
         break;
     }
 
     e->has_flushed = false;
+    e->replay = frame_no_replay;
     return true;
 }
 

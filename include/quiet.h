@@ -712,6 +712,12 @@ size_t quiet_encoder_get_frame_len(const quiet_encoder *e);
  */
 size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
 
+/* On next call to emit, flush the current frame
+ * On the call after that, replay the current frame from the beginning
+ * This can be useful if a collision requires resending of frame
+ */
+void quiet_encoder_replay_frame(quiet_encoder *e);
+
 /* Destroy encoder
  * @e encoder object
  *
