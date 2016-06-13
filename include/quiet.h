@@ -775,6 +775,8 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len);
  */
 void quiet_decoder_consume(quiet_decoder *d, const quiet_sample_t *samplebuf, size_t sample_len);
 
+bool quiet_decoder_frame_in_progress(quiet_decoder *d);
+
 /* Flush existing state through decoder
  * @d decoder object
  *

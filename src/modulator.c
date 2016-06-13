@@ -85,7 +85,7 @@ size_t modulator_flush_sample_len(modulator *m) {
         return 0;
     }
 
-    return m->opt.samples_per_symbol * (2 * m->opt.symbol_delay + 50);
+    return m->opt.samples_per_symbol * (2 * m->opt.symbol_delay);
 }
 
 size_t modulator_flush(modulator *m, sample_t *samples) {
@@ -97,7 +97,7 @@ size_t modulator_flush(modulator *m, sample_t *samples) {
         return 0;
     }
 
-    size_t symbol_len = 2 * m->opt.symbol_delay + 50;
+    size_t symbol_len = 2 * m->opt.symbol_delay;
     float complex terminate[symbol_len];
     for (size_t i = 0; i < symbol_len; i++) {
         terminate[i] = 0;

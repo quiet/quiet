@@ -9,8 +9,11 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
         return 1;
     }
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
+    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
+    double sample_rate = deviceInfo->defaultSampleRate;
+    PaTime latency = deviceInfo->defaultLowInputLatency;
 
-    quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, 16384);
+    quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, latency, sample_rate, 16384);
 
     size_t write_buffer_size = 16384;
     uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));

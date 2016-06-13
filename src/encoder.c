@@ -91,7 +91,9 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
 
     e->mod = modulator_create(&(opt->modopt));
 
-    e->samplebuf_cap = modulator_sample_len(e->mod, e->symbolbuf_len);
+    size_t emit_len = modulator_sample_len(e->mod, e->symbolbuf_len);
+    size_t flush_len = modulator_flush_sample_len(e->mod);
+    e->samplebuf_cap = (emit_len > flush_len) ? emit_len : flush_len;
     e->samplebuf = malloc(e->samplebuf_cap * sizeof(sample_t));
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;

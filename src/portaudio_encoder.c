@@ -1,20 +1,18 @@
 #include "quiet/portaudio_encoder.h"
 
-portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size) {
+portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
     size_t num_channels = 2;
-    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
-    unsigned int desired_sample_rate = deviceInfo->defaultSampleRate;
     PaStreamParameters param = {
         .device = device,
         .channelCount = num_channels,
         .sampleFormat = paFloat32,
-        .suggestedLatency = deviceInfo->defaultHighOutputLatency,
+        .suggestedLatency = latency,
         .hostApiSpecificStreamInfo = NULL,
     };
 
     PaError err;
     PaStream *stream;
-    err = Pa_OpenStream(&stream, NULL, &param, desired_sample_rate,
+    err = Pa_OpenStream(&stream, NULL, &param, sample_rate,
                         sample_buffer_size, paNoFlag, NULL, NULL);
     if (err != paNoError) {
         printf("failed to open port audio stream, %s\n", Pa_GetErrorText(err));
@@ -58,17 +56,29 @@ ssize_t quiet_portaudio_encoder_send(portaudio_encoder *enc, uint8_t *buf, size_
 }
 
 ssize_t quiet_portaudio_encoder_emit(portaudio_encoder *enc) {
+    memset(enc->sample_buffer, 0, enc->sample_buffer_size * enc->num_channels * sizeof(quiet_sample_t));
+    memset(enc->mono_buffer, 0, enc->sample_buffer_size * sizeof(quiet_sample_t));
     ssize_t written = quiet_encoder_emit(enc->enc, enc->mono_buffer, enc->sample_buffer_size);
-    for (size_t i = 0; i < written; i++) {
+    for (size_t i = 0; i < enc->sample_buffer_size; i++) {
         enc->sample_buffer[enc->num_channels * i] = enc->mono_buffer[i];
     }
     PaError err;
-    err = Pa_WriteStream(enc->stream, enc->sample_buffer, written);
+    err = Pa_WriteStream(enc->stream, enc->sample_buffer, enc->sample_buffer_size);
     if (err != paNoError) {
         printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
         return -1;
     }
     return written;
+}
+
+void quiet_portaudio_encoder_emit_empty(portaudio_encoder *enc) {
+    memset(enc->sample_buffer, 0, enc->sample_buffer_size * enc->num_channels * sizeof(quiet_sample_t));
+    PaError err;
+    err = Pa_WriteStream(enc->stream, enc->sample_buffer, enc->sample_buffer_size);
+    if (err != paNoError) {
+        printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
+        return;
+    }
 }
 
 void quiet_portaudio_encoder_destroy(portaudio_encoder *enc) {

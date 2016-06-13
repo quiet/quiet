@@ -334,6 +334,20 @@ void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_
     }
 }
 
+bool quiet_decoder_frame_in_progress(decoder *d) {
+    switch (d->opt.encoding) {
+    case ofdm_encoding:
+        return ofdmflexframesync_is_frame_open(d->frame.ofdm.framesync);
+        break;
+    case modem_encoding:
+        return flexframesync_is_frame_open(d->frame.modem.framesync);
+        break;
+    case gmsk_encoding:
+        return gmskframesync_is_frame_open(d->frame.gmsk.framesync);
+        break;
+    }
+}
+
 void quiet_decoder_flush(decoder *d) {
     if (!d) {
         return;

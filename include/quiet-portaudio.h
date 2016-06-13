@@ -6,7 +6,7 @@
 struct quiet_portaudio_encoder;
 typedef struct quiet_portaudio_encoder quiet_portaudio_encoder;
 
-quiet_portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size);
+quiet_portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size);
 
 size_t quiet_portaudio_encoder_get_frame_len(const quiet_portaudio_encoder *e);
 
@@ -16,17 +16,21 @@ ssize_t quiet_portaudio_encoder_send(quiet_portaudio_encoder *enc, uint8_t *buf,
 
 ssize_t quiet_portaudio_encoder_emit(quiet_portaudio_encoder *enc);
 
+void quiet_portaudio_encoder_emit_empty(quiet_portaudio_encoder *enc);
+
 void quiet_portaudio_encoder_destroy(quiet_portaudio_encoder *enc);
 
 // Sound decoder
 struct quiet_portaudio_decoder;
 typedef struct quiet_portaudio_decoder quiet_portaudio_decoder;
 
-quiet_portaudio_decoder *quiet_portaudio_decoder_create(const quiet_decoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size);
+quiet_portaudio_decoder *quiet_portaudio_decoder_create(const quiet_decoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size);
 
 ssize_t quiet_portaudio_decoder_recv(quiet_portaudio_decoder *d, uint8_t *data, size_t len);
 
 void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d);
+
+bool quiet_portaudio_decoder_frame_in_progress(quiet_portaudio_decoder *d);
 
 unsigned int quiet_portaudio_decoder_checksum_fails(const quiet_portaudio_decoder *d);
 

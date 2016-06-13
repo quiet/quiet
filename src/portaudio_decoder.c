@@ -1,17 +1,15 @@
 #include "quiet/portaudio_decoder.h"
 
-portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, PaDeviceIndex device, size_t sample_buffer_size) {
+portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
     PaStream *stream;
-    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
-    unsigned int desired_sample_rate = deviceInfo->defaultSampleRate;
     PaStreamParameters param = {
         .device = device,
         .channelCount = 1,
         .sampleFormat = paFloat32,
-        .suggestedLatency = deviceInfo->defaultHighInputLatency,
+        .suggestedLatency = latency,
         .hostApiSpecificStreamInfo = NULL,
     };
-    PaError err = Pa_OpenStream(&stream, &param, NULL, desired_sample_rate,
+    PaError err = Pa_OpenStream(&stream, &param, NULL, sample_rate,
                         sample_buffer_size, paNoFlag, NULL, NULL);
     if (err != paNoError) {
         printf("failed to open port audio stream, %s\n", Pa_GetErrorText(err));
@@ -48,6 +46,10 @@ void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
         return;
     }
     quiet_decoder_consume(d->dec, d->sample_buffer, d->sample_buffer_size);
+}
+
+bool quiet_portaudio_decoder_frame_in_progress(quiet_portaudio_decoder *d) {
+    return quiet_decoder_frame_in_progress(d->dec);
 }
 
 unsigned int quiet_portaudio_decoder_checksum_fails(const quiet_portaudio_decoder *d) {

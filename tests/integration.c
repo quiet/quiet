@@ -43,12 +43,12 @@ int test_payload(const char *profile_name,
                  const uint8_t *payload, size_t payload_len,
                  unsigned int encode_rate, unsigned int decode_rate,
                  bool do_clamp) {
-    fseek(profiles_f, 0, 0);
+    fseek(profiles_f, 0, SEEK_SET);
     quiet_encoder_options *encodeopt =
         quiet_encoder_profile_file(profiles_f, profile_name);
     quiet_encoder *e = quiet_encoder_create(encodeopt, encode_rate);
 
-    fseek(profiles_f, 0, 0);
+    fseek(profiles_f, 0, SEEK_SET);
     quiet_decoder_options *decodeopt =
         quiet_decoder_profile_file(profiles_f, profile_name);
     quiet_decoder *d = quiet_decoder_create(decodeopt, decode_rate);
@@ -120,7 +120,7 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
         }
         for (size_t j = 0; j < do_close_frame_len; j++) {
             printf("    payload_len=%6zu, close_frame=%s... ",
-                   payload_len, (do_close_frame[j]?" true":"false"));
+                   payload_len, (do_close_frame[j] ? " true":"false"));
             if (test_payload(profile, payload, payload_len,
                              encode_rate, decode_rate, do_close_frame[j])) {
                 printf("FAILED\n");
@@ -135,7 +135,7 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
 
 int test_sample_rate_pair(unsigned int encode_rate, unsigned int decode_rate) {
     size_t num_profiles;
-    fseek(profiles_f, 0, 0);
+    fseek(profiles_f, 0, SEEK_SET);
     char **profiles = quiet_profile_keys_file(profiles_f, &num_profiles);
     for (size_t i = 0; i < num_profiles; i++) {
         const char *profile = profiles[i];
