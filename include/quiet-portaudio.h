@@ -1,6 +1,6 @@
 #if QUIET_PORTAUDIO
 #include <quiet.h>
-#include <PortAudio.h>
+#include <portaudio.h>
 
 // Sound encoder
 struct quiet_portaudio_encoder;
