@@ -102,7 +102,7 @@ int main(int argc, char **argv) {
 
     decode_wav(output, "encoded.wav", decodeopt);
 
-    fclose(payload);
+    fclose(output);
     free(decodeopt);
 
     return 0;
