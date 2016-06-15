@@ -77,7 +77,6 @@ int decode_wav(FILE *payload, const char *wav_fname,
     free(buf);
     quiet_decoder_destroy(d);
     wav_close(wav);
-    fclose(payload);
     return 0;
 }
 
@@ -103,6 +102,7 @@ int main(int argc, char **argv) {
 
     decode_wav(output, "encoded.wav", decodeopt);
 
+    fclose(payload);
     free(decodeopt);
 
     return 0;

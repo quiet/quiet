@@ -79,7 +79,6 @@ int encode_to_wav(FILE *payload, const char *out_fname,
     free(readbuf);
     free(samplebuf);
     wav_close(wav);
-    fclose(payload);
     return 0;
 }
 
