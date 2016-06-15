@@ -44,7 +44,7 @@ else()
 endif()
 
 
-set(CORE_DEPENDENCIES liquid jansson)
+set(CORE_DEPENDENCIES liquid jansson m)
 
 find_library(LIQUID liquid REQUIRED)
 if (LIQUID)
