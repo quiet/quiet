@@ -25,7 +25,7 @@ endif()
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99 -Wpedantic -Werror -Wall -D_XOPEN_SOURCE=700")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -D_XOPEN_SOURCE=700")
 set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/encoder.c src/profile.c)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
@@ -35,18 +35,20 @@ if (HAVE_STDATOMIC_H)
   add_definitions(-DLOCKABLE_RING_BUFFER=1)
   add_definitions(-DRING_ATOMIC=1)
   set(SRCFILES ${SRCFILES} src/ring_atomic.c)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
 else()
   add_definitions(-DLOCKABLE_RING_BUFFER=0)
   add_definitions(-DRING_ATOMIC=0)
   set(SRCFILES ${SRCFILES} src/ring.c)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
 
 
-set(CORE_DEPENDENCIES LIQUID JANSSON)
+set(CORE_DEPENDENCIES liquid jansson)
 
 find_library(LIQUID liquid REQUIRED)
 if (LIQUID)
-    check_library_exists(LIQUID flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
+    check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
     if(NOT LIQUID_DEVEL_FUNCTIONS)
         unset(LIQUID_DEVEL_FUNCTIONS CACHE)
         message(FATAL_ERROR "
@@ -79,7 +81,7 @@ find_library(PORTAUDIO portaudio)
 if (PORTAUDIO)
   set(SRCFILES ${SRCFILES} src/portaudio_encoder.c src/portaudio_decoder.c)
   add_definitions(-DQUIET_PORTAUDIO=1)
-  set(CORE_DEPENDENCIES ${CORE_DEPENDENCIES} PORTAUDIO)
+  set(CORE_DEPENDENCIES ${CORE_DEPENDENCIES} portaudio)
 else()
     unset(PORTAUDIO CACHE)
     message(WARNING "
@@ -116,11 +118,11 @@ set(buildable_programs "")
 find_library(SNDFILE sndfile)
 if (SNDFILE)
     add_executable(quiet_encode_file programs/encode_file.c)
-    target_link_libraries(quiet_encode_file quiet_static SNDFILE)
+    target_link_libraries(quiet_encode_file quiet_static sndfile)
     set(buildable_programs ${buildable_programs} quiet_encode_file)
 
     add_executable(quiet_decode_file programs/decode_file.c)
-    target_link_libraries(quiet_decode_file quiet_static SNDFILE)
+    target_link_libraries(quiet_decode_file quiet_static sndfile)
     set(buildable_programs ${buildable_programs} quiet_decode_file)
 else()
     unset(SNDFILE CACHE)
@@ -147,8 +149,7 @@ add_custom_target(programs DEPENDS ${buildable_programs})
 
 install(FILES ${CMAKE_BINARY_DIR}/share/quiet-profiles.json DESTINATION ${QUIET_PROFILES_LOCATION})
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include)
-install(TARGETS quiet_encode_soundcard quiet_encode_file
-                quiet_decode_soundcard quiet_decode_file
+install(TARGETS ${buildable_programs}
                 quiet quiet_static
         RUNTIME DESTINATION bin
         LIBRARY DESTINATION lib
