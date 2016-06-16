@@ -1,10 +1,14 @@
 #ifndef QUIET_H
 #define QUIET_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <complex.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
@@ -471,19 +475,8 @@ typedef struct {
  * single frame. The frame may have been detected but failed to
  * pass checksum or may have been successfully received.
  */
-typedef struct {
-    // Raw symbols, in complex plane, as seen after decimation and downmixing
-    const float complex *symbols;
-    size_t num_symbols;
-
-    // Magnitude of vector from received symbols to reference symbols, in dB
-    float error_vector_magnitude;
-
-    // Power level of received signal after decimation and downmixing, in dB
-    float received_signal_strength_indicator;
-
-    bool checksum_passed;
-} quiet_decoder_frame_stats;
+struct quiet_decoder_frame_stats;
+typedef struct quiet_decoder_frame_stats quiet_decoder_frame_stats;
 
 /* cldoc:end-category() */
 /* cldoc:begin-category(profile) */
@@ -847,4 +840,9 @@ void quiet_decoder_disable_stats(quiet_decoder *d);
  * functions on the decoder.
  */
 void quiet_decoder_destroy(quiet_decoder *d);
+
+#ifdef __cplusplus
+} //extern "C"
+#endif // __cplusplus
+
 #endif

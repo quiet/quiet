@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <complex.h>
 
 #include "quiet/common.h"
 #include "quiet/demodulator.h"
@@ -15,6 +16,20 @@ typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
 typedef struct { flexframesync framesync; } modem_decoder;
 
 typedef struct { gmskframesync framesync; } gmsk_decoder;
+
+struct quiet_decoder_frame_stats {
+    // Raw symbols, in complex plane, as seen after decimation and downmixing
+    const float complex *symbols;
+    size_t num_symbols;
+
+    // Magnitude of vector from received symbols to reference symbols, in dB
+    float error_vector_magnitude;
+
+    // Power level of received signal after decimation and downmixing, in dB
+    float received_signal_strength_indicator;
+
+    bool checksum_passed;
+};
 
 enum { num_frames_stats = 8 };
 
