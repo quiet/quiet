@@ -21,14 +21,18 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
     if (d->stats_enabled) {
         size_t stats_index = d->num_frames_collected;
         if (stats_index < num_frames_stats) {
-            float complex *sym = d->stats_symbols[stats_index];
+            quiet_complex *sym = d->stats_symbols[stats_index];
             size_t sym_cap = d->stats_symbol_caps[stats_index];
 
             if (sym_cap < stats.num_framesyms) {
-                d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(float complex));
+                d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(quiet_complex));
                 d->stats_symbol_caps[stats_index] = stats.num_framesyms;
             }
-            memcpy(d->stats_symbols[stats_index], stats.framesyms, stats.num_framesyms * sizeof(float complex));
+
+            for (size_t i = 0; i < stats.num_framesyms; i++) {
+                d->stats_symbols[stats_index][i].real = crealf(stats.framesyms[i]);
+                d->stats_symbols[stats_index][i].imaginary = cimagf(stats.framesyms[i]);
+            }
 
             quiet_decoder_frame_stats *fstats = d->stats + stats_index;
 

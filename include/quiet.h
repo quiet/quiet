@@ -1,10 +1,14 @@
 #ifndef QUIET_H
 #define QUIET_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <complex.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
@@ -465,6 +469,11 @@ typedef struct {
     bool is_debug;
 } quiet_decoder_options;
 
+typedef struct {
+    float real;
+    float imaginary;
+} quiet_complex;
+
 /* Decoder frame stats
  *
  * This contains information about the decoding process related to a
@@ -473,7 +482,7 @@ typedef struct {
  */
 typedef struct {
     // Raw symbols, in complex plane, as seen after decimation and downmixing
-    const float complex *symbols;
+    const quiet_complex *symbols;
     size_t num_symbols;
 
     // Magnitude of vector from received symbols to reference symbols, in dB
@@ -847,4 +856,9 @@ void quiet_decoder_disable_stats(quiet_decoder *d);
  * functions on the decoder.
  */
 void quiet_decoder_destroy(quiet_decoder *d);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif
