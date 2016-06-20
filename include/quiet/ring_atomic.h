@@ -1,4 +1,3 @@
-
 #include <stddef.h>
 #include <stdint.h>
 #include <unistd.h>
@@ -17,7 +16,6 @@ typedef struct {
     pthread_mutex_t reader_mutex;
     pthread_mutex_t writer_mutex;
 } ring;
-
 
 ring *ring_create(size_t length);
 void ring_destroy(ring *r);

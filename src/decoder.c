@@ -81,7 +81,7 @@ static void decoder_ofdm_create(const decoder_options *opt, decoder *d) {
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
     d->symbolbuf = malloc(symbolbuf_len *
-                          sizeof(float complex));  // XXX check malloc result
+                          sizeof(float complex));
     d->symbolbuf_len = symbolbuf_len;
 
     free(subcarriers);
@@ -123,10 +123,6 @@ static void decoder_gmsk_create(const decoder_options *opt, decoder *d) {
 }
 
 decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
-    if (!opt) {
-        return NULL;
-    }
-
     decoder *d = malloc(sizeof(decoder));
 
     d->opt = *opt;

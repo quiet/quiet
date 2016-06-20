@@ -4,13 +4,13 @@
 encoder_options *encoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
-        printf("failed to access profile %s\n", profilename);
+        quiet_set_last_error(quiet_profile_missing_key);
         return NULL;
     }
 
     encoder_options *opt = calloc(1, sizeof(encoder_options));
     if (!opt) {
-        printf("allocation of encoder_options failed\n");
+        quiet_set_last_error(quiet_mem_fail);
         return NULL;
     }
 
@@ -41,7 +41,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "ofdm"))) {
         if (opt->encoding == gmsk_encoding) {
-            printf("gmsk cannot be used with ofdm, profile invalid\n");
+            quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;
         }
         json_t *vv;
@@ -71,7 +71,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "gain"))) {
             float gain = json_number_value(vv);
             if (gain < 0 || gain > 0.5) {
-                printf("gain must be between 0 and 0.5, is %f\n", gain);
+                quiet_set_last_error(quiet_profile_invalid_profile);
                 return NULL;
             }
             opt->modopt.gain = gain;
@@ -130,7 +130,7 @@ encoder_options *quiet_encoder_profile_file(FILE *f, const char *profilename) {
     json_t *root = json_loadf(f, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -145,7 +145,7 @@ encoder_options *quiet_encoder_profile_filename(const char *fname,
     json_t *root = json_load_file(fname, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -160,7 +160,7 @@ encoder_options *quiet_encoder_profile_str(const char *input,
     json_t *root = json_loads(input, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -172,13 +172,13 @@ encoder_options *quiet_encoder_profile_str(const char *input,
 decoder_options *decoder_profile(json_t *root, const char *profilename) {
     json_t *profile = json_object_get(root, profilename);
     if (!profile) {
-        printf("failed to access profile %s\n", profilename);
+        quiet_set_last_error(quiet_profile_missing_key);
         return NULL;
     }
 
     decoder_options *opt = calloc(1, sizeof(decoder_options));
     if (!opt) {
-        printf("allocation of decoder_options failed\n");
+        quiet_set_last_error(quiet_mem_fail);
         return NULL;
     }
     json_t *v;
@@ -194,7 +194,7 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "ofdm"))) {
         if (opt->encoding == gmsk_encoding) {
-            printf("gmsk cannot be used with ofdm, profile invalid\n");
+            quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;
         }
         json_t *vv;
@@ -269,7 +269,7 @@ decoder_options *quiet_decoder_profile_file(FILE *f, const char *profilename) {
     json_t *root = json_loadf(f, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -284,7 +284,7 @@ decoder_options *quiet_decoder_profile_filename(const char *fname,
     json_t *root = json_load_file(fname, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -299,7 +299,7 @@ decoder_options *quiet_decoder_profile_str(const char *input,
     json_t *root = json_loads(input, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -333,7 +333,7 @@ char **quiet_profile_keys_file(FILE *f, size_t *size) {
     json_t *root = json_loadf(f, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -347,7 +347,7 @@ char **quiet_profile_keys_filename(const char *filename, size_t *size) {
     json_t *root = json_load_file(filename, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 
@@ -361,7 +361,7 @@ char **quiet_profile_keys_str(const char *input, size_t *size) {
     json_t *root = json_loads(input, 0, &error);
 
     if (!root) {
-        printf("failed to read profiles\n");
+        quiet_set_last_error(quiet_profile_malformed_json);
         return NULL;
     }
 

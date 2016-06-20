@@ -12,6 +12,16 @@ extern "C" {
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
+typedef enum {
+    quiet_mem_fail,
+    quiet_encoder_bad_config,
+    quiet_profile_malformed_json,
+    quiet_profile_missing_key,
+    quiet_profile_invalid_profile,
+} quiet_error;
+
+quiet_error quiet_get_last_error();
+
 /* cldoc:begin-category(options) */
 
 /* DC-blocking filter options

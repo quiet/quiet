@@ -1,10 +1,6 @@
 #include "quiet/common.h"
 
 modulator *modulator_create(const modulator_options *opt) {
-    if (!opt) {
-        return NULL;
-    }
-
     modulator *m = malloc(sizeof(modulator));
 
     m->opt = *opt;

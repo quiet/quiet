@@ -64,12 +64,8 @@ void encoder_gmsk_create(const encoder_options *opt, encoder *e) {
 }
 
 encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
-    if (!opt) {
-        return NULL;
-    }
-
     if (opt->modopt.gain < 0 || opt->modopt.gain > 0.5) {
-        printf("gain must be between 0 and 0.5, is %f\n", opt->modopt.gain);
+        quiet_set_last_error(quiet_encoder_bad_config);
         return NULL;
     }
 

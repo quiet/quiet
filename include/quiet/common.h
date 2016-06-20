@@ -5,6 +5,7 @@
 #include <math.h>
 
 #include "quiet.h"
+#include "quiet/error.h"
 
 #include <liquid/liquid.h>
 

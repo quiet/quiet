@@ -1,4 +1,4 @@
-#include "quiet/common.h"
+#include "quiet/demodulator.h"
 
 demodulator *demodulator_create(const demodulator_options *opt) {
     if (!opt) {
@@ -32,7 +32,7 @@ size_t demodulator_recv(demodulator *d, const sample_t *samples, size_t sample_l
     }
 
     if (sample_len % d->opt.samples_per_symbol != 0) {
-        printf("must receive multiple of samples_per_symbol samples");
+        assert(false && "libquiet: demodulator must receive multiple of samples_per_symbol samples");
         return 0;
     }
 

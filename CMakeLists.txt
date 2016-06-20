@@ -26,9 +26,10 @@ endif()
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -D_XOPEN_SOURCE=700")
-set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/encoder.c src/profile.c)
+set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/encoder.c src/profile.c src/error.c)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+add_definitions(-DQUIET_PTHREAD_ERROR=1)
 
 check_include_files(stdatomic.h HAVE_STDATOMIC_H)
 if (HAVE_STDATOMIC_H)
