@@ -91,10 +91,20 @@ int main(int argc, char **argv) {
         output = stdout;
     } else {
         output = fopen(argv[2], "wb");
+        if (!output) {
+            fprintf(stderr, "failed to open %s: ", argv[2]);
+            perror(NULL);
+            exit(1);
+        }
     }
 
     quiet_decoder_options *decodeopt =
         quiet_decoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+
+    if (!decodeopt) {
+        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        exit(1);
+    }
 
 #ifdef QUIET_DEBUG
     decodeopt->is_debug = true;

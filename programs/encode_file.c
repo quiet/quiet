@@ -93,10 +93,20 @@ int main(int argc, char **argv) {
         input = stdin;
     } else {
         input = fopen(argv[2], "rb");
+        if (!input) {
+            fprintf(stderr, "failed to open %s: ", argv[2]);
+            perror(NULL);
+            exit(1);
+        }
     }
 
     quiet_encoder_options *encodeopt =
         quiet_encoder_profile_filename(QUIET_PROFILES_LOCATION, argv[1]);
+
+    if (!encodeopt) {
+        printf("failed to read profile %s from %s\n", argv[1], QUIET_PROFILES_LOCATION);
+        exit(1);
+    }
 
     encode_to_wav(input, "encoded.wav", encodeopt);
 
