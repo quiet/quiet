@@ -4,7 +4,7 @@ include(CheckLibraryExists)
 include(CheckIncludeFiles)
 
 set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/share/quiet/")
-add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}/quiet-profiles.json")
+add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}quiet-profiles.json")
 
 if (EMSCRIPTEN)
   set(CMAKE_LIBRARY_PATH ${CMAKE_LIBRARY_PATH} "$ENV{EMSCRIPTEN}/system/local/lib/")
