@@ -38,7 +38,7 @@ struct quiet_decoder {
     uint8_t *writeframe;
     size_t writeframe_len;
     quiet_decoder_frame_stats stats[num_frames_stats];
-    float complex *stats_symbols[num_frames_stats];
+    quiet_complex *stats_symbols[num_frames_stats];
     size_t stats_symbol_caps[num_frames_stats];
     size_t num_frames_collected;
     bool stats_enabled;
