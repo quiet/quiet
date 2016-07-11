@@ -118,12 +118,13 @@ set(buildable_programs "")
 
 find_library(SNDFILE sndfile)
 if (SNDFILE)
+    find_package (Threads)
     add_executable(quiet_encode_file programs/encode_file.c)
-    target_link_libraries(quiet_encode_file quiet_static sndfile)
+    target_link_libraries(quiet_encode_file quiet_static sndfile ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_encode_file)
 
     add_executable(quiet_decode_file programs/decode_file.c)
-    target_link_libraries(quiet_decode_file quiet_static sndfile)
+    target_link_libraries(quiet_decode_file quiet_static sndfile ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_decode_file)
 else()
     unset(SNDFILE CACHE)
@@ -137,12 +138,13 @@ from building its file generating programs. you can get libsndfile from
 endif()
 
 if (PORTAUDIO)
+    find_package (Threads)
     add_executable(quiet_encode_soundcard programs/encode_soundcard.c)
-    target_link_libraries(quiet_encode_soundcard quiet_static)
+    target_link_libraries(quiet_encode_soundcard quiet_static ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_encode_soundcard)
 
     add_executable(quiet_decode_soundcard programs/decode_soundcard.c)
-    target_link_libraries(quiet_decode_soundcard quiet_static)
+    target_link_libraries(quiet_decode_soundcard quiet_static ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_decode_soundcard)
 endif()
 
