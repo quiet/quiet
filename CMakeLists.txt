@@ -31,21 +31,22 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 add_definitions(-DQUIET_PTHREAD_ERROR=1)
 
+set(CORE_DEPENDENCIES liquid jansson m)
+
 check_include_files(stdatomic.h HAVE_STDATOMIC_H)
 if (HAVE_STDATOMIC_H)
   add_definitions(-DLOCKABLE_RING_BUFFER=1)
   add_definitions(-DRING_ATOMIC=1)
   set(SRCFILES ${SRCFILES} src/ring_atomic.c)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c11")
+  find_package(Threads)
+  set(CORE_DEPENDENCIES "${CORE_DEPENDENCIES} ${CMAKE_THREAD_LIBS_INIT}")
 else()
   add_definitions(-DLOCKABLE_RING_BUFFER=0)
   add_definitions(-DRING_ATOMIC=0)
   set(SRCFILES ${SRCFILES} src/ring.c)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
-
-
-set(CORE_DEPENDENCIES liquid jansson m)
 
 find_library(LIQUID liquid REQUIRED)
 if (LIQUID)
