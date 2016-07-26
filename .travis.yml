@@ -1,4 +1,5 @@
 language: c
+dist: trusty
 install:
     - git clone https://github.com/quiet/libfec.git && cd libfec && ./configure && make && sudo make install
     - git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch && cd liquid-dsp && aclocal -I./scripts && autoconf && autoheader && ./configure && make && sudo make install
