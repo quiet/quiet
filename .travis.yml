@@ -1,7 +1,7 @@
 language: c
 install:
     - git clone https://github.com/quiet/libfec.git && cd libfec && ./configure && make && sudo make install
-    - git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch && cd liquid-dsp && ./bootstrap.sh && ./configure && make && sudo make install
+    - git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch && cd liquid-dsp && aclocal && autoconf && autoheader && ./configure && make && sudo make install
     - wget http://www.digip.org/jansson/releases/jansson-2.7.tar.gz && tar -xzvf jansson-2.7.tar.gz && cd jansson-2.7 && ./configure && make && sudo make install
 script:
     - ./bootstrap
