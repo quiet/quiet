@@ -17,6 +17,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -42,6 +43,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 2,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -56,7 +58,7 @@
     "gmsk": {
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "v27",
-        "outer_fec_scheme": "rs8",
+        "outer_fec_scheme": "none",
         "mod_scheme": "gmsk",
         "frame_length": 25,
         "modulation": {
@@ -64,6 +66,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
@@ -89,6 +92,7 @@
             "gain": 0.15
         },
         "interpolation": {
+            "shape": "kaiser",
             "samples_per_symbol": 10,
             "symbol_delay": 4,
             "excess_bandwidth": 0.35
