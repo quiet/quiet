@@ -168,12 +168,16 @@ add_custom_target(test-profiles COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_
 add_custom_target(cp-test-profiles DEPENDS test-profiles)
 add_dependencies(integration_test_runner cp-test-profiles)
 
-add_executable(test_ring_atomic EXCLUDE_FROM_ALL tests/ring_atomic.c src/ring_atomic.c)
-set_target_properties(test_ring_atomic PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
-add_test(NAME ring_atomic_test WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/tests" COMMAND test_ring_atomic)
+set(TEST_RUNNERS integration_test_runner)
 
+if (HAVE_STDATOMIC_H)
+  add_executable(test_ring_atomic EXCLUDE_FROM_ALL tests/ring_atomic.c src/ring_atomic.c)
+  set_target_properties(test_ring_atomic PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
+  add_test(NAME ring_atomic_test WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/tests" COMMAND test_ring_atomic)
+  set(TEST_RUNNERS ${TEST_RUNNERS} test_ring_atomic)
+endif()
 
-add_custom_target(test_runners DEPENDS integration_test_runner test_ring_atomic)
+add_custom_target(test_runners DEPENDS ${TEST_RUNNERS})
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_runners)
 enable_testing()
 endif() # EMSCRIPTEN
