@@ -5,7 +5,7 @@ install:
     - git clone https://github.com/quiet/libfec.git && cd libfec && ./configure && make && sudo make install
     - git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch && cd liquid-dsp && aclocal -I./scripts && autoconf && autoheader && ./configure && make && sudo make install
     - wget http://www.digip.org/jansson/releases/jansson-2.7.tar.gz && tar -xzvf jansson-2.7.tar.gz && cd jansson-2.7 && ./configure && make && sudo make install
-    - ldconfig
+    - sudo ldconfig
 script:
     - cd $TRAVIS_BUILD_DIR && ./bootstrap
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
