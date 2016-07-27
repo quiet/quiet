@@ -1,6 +1,7 @@
 [Quiet](https://github.com/quiet/quiet/)
-[![Build Status](https://travis-ci.org/quiet/quiet.svg?branch=master)](https://travis-ci.org/quiet/quiet)
 ===========
+[![Build Status](https://travis-ci.org/quiet/quiet.svg?branch=master)](https://travis-ci.org/quiet/quiet)
+
 
 **[Documentation](http://quiet.github.io/quiet/)**
 
