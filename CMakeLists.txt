@@ -172,6 +172,7 @@ set(TEST_RUNNERS integration_test_runner)
 
 if (HAVE_STDATOMIC_H)
   add_executable(test_ring_atomic EXCLUDE_FROM_ALL tests/ring_atomic.c src/ring_atomic.c)
+  target_link_libraries(test_ring_atomic ${CMAKE_THREAD_LIBS_INIT})
   set_target_properties(test_ring_atomic PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
   add_test(NAME ring_atomic_test WORKING_DIRECTORY "${CMAKE_BINARY_DIR}/tests" COMMAND test_ring_atomic)
   set(TEST_RUNNERS ${TEST_RUNNERS} test_ring_atomic)
