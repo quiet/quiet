@@ -8,4 +8,6 @@ install:
     - sudo ldconfig
 script:
     - cd $TRAVIS_BUILD_DIR && ./bootstrap
+    - sudo modprobe snd-aloop
+    - cp ./.travis/.asoundrc ~/.asoundrc
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE

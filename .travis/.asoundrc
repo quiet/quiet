@@ -1,0 +1,31 @@
+# default device
+pcm.!default {
+    type plug
+    slave.pcm "loop"
+}
+
+# output device
+pcm.loopout {
+    type dmix
+    ipc_key 328211
+    slave.pcm "hw:Loopback,0,0"
+}
+
+# input device
+pcm.loopin {
+    type dsnoop
+    ipc_key 686592
+    slave.pcm "hw:Loopback,1,0"
+}
+
+# duplex plug device
+pcm.loop {
+    type plug
+    slave {
+      pcm {
+         type asym
+         playback.pcm "loopout"
+         capture.pcm "loopin"
+      }
+    }
+}
