@@ -11,3 +11,8 @@ script:
     - sudo modprobe snd-aloop
     - cp ./.travis/.asoundrc ~/.asoundrc
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
+    - cd build && sudo make install
+    - quiet_decode_soundcard audible > README.md.decoded &
+    - quiet_encode_soundcard audible README.md
+    - diff README.md.decoded README.md
+    - killall -9 quiet_decode_soundcard
