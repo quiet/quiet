@@ -9,6 +9,7 @@ install:
     - sudo ldconfig
 script:
     - cd $TRAVIS_BUILD_DIR && ./bootstrap
+    - whoami
     - sudo usermod -a -G audio travis
     - sudo modprobe snd-aloop index=0 pcm_substreams=1
     - cp ./.travis/.asoundrc ~/.asoundrc
