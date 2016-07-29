@@ -27,6 +27,7 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
                 break;
             }
             fwrite(write_buffer, 1, read, output);
+            fflush(output);
         }
     }
 
