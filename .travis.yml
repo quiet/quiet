@@ -14,6 +14,7 @@ script:
     - sudo usermod -a -G sound travis
     - sudo modprobe snd-aloop index=0 pcm_substreams=1
     - cp ./.travis/.asoundrc ~/.asoundrc
+    - cat /proc/asound/cards
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
