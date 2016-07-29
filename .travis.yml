@@ -10,17 +10,13 @@ install:
 script:
     - cd $TRAVIS_BUILD_DIR && ./bootstrap
     - sudo usermod -a -G audio travis
-    - su travis
     - sudo modprobe snd-aloop index=0 pcm_substreams=1
     - cp ./.travis/.asoundrc ~/.asoundrc
-    - cat /proc/asound/cards
-    - ls -al /dev/snd
-    - aplay -l
-    - alsamixer
+    - sg audio -c alsamixer
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
-    - quiet_decode_soundcard audible > README.md.decoded &
-    - quiet_encode_soundcard audible README.md
+    - sg audio -c "quiet_decode_soundcard audible > README.md.decoded" &
+    - sg audio -c "quiet_encode_soundcard audible README.md"
     - diff README.md.decoded README.md
     - killall -9 quiet_decode_soundcard
