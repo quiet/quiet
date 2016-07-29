@@ -15,6 +15,7 @@ script:
     - cat /proc/asound/cards
     - ls -al /dev/snd
     - aplay -l
+    - alsamixer
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
