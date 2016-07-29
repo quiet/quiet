@@ -64,7 +64,9 @@ ssize_t quiet_portaudio_encoder_emit(portaudio_encoder *enc) {
     }
     PaError err;
     err = Pa_WriteStream(enc->stream, enc->sample_buffer, enc->sample_buffer_size);
-    if (err != paNoError) {
+    if (err == paOutputUnderflowed) {
+        printf("output audio stream underflowed\n");
+    } else if (err != paNoError) {
         printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
         return -1;
     }
@@ -75,7 +77,9 @@ void quiet_portaudio_encoder_emit_empty(portaudio_encoder *enc) {
     memset(enc->sample_buffer, 0, enc->sample_buffer_size * enc->num_channels * sizeof(quiet_sample_t));
     PaError err;
     err = Pa_WriteStream(enc->stream, enc->sample_buffer, enc->sample_buffer_size);
-    if (err != paNoError) {
+    if (err == paOutputUnderflowed) {
+        printf("output audio stream underflowed\n");
+    } else if (err != paNoError) {
         printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
         return;
     }
