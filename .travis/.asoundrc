@@ -21,7 +21,6 @@ pcm.loopin {
 # duplex plug device
 pcm.loop {
     type plug
-    card 0
     slave {
       pcm {
          type asym
