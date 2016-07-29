@@ -27,4 +27,4 @@ script:
     - killall arecord
     - diff README.md.decoded README.md
     - sndfile-info recorded.wav
-    - quiet_decode_file recorded.wav
+    - quiet_decode_file audible recorded.wav
