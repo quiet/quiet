@@ -6,7 +6,7 @@ install:
     - git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch && cd liquid-dsp && aclocal -I./scripts && autoconf && autoheader && ./configure && make && sudo make install
     - wget http://www.digip.org/jansson/releases/jansson-2.7.tar.gz && tar -xzvf jansson-2.7.tar.gz && cd jansson-2.7 && ./configure && make && sudo make install
     - wget http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz && tar -xzvf pa_stable_v19_20140130.tgz && cd portaudio && ./configure && make && sudo make install
-    - wget http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.27.tar.gz && tar -xzvf libsndfile-1.0.27.tar.gz && cd libsndfile && ./configure && make && sudo make install
+    - wget http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.27.tar.gz && tar -xzvf libsndfile-1.0.27.tar.gz && cd libsndfile-1.0.27 && ./configure && make && sudo make install
     - sudo ldconfig
 script:
     - cd $TRAVIS_BUILD_DIR && ./bootstrap
