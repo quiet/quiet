@@ -21,7 +21,7 @@ script:
     - make programs && sudo make install
     - cd ..
     - sg audio -c "arecord -r 44100 -f FLOAT_LE recorded.wav &"
-    - sg audio -c "quiet_decode_soundcard audible > README.md.decoded" &
+    - sg audio -c "quiet_decode_soundcard audible - > README.md.decoded" &
     - sg audio -c "quiet_encode_soundcard audible README.md"
     - killall quiet_decode_soundcard
     - killall arecord
