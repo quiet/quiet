@@ -20,10 +20,11 @@ script:
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
-    - sg audio -c "arecord recorded.wav &"
+    - sg audio -c "arecord -r 44100 -f FLOAT_LE recorded.wav &"
     - sg audio -c "quiet_decode_soundcard audible > README.md.decoded" &
     - sg audio -c "quiet_encode_soundcard audible README.md"
     - killall quiet_decode_soundcard
     - killall arecord
     - diff README.md.decoded README.md
     - sndfile-info recorded.wav
+    - quiet_decode_file recorded.wav
