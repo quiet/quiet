@@ -15,6 +15,7 @@ script:
     - sudo service alsa-utils stop
     - sudo alsa force-reload
     - sudo service alsa-utils start
+    - sg audio -c "amixer set Master 50%"
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
