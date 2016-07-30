@@ -8,16 +8,16 @@ install:
     - wget http://www.portaudio.com/archives/pa_stable_v19_20140130.tgz && tar -xzvf pa_stable_v19_20140130.tgz && cd portaudio && ./configure && make && sudo make install
     - wget http://www.mega-nerd.com/libsndfile/files/libsndfile-1.0.27.tar.gz && tar -xzvf libsndfile-1.0.27.tar.gz && cd libsndfile-1.0.27 && ./configure && make && sudo make install
     - sudo ldconfig
-script:
-    - cd $TRAVIS_BUILD_DIR && ./bootstrap
     - sudo usermod -a -G audio travis
     - sudo modprobe snd-aloop index=1 pcm_substreams=1
     - cp ./.travis/.asoundrc ~/.asoundrc
     - sudo alsa force-reload
+script:
+    - cd $TRAVIS_BUILD_DIR && ./bootstrap
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
-    - sg audio -c "quiet_decode_soundcard audible > README.md.decoded &"
+    - sg audio -c "quiet_decode_soundcard audible README.md.decoded &"
     - sg audio -c "quiet_encode_soundcard audible README.md"
     - sleep 2
     - killall quiet_decode_soundcard

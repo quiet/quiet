@@ -1,6 +1,14 @@
 #include <string.h>
+#include <signal.h>
 
 #include "quiet-portaudio.h"
+
+static bool should_terminate = false;
+
+static void sig_handler(int signal) {
+    should_terminate = true;
+}
+
 
 int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     PaError err = Pa_Initialize();
@@ -18,18 +26,14 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
 
     size_t write_buffer_size = 16384;
     uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));
-    bool done = false;
 
-    while (!done) {
-
-        for (;;) {
-            quiet_portaudio_decoder_consume(d);
-            ssize_t read = quiet_portaudio_decoder_recv(d, write_buffer, write_buffer_size);
-            if (read < 0) {
-                break;
-            }
-            fwrite(write_buffer, 1, read, output);
+    while (!should_terminate) {
+        quiet_portaudio_decoder_consume(d);
+        ssize_t read = quiet_portaudio_decoder_recv(d, write_buffer, write_buffer_size);
+        if (read < 0) {
+            break;
         }
+        fwrite(write_buffer, 1, read, output);
     }
 
     free(write_buffer);
@@ -63,6 +67,9 @@ int main(int argc, char **argv) {
             exit(1);
         }
     }
+
+    signal(SIGINT, sig_handler);
+    signal(SIGTERM, sig_handler);
 
     int code = decode_from_soundcard(output, decodeopt);
 
