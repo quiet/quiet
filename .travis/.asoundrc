@@ -11,7 +11,6 @@ pcm.loopout {
     slave {
         pcm "hw:Loopback,0,0"
         period_size 8192
-        rate 44100
     }
 }
 
@@ -22,7 +21,6 @@ pcm.loopin {
     slave {
         pcm "hw:Loopback,1,0"
         period_size 8192
-        rate 44100
     }
 }
 
@@ -34,7 +32,6 @@ pcm.loop {
          type asym
          playback.pcm "loopout"
          capture.pcm "loopin"
-         rate 44100
       }
     }
 }
