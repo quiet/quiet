@@ -8,6 +8,13 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
         printf("failed to initialize port audio, %s\n", Pa_GetErrorText(err));
         return 1;
     }
+
+    int num_devices = Pa_GetDeviceCount();
+    for (int i = 0; i < num_devices; i++) {
+        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
+        printf("%d: %s\n", i, deviceInfo->name);
+    }
+
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     double sample_rate = deviceInfo->defaultSampleRate;
@@ -28,7 +35,6 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
             }
             printf("writing data\n");
             fwrite(write_buffer, 1, read, output);
-            fflush(output);
         }
     }
 
