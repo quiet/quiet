@@ -24,6 +24,7 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     while (!done) {
 
         for (;;) {
+            quiet_portaudio_decoder_consume(d);
             ssize_t read = quiet_portaudio_decoder_recv(d, write_buffer, write_buffer_size);
             if (read < 0) {
                 break;
