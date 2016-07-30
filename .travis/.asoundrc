@@ -34,6 +34,7 @@ pcm.loop {
          type asym
          playback.pcm "loopout"
          capture.pcm "loopin"
+         rate 44100
       }
     }
 }
