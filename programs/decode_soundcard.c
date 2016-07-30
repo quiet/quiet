@@ -9,14 +9,7 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
         return 1;
     }
 
-    int num_devices = Pa_GetDeviceCount();
-    for (int i = 0; i < num_devices; i++) {
-        const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(i);
-        printf("%d: %s\n", i, deviceInfo->name);
-    }
-
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
-    device = 5;
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     double sample_rate = deviceInfo->defaultSampleRate;
     PaTime latency = deviceInfo->defaultLowInputLatency;
