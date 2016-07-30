@@ -44,17 +44,11 @@ ssize_t quiet_portaudio_decoder_recv(quiet_portaudio_decoder *d, uint8_t *data, 
 void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
     PaError err = Pa_ReadStream(d->stream, d->sample_buffer, d->sample_buffer_size);
     if (err != paNoError) {
-        printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
+        printf("failed to read port audio stream, %s\n", Pa_GetErrorText(err));
         return;
     }
     for (size_t i = 0; i < d->sample_buffer_size; i++) {
-        if (d->sample_buffer[i] > 0.001) {
-            printf("saw nonzero sample\n");
-            break;
-        }
-    }
-    for (size_t i = 0; i < d->sample_buffer_size; i++) {
-        d->mono_buffer[i] = d->sample_buffer[i * 2];
+        d->mono_buffer[i] = d->sample_buffer[i * 2] + d->sample_buffer[i * 2 + 1];
     }
     quiet_decoder_consume(d->dec, d->mono_buffer, d->sample_buffer_size);
 }

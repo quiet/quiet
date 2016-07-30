@@ -29,7 +29,6 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
             if (read < 0) {
                 break;
             }
-            printf("writing data\n");
             fwrite(write_buffer, 1, read, output);
         }
     }
