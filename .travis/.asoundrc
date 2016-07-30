@@ -8,14 +8,20 @@ pcm.!default {
 pcm.loopout {
     type dmix
     ipc_key 328211
-    slave.pcm "hw:Loopback,0,0"
+    slave {
+        pcm "hw:Loopback,0,0"
+        period_size 8192
+    }
 }
 
 # input device
 pcm.loopin {
     type dsnoop
     ipc_key 686592
-    slave.pcm "hw:Loopback,1,0"
+    slave {
+        pcm "hw:Loopback,1,0"
+        period_size 8192
+    }
 }
 
 # duplex plug device
