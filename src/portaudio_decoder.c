@@ -45,6 +45,12 @@ void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
         printf("failed to write to port audio stream, %s\n", Pa_GetErrorText(err));
         return;
     }
+    for (size_t i = 0; i < d->sample_buffer_size; i++) {
+        if (d->sample_buffer[i] > 0.001) {
+            printf("saw nonzero sample\n");
+            break;
+        }
+    }
     quiet_decoder_consume(d->dec, d->sample_buffer, d->sample_buffer_size);
 }
 
