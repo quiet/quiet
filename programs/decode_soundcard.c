@@ -12,7 +12,6 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     PaDeviceIndex device = Pa_GetDefaultInputDevice();
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     double sample_rate = deviceInfo->defaultSampleRate;
-    printf("starting device %s with %d channels at sample rate %f\n", deviceInfo->name, deviceInfo->maxInputChannels, deviceInfo->defaultSampleRate);
     PaTime latency = deviceInfo->defaultLowInputLatency;
 
     quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, latency, sample_rate, 16384);
