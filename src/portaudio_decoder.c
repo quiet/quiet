@@ -4,7 +4,7 @@ portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, Pa
     PaStream *stream;
     PaStreamParameters param = {
         .device = device,
-        .channelCount = 1,
+        .channelCount = 2,
         .sampleFormat = paFloat32,
         .suggestedLatency = latency,
         .hostApiSpecificStreamInfo = NULL,
@@ -25,11 +25,13 @@ portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, Pa
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
     decoder *d = quiet_decoder_create(opt, info->sampleRate);
 
-    quiet_sample_t *sample_buffer = malloc(sample_buffer_size * sizeof(quiet_sample_t));
+    quiet_sample_t *sample_buffer = malloc(2 * sample_buffer_size * sizeof(quiet_sample_t));
+    quiet_sample_t *mono_buffer = malloc(sample_buffer_size * sizeof(quiet_sample_t));
     portaudio_decoder *decoder = malloc(1 * sizeof(portaudio_decoder));
     decoder->dec = d;
     decoder->stream = stream;
     decoder->sample_buffer = sample_buffer;
+    decoder->mono_buffer = mono_buffer;
     decoder->sample_buffer_size = sample_buffer_size;
 
     return decoder;
@@ -51,7 +53,10 @@ void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
             break;
         }
     }
-    quiet_decoder_consume(d->dec, d->sample_buffer, d->sample_buffer_size);
+    for (size_t i = 0; i < d->sample_buffer_size; i++) {
+        d->mono_buffer[i] = d->sample_buffer[i * 2];
+    }
+    quiet_decoder_consume(d->dec, d->mono_buffer, d->sample_buffer_size);
 }
 
 bool quiet_portaudio_decoder_frame_in_progress(quiet_portaudio_decoder *d) {
@@ -80,6 +85,7 @@ void quiet_portaudio_decoder_destroy(quiet_portaudio_decoder *d) {
 
     quiet_decoder_destroy(d->dec);
     free(d->sample_buffer);
+    free(d->mono_buffer);
     free(d);
 }
 
