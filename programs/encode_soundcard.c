@@ -1,5 +1,6 @@
 #include <math.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "quiet-portaudio.h"
 
@@ -41,6 +42,8 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
             written = quiet_portaudio_encoder_emit(e);
         }
     }
+
+    sleep(1);
 
     free(read_buffer);
 
