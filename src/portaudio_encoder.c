@@ -86,6 +86,9 @@ void quiet_portaudio_encoder_emit_empty(portaudio_encoder *enc) {
 }
 
 void quiet_portaudio_encoder_destroy(portaudio_encoder *enc) {
+    for (int i = 0; i < 3; i++) {
+        quiet_portaudio_encoder_emit_empty(enc);
+    }
     Pa_StopStream(enc->stream);
     Pa_CloseStream(enc->stream);
 
