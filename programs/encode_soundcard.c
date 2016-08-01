@@ -43,6 +43,8 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
         }
     }
 
+    quiet_portaudio_encoder_emit_empty(e);
+
     free(read_buffer);
 
     quiet_portaudio_encoder_destroy(e);
