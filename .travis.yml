@@ -19,7 +19,7 @@ script:
     - cd ..
     - sg audio -c "quiet_decode_soundcard audible README.md.decoded &"
     - sg audio -c "quiet_encode_soundcard audible README.md"
-    - sleep 3
+    - sleep 5
     - killall quiet_decode_soundcard
     - sleep 1
     - diff README.md.decoded README.md
