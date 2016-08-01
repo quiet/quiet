@@ -17,9 +17,11 @@ script:
     - cd build && make check CTEST_OUTPUT_ON_FAILURE=TRUE
     - make programs && sudo make install
     - cd ..
-    - sg audio -c "quiet_decode_soundcard audible README.md.decoded &"
+    - sg audio -c "quiet_decode_soundcard audible README.md.soundcard &"
     - sg audio -c "quiet_encode_soundcard audible README.md"
     - sleep 6
     - killall quiet_decode_soundcard
     - sleep 1
-    - diff README.md.decoded README.md
+    - quiet_encode_file audible README.md
+    - quiet_decode_file audible README.md.file
+    - diff --from-file=README.md README.md.soundcard README.md.file
