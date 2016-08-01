@@ -10,7 +10,7 @@ pcm.loopout {
     ipc_key 328211
     slave {
         pcm "hw:Loopback,0,0"
-        period_size 16384
+        period_size 4096
     }
 }
 
@@ -20,7 +20,7 @@ pcm.loopin {
     ipc_key 686592
     slave {
         pcm "hw:Loopback,1,0"
-        period_size 16384
+        period_size 4096
     }
 }
 
