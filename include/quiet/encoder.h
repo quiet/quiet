@@ -4,6 +4,8 @@
 #include "quiet/modulator.h"
 #if RING_ATOMIC
 #include "quiet/ring_atomic.h"
+#elif RING_BLOCKING
+#include "quiet/ring_blocking.h"
 #else
 #include "quiet/ring.h"
 #endif
@@ -39,6 +41,7 @@ struct quiet_encoder {
     const uint8_t *payload;
     size_t payload_length;
     bool has_flushed;
+    bool is_queue_closed;
     bool is_close_frame;
     float resample_rate;
     resamp_rrrf resampler;

@@ -6,6 +6,7 @@
 
 #include "quiet.h"
 #include "quiet/error.h"
+#include "quiet/ring_common.h"
 
 #include <liquid/liquid.h>
 

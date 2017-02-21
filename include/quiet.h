@@ -9,17 +9,29 @@ extern "C" {
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
 
 typedef enum {
+    quiet_success,
     quiet_mem_fail,
     quiet_encoder_bad_config,
     quiet_profile_malformed_json,
     quiet_profile_missing_key,
     quiet_profile_invalid_profile,
+    quiet_msg_size,
+    quiet_would_block,
+    quiet_timedout,
+    quiet_io,
 } quiet_error;
 
+/* Get last error set by libquiet
+ *
+ * quiet_get_last_error retrieves the last error set. If
+ * libquiet was compiled with pthread, then this error will be specific
+ * to the thread where this is called.
+ */
 quiet_error quiet_get_last_error();
 
 /* cldoc:begin-category(options) */
@@ -679,23 +691,68 @@ typedef struct quiet_encoder quiet_encoder;
  */
 quiet_encoder *quiet_encoder_create(const quiet_encoder_options *opt, float sample_rate);
 
-
 /* Send a single frame
  * @e encoder object
  * @buf user buffer containing the frame payload
  * @len the number of bytes in buf
  *
  * quiet_encoder_send copies the frame provided by the user to an internal
- * transmit queue. This is a nonblocking call and will fail if the queue is
- * full.
+ * transmit queue. By default, this is a nonblocking call and will fail if
+ * the queue is full. However, if quiet_encoder_set_blocking has been
+ * called first, then it will wait for as much as the timeout length
+ * specified there if the frame cannot be immediately written.
  *
  * The frame provided must be no longer than the maximum frame length of the
  * encoder. If the frame is longer, it will be rejected entirely, and no data
  * will be transmitted.
  *
- * @return the number of bytes copied from the buffer, or -1 if sending failed
+ * If libquiet was built and linked with pthread, then this function may be
+ * called from any thread, and by multiple threads concurrently.
+ *
+ * quiet_encoder_send will return 0 if the queue is closed to signal EOF.
+ *
+ * quiet_encoder_send will return a negative value and set the last error
+ * to quiet_timedout if the send queue is full and no space was made before
+ * the timeout
+ *
+ * quiet_encoder_send will return a negative value and set the last error
+ * to quiet_would_block if the send queue is full and the encoder is in
+ * nonblocking mode
+ *
+ * @return the number of bytes copied from the buffer, 0 if the queue
+ * is closed, or -1 if sending failed
  */
 ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len);
+
+/* Set blocking mode of quiet_encoder_send
+ * @e encoder object
+ * @sec time_t number of seconds to block for
+ * @nano long number of nanoseconds to block for
+ *
+ * quiet_encoder_set_blocking changes the behavior of quiet_encoder_send so
+ * that it will block until a frame can be written. It will block for
+ * approximately (nano + 1000000000*sec) nanoseconds.
+ *
+ * If `sec` and `nano` are both 0, then quiet_encoder_send will block
+ * indefinitely until a frame is sent.
+ *
+ * This function is only supported on systems with pthread. Calling
+ * quiet_encoder_set_blocking on a host without pthread will assert
+ * false.
+ *
+ */
+void quiet_encoder_set_blocking(quiet_encoder *e, time_t sec, long nano);
+
+/* Set nonblocking mode of quiet_encoder_send
+ * @e encoder object
+ *
+ * quiet_encoder_set_nonblocking changes the behavior of quiet_encoder_send
+ * so that it will not block if it cannot write a frame. This function
+ * restores the default behavior after quiet_encoder_set_blocking has
+ * been called.
+ *
+ */
+void quiet_encoder_set_nonblocking(quiet_encoder *e);
 
 /* Clamp frame length to largest possible for sample length
  * @e encoder object
@@ -736,18 +793,44 @@ size_t quiet_encoder_get_frame_len(const quiet_encoder *e);
  * the configuration specified at creation. These samples can be written out
  * directly to a file or soundcard.
  *
- * If you are using a soundcard, it is recommended to use the largest block
- * size offered. Typically, this is 16384 samples. Larger block sizes will
- * help hide uneven latencies in the encoding process and ensure smoother
+ * If you are using a soundcard, you will have to carefully choose the sample
+ * size block. Typically, the largest size is 16384 samples. Larger block sizes
+ * will help hide uneven latencies in the encoding process and ensure smoother
  * transmission at the cost of longer latencies.
+ *
+ * quiet_encoder_emit may return fewer than the number of samples requested.
+ * Unlike quiet_encoder_send, quiet_encoder_emit does not block, even when
+ * blocking mode is enabled. This is because soundcard interfaces typically
+ * require realtime sample generation.
+ *
+ * If quiet_encoder_emit returns 0, then the transmit queue is closed and
+ * empty, and no future calls to quiet_encoder_emit will retrieve any more
+ * samples.
  *
  * @return the number of samples written to samplebuf, which shall never
  *  exceed samplebuf_len. If the returned number of samples written is less
  *  than samplebuf_len, then the encoder has finished encoding the payload
  *  (its transmit queue is empty and all state has been flushed out). The user
  *  should 0-fill any remaining length if the block is to be transmitted.
+ *
+ *  If quiet_encoder_emit returns a negative length, then it will set the
+ *  quiet error. Most commonly, this will happen when the transmit queue
+ *  is empty and there are no frames ready to send, but the queue is still
+ *  open. If and only if the queue is *closed* and has been completely read,
+ *  quiet_encoder_emit will return 0 to signal EOF.
  */
-size_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
+ssize_t quiet_encoder_emit(quiet_encoder *e, quiet_sample_t *samplebuf, size_t samplebuf_len);
+
+/* Close encoder
+ * @e encoder object
+ *
+ * quiet_encoder_close closes the encoder object. This has the effect of
+ * rejecting any future calls to quiet_encoder_send. Any previously queued
+ * frames will be written by quiet_encoder_emit. Once the send queue is empty,
+ * quiet_encoder_emit will set last error to quiet_closed.
+ *
+ */
+void quiet_encoder_close(quiet_encoder *e);
 
 /* Destroy encoder
  * @e encoder object
@@ -781,9 +864,11 @@ quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt, float samp
  * @data user buffer which quiet will write received frame into
  * @len length of user-supplied buffer
  *
- * quiet_decoder_recv reads one frame from the decoder's receive buffer. This
- * is a nonblocking call and will fail quickly if no frames are ready to
- * be received.
+ * quiet_decoder_recv reads one frame from the decoder's receive buffer. By
+ * default, this is a nonblocking call and will fail quickly if no frames are
+ * ready to be received. However, if quiet_decoder_set_blocking is called
+ * prior to this call, then it will wait for as much as the timeout specified
+ * there until it can read a frame.
  *
  * If the user's supplied buffer is smaller than the length of the received
  * frame, then only `len` bytes will be copied to `data`. The remaining bytes
@@ -791,9 +876,54 @@ quiet_decoder *quiet_decoder_create(const quiet_decoder_options *opt, float samp
  *
  * This function will never return frames for which the checksum has failed.
  *
- * @return number of bytes written to buffer, -1 if no frames available
+ * If libquiet was built and linked with pthread, then this function may be
+ * called from any thread, and by multiple threads concurrently.
+ *
+ * quiet_decoder_recv will return 0 if the decoder has been closed and the
+ * receive queue is empty.
+ *
+ * quiet_decoder_recv will return a negative value and set the last error
+ * to quiet_timedout if blocking mode is enabled and no frame could be read
+ * before the timeout.
+ *
+ * quiet_decoder_recv will return a negative value and set the last error
+ * to quiet_would_block if nonblocking mode is enabled and no frame was
+ * available.
+ *
+ * @return number of bytes written to buffer, 0 at EOF, or -1 if no frames
+ * available
  */
 ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len);
+
+/* Set blocking mode of quiet_decoder_recv
+ * @d decoder object
+ * @sec time_t number of seconds to block for
+ * @nano long number of nanoseconds to block for
+ *
+ * quiet_decoder_set_blocking changes the behavior of quiet_decoder_recv so
+ * that it will block until a frame can be read. It will block for
+ * approximately (nano + 1000000000*sec) nanoseconds.
+ *
+ * If `sec` and `nano` are both 0, then quiet_decoder_recv will block
+ * indefinitely until a frame is received.
+ *
+ * This function is only supported on systems with pthread. Calling
+ * quiet_decoder_set_blocking on a host without pthread will assert
+ * false.
+ *
+ */
+void quiet_decoder_set_blocking(quiet_decoder *d, time_t sec, long nano);
+
+/* Set nonblocking mode of quiet_decoder_recv
+ * @d decoder object
+ *
+ * quiet_decoder_set_nonblocking changes the behavior of quiet_decoder_recv
+ * so that it will not block if it cannot read a frame. This function
+ * restores the default behavior after quiet_decoder_set_blocking has
+ * been called.
+ *
+ */
+void quiet_decoder_set_nonblocking(quiet_decoder *d);
 
 /* Feed received sound samples to decoder
  * @d decoder object
@@ -812,6 +942,23 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len);
  */
 void quiet_decoder_consume(quiet_decoder *d, const quiet_sample_t *samplebuf, size_t sample_len);
 
+/* Check if a frame is likely being received
+ * @d decoder object
+ *
+ * quiet_decoder_frame_in_progress determines if a frame is likely in the
+ * process of being received. It inspects information in the decoding process
+ * and will be relevant to the last call to quiet_decoder_consume. There
+ * is no guarantee of accuracy from this function, and both false-negatives
+ * and false-positives can occur.
+ *
+ * The output of this function can be useful to avoid collisions when two
+ * pairs of encoders/decoders share the same channel, e.g. in half-duplex.
+ *
+ * This function must be called from the same thread which calls
+ * quiet_decoder_consume.
+ *
+ * @return true if a frame is likely being received
+ */
 bool quiet_decoder_frame_in_progress(quiet_decoder *d);
 
 /* Flush existing state through decoder
@@ -825,6 +972,19 @@ bool quiet_decoder_frame_in_progress(quiet_decoder *d);
  * trailing samples to "push" the decoded data through the decoder's filters
  */
 void quiet_decoder_flush(quiet_decoder *d);
+
+/* Close decoder
+ * @d decoder object
+ *
+ * quiet_decoder_close closes the decoder object. Future calls to
+ * quiet_decoder_consume will still attempt the decoding process but
+ * will not enqueue any decoded frames into the receive queue, e.g.
+ * they become cpu-expensive no-ops. Any previously enqueued frames
+ * can still be read out by quiet_decoder_recv, and once the receive queue
+ * is empty, quiet_decoder_recv will set the last error to quiet_closed.
+ *
+ */
+void quiet_decoder_close(quiet_decoder *d);
 
 /* Return number of failed frames
  * @d decoder object

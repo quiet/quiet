@@ -74,6 +74,9 @@ int test_payload(const char *profile_name,
     size_t accum;
     while (written == samplebuf_len) {
         written = quiet_encoder_emit(e, samplebuf, samplebuf_len);
+        if (written <= 0) {
+            break;
+        }
         quiet_decoder_consume(d, samplebuf, written);
         if (do_clamp) {
             quiet_decoder_consume(d, silence, samplebuf_len);

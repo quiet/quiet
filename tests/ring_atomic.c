@@ -37,14 +37,12 @@ void *write_sequence(void *arg_void) {
             if (arg->multi) {
                 ring_writer_lock(buf);
             }
-            if (ring_write(buf, temp, nitems) != -1) {
-                if (arg->multi) {
-                    ring_writer_unlock(buf);
-                }
-                break;
-            }
+            ssize_t nwritten = ring_write(buf, temp, nitems);
             if (arg->multi) {
                 ring_writer_unlock(buf);
+            }
+            if (nwritten != -1) {
+                break;
             }
             usleep(10);
         }
@@ -73,14 +71,12 @@ void *read_sequence(void *arg_void) {
             if (arg->multi) {
                 ring_reader_lock(buf);
             }
-            if (ring_read(buf, temp, nitems) != -1) {
-                if (arg->multi) {
-                    ring_reader_unlock(buf);
-                }
-                break;
-            }
+            ssize_t nread = ring_read(buf, temp, nitems);
             if (arg->multi) {
                 ring_reader_unlock(buf);
+            }
+            if (nread != -1) {
+                break;
             }
             usleep(10);
         }
@@ -157,6 +153,7 @@ int main() {
     free(res_p);
 
     printf("2 reader, 2 writer test passed: %s\n", (read_sum != write_sum) ? "FALSE" : "TRUE");
+    res = res ? res : read_sum != write_sum;
 
     ring_destroy(buf);
     return res;

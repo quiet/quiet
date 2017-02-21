@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include "quiet/portaudio.h"
 
 typedef quiet_portaudio_encoder portaudio_encoder;

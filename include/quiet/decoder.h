@@ -4,6 +4,8 @@
 #include "quiet/demodulator.h"
 #if RING_ATOMIC
 #include "quiet/ring_atomic.h"
+#elif RING_BLOCKING
+#include "quiet/ring_blocking.h"
 #else
 #include "quiet/ring.h"
 #endif

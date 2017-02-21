@@ -62,7 +62,9 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
     memcpy(d->writeframe, &len, sizeof(size_t));
     memcpy(d->writeframe + (sizeof(size_t)), payload, len);
 
+    ring_writer_lock(d->buf);
     ring_write(d->buf, d->writeframe, framelen);
+    ring_writer_unlock(d->buf);
     return 0;
 }
 
@@ -194,6 +196,18 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     return d;
 }
 
+void quiet_decoder_set_blocking(quiet_decoder *d, time_t sec, long nano) {
+    ring_reader_lock(d->buf);
+    ring_set_reader_blocking(d->buf, sec, nano);
+    ring_reader_unlock(d->buf);
+}
+
+void quiet_decoder_set_nonblocking(quiet_decoder *d) {
+    ring_reader_lock(d->buf);
+    ring_set_reader_nonblocking(d->buf);
+    ring_reader_unlock(d->buf);
+}
+
 void quiet_decoder_enable_stats(quiet_decoder *d) {
     d->stats_enabled = true;
 
@@ -242,18 +256,21 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
     len = (len > framelen) ? framelen : len;
 
     if (ring_read(d->buf, data, len) < 0) {
-#if LOCKABLE_RING_BUFFER
+        // the last read we did was for the length of the frame, and
+        //   now we tried to read as many bytes as that length describes
+        // but that read failed, and the decoder writer is supposed to write
+        //   them together, so something has gone very wrong
+        // e.g. we should never see a frame length without a frame written
+        //   (the lock would be held once for both calls)
         ring_reader_unlock(d->buf);
-#endif
         assert(false && "ring buffer failed: frame not written atomically?");
+        quiet_set_last_error(quiet_io);
         return -1;
     }
 
     ring_advance_reader(d->buf, framelen - len);
 
-#if LOCKABLE_RING_BUFFER
     ring_reader_unlock(d->buf);
-#endif
     return len;
 }
 
@@ -441,6 +458,13 @@ void quiet_decoder_flush(decoder *d) {
     }
 }
 
+void quiet_decoder_close(decoder *d) {
+    ring_reader_lock(d->buf);
+    ring_close(d->buf);
+    ring_reader_unlock(d->buf);
+
+}
+
 void quiet_decoder_destroy(decoder *d) {
     if (!d) {
         return;
@@ -469,7 +493,9 @@ void quiet_decoder_destroy(decoder *d) {
         }
     }
     ring_destroy(d->buf);
-    free(d->writeframe);
+    if (d->writeframe) {
+        free(d->writeframe);
+    }
     demodulator_destroy(d->demod);
     free(d->symbolbuf);
     free(d);

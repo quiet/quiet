@@ -1,4 +1,5 @@
-#if QUIET_PORTAUDIO
+#ifndef QUIET_PORTAUDIO_H
+#define QUIET_PORTAUDIO_H
 #include <quiet.h>
 #include <portaudio.h>
 
@@ -17,6 +18,8 @@ ssize_t quiet_portaudio_encoder_send(quiet_portaudio_encoder *enc, uint8_t *buf,
 ssize_t quiet_portaudio_encoder_emit(quiet_portaudio_encoder *enc);
 
 void quiet_portaudio_encoder_emit_empty(quiet_portaudio_encoder *enc);
+
+void quiet_portaudio_encoder_close(quiet_portaudio_encoder *enc);
 
 void quiet_portaudio_encoder_destroy(quiet_portaudio_encoder *enc);
 

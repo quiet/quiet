@@ -36,14 +36,9 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
             frame_len = (frame_len > (nread - i)) ? (nread - i) : frame_len;
             quiet_portaudio_encoder_send(e, read_buffer + i, frame_len);
         }
-
-        size_t written = sample_buffer_size;
-        while (written == sample_buffer_size) {
-            written = quiet_portaudio_encoder_emit(e);
-        }
     }
 
-    quiet_portaudio_encoder_emit_empty(e);
+    quiet_portaudio_encoder_close(e);
 
     free(read_buffer);
 

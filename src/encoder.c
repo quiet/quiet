@@ -114,6 +114,7 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     e->payload = NULL;
     e->payload_length = 0;
     e->has_flushed = true;
+    e->is_queue_closed = false;
 
     e->is_close_frame = false;
 
@@ -183,6 +184,18 @@ size_t quiet_encoder_clamp_frame_len(encoder *e, size_t sample_len) {
     return frame_len;
 }
 
+void quiet_encoder_set_blocking(quiet_encoder *e, time_t sec, long nano) {
+    ring_writer_lock(e->buf);
+    ring_set_writer_blocking(e->buf, sec, nano);
+    ring_writer_unlock(e->buf);
+}
+
+void quiet_encoder_set_nonblocking(quiet_encoder *e) {
+    ring_writer_lock(e->buf);
+    ring_set_writer_nonblocking(e->buf);
+    ring_writer_unlock(e->buf);
+}
+
 static int encoder_is_assembled(encoder *e) {
     switch (e->opt.encoding) {
     case ofdm_encoding:
@@ -196,6 +209,7 @@ static int encoder_is_assembled(encoder *e) {
 
 ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len) {
     if (len > e->opt.frame_len) {
+        quiet_set_last_error(quiet_msg_size);
         return -1;
     }
 
@@ -204,44 +218,71 @@ ssize_t quiet_encoder_send(quiet_encoder *e, const void *buf, size_t len) {
     memcpy(e->tempframe, &len, sizeof(size_t));
     memcpy(e->tempframe + (sizeof(size_t)), buf, len);
 
-#if LOCKABLE_RING_BUFFER
     ring_writer_lock(e->buf);
-#endif
     ssize_t written = ring_write(e->buf, e->tempframe, sizeof(size_t) + len);
-#if LOCKABLE_RING_BUFFER
     ring_writer_unlock(e->buf);
-#endif
-    if (written == -1) {
+    if (written == 0) {
+        return 0;
+    }
+    if (written < 0) {
+        switch (written) {
+            case RingErrorWouldBlock:
+                quiet_set_last_error(quiet_would_block);
+                break;
+            case RingErrorTimedout:
+                quiet_set_last_error(quiet_timedout);
+                break;
+            default:
+                quiet_set_last_error(quiet_io);
+        }
         return -1;
     }
     return written - sizeof(size_t);
 }
 
+void quiet_encoder_close(quiet_encoder *e) {
+    ring_writer_lock(e->buf);
+    ring_close(e->buf);
+    ring_writer_unlock(e->buf);
+}
+
 static bool encoder_read_next_frame(encoder *e) {
-    size_t framelen;
-    if (ring_read(e->buf, (uint8_t*)(&framelen), sizeof(size_t)) < 0) {
+    if (e->is_queue_closed) {
         return false;
     }
-    if (ring_read(e->buf, e->readframe, framelen) < 0) {
+    size_t framelen;
+    ring_reader_lock(e->buf);
+    ssize_t nread = ring_read(e->buf, (uint8_t*)(&framelen), sizeof(size_t));
+    if (nread <= 0) {
+        ring_reader_unlock(e->buf);
+        if (nread == 0) {
+            e->is_queue_closed = true;
+        }
+        return false;
+    }
+    ssize_t read = ring_read(e->buf, e->readframe, framelen);
+    ring_reader_unlock(e->buf);
+    if (read <= 0) {
         assert(false && "ring buffer failed: frame not written atomically?");
     }
 
+    uint8_t header[1];
     switch (e->opt.encoding) {
     case ofdm_encoding:
-        ofdmflexframegen_assemble(e->frame.ofdm.framegen, NULL, e->readframe,
+        ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, e->readframe,
                                   framelen);
         break;
     case modem_encoding:
-        flexframegen_assemble(e->frame.modem.framegen, NULL, e->readframe,
+        flexframegen_assemble(e->frame.modem.framegen, header, e->readframe,
                               framelen);
         e->frame.modem.symbols_remaining =
             flexframegen_getframelen(e->frame.modem.framegen);
         break;
     case gmsk_encoding:
         gmskframegen_reset(e->frame.gmsk.framegen);
-        gmskframegen_assemble(e->frame.gmsk.framegen, NULL, e->readframe,
-                              framelen, e->opt.checksum_scheme,
-                              e->opt.inner_fec_scheme, e->opt.outer_fec_scheme);
+        gmskframegen_assemble(e->frame.gmsk.framegen, header, e->readframe,
+                              framelen, (crc_scheme)e->opt.checksum_scheme,
+                              (fec_scheme)e->opt.inner_fec_scheme, (fec_scheme)e->opt.outer_fec_scheme);
         break;
     }
 
@@ -269,8 +310,8 @@ static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
         break;
     case gmsk_encoding:
         gmskframegen_assemble(e->frame.gmsk.framegen, header, empty, data_len,
-                              e->opt.checksum_scheme, e->opt.inner_fec_scheme,
-                              e->opt.outer_fec_scheme);
+                              (crc_scheme)e->opt.checksum_scheme, (fec_scheme)e->opt.inner_fec_scheme,
+                              (fec_scheme)e->opt.outer_fec_scheme);
         num_symbols = gmskframegen_getframelen(e->frame.gmsk.framegen);
         gmskframegen_reset(e->frame.gmsk.framegen);
         break;
@@ -327,12 +368,12 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
     }
 }
 
-size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
+ssize_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len) {
     if (!e) {
         return 0;
     }
 
-    size_t written = 0;
+    ssize_t written = 0;
     bool frame_closed = false;
     while (written < samplebuf_len) {
         size_t remaining = samplebuf_len - written;
@@ -430,8 +471,13 @@ size_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len)
             samplebuf[i] = 0;
             written++;
         }
+    }
 
-        return written;
+    if (written == 0 && !e->is_queue_closed) {
+        // we only return 0 if the queue is closed
+        // here we remap to -1
+        quiet_set_last_error(quiet_would_block);
+        written = -1;
     }
 
     return written;
