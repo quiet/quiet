@@ -151,6 +151,212 @@ typedef struct {
     float center_rads;
 } quiet_demodulator_options;
 
+typedef enum quiet_checksum_schemes {
+     /* These values correspond to those used by liquid DSP */
+    // no error-detection
+    quiet_checksum_none = 1,
+    // 8-bit checksum
+    quiet_checksum_8bit,
+    // 8-bit CRC
+    quiet_checksum_crc8,
+    // 16-bit CRC
+    quiet_checksum_crc16,
+    // 24-bit CRC
+    quiet_checksum_crc24,
+    // 32-bit CRC
+    quiet_checksum_crc32,
+} quiet_checksum_scheme_t;
+
+typedef enum quiet_error_correction_schemes {
+     /* These values correspond to those used by liquid DSP */
+    // no error-correction
+    quiet_error_correction_none = 1,
+    // simple repeat code, r1/3
+    quiet_error_correction_repeat_3,
+    // simple repeat code, r1/5
+    quiet_error_correction_repeat_5,
+    // Hamming (7,4) block code, r1/2 (really 4/7)
+    quiet_error_correction_hamming_7_4,
+    // Hamming (7,4) with extra parity bit, r1/2
+    quiet_error_correction_hamming_7_4_parity,
+    // Hamming (12,8) block code, r2/3
+    quiet_error_correction_hamming_12_8,
+    // Golay (24,12) block code, r1/2
+    quiet_error_correction_golay_24_12,
+    // SEC-DED (22,16) block code, r8/11
+    quiet_error_correction_secded_22_16,
+    // SEC-DED (39,32) block code
+    quiet_error_correction_secded_39_32,
+    // SEC-DED (72,64) block code, r8/9
+    quiet_error_correction_secded_72_64,
+    // convolutional code r1/2, K=7, dfree=10
+    quiet_error_correction_conv_12_7,
+    // convolutional code r1/2, K=9, dfree=12
+    quiet_error_correction_conv_12_9,
+    // convolutional code r1/3, K=9, dfree=18
+    quiet_error_correction_conv_13_9,
+    // convolutional code 1/6, K=15, dfree<=57 (Heller 1968)
+    quiet_error_correction_conv_16_15,
+    // perforated convolutional code r2/3, K=7, dfree=6
+    quiet_error_correction_conv_perf_23_7,
+    // perforated convolutional code r3/4, K=7, dfree=5
+    quiet_error_correction_conv_perf_34_7,
+    // perforated convolutional code r4/5, K=7, dfree=4
+    quiet_error_correction_conv_perf_45_7,
+    // perforated convolutional code r5/6, K=7, dfree=4
+    quiet_error_correction_conv_perf_56_7,
+    // perforated convolutional code r6/7, K=7, dfree=3
+    quiet_error_correction_conv_perf_67_7,
+    // perforated convolutional code r7/8, K=7, dfree=3
+    quiet_error_correction_conv_perf_78_7,
+    // perforated convolutional code r2/3, K=9, dfree=7
+    quiet_error_correction_conv_perf_23_9,
+    // perforated convolutional code r3/4, K=9, dfree=6
+    quiet_error_correction_conv_perf_34_9,
+    // perforated convolutional code r4/5, K=9, dfree=5
+    quiet_error_correction_conv_perf_45_9,
+    // perforated convolutional code r5/6, K=9, dfree=5
+    quiet_error_correction_conv_perf_56_9,
+    // perforated convolutional code r6/7, K=9, dfree=4
+    quiet_error_correction_conv_perf_67_9,
+    // perforated convolutional code r7/8, K=9, dfree=4
+    quiet_error_correction_conv_perf_78_9,
+    // Reed-Solomon m=8, n=255, k=223
+    quiet_error_correction_reed_solomon_223_255
+} quiet_error_correction_scheme_t;
+
+typedef enum quiet_modulation_schemes {
+     /* These values correspond to those used by liquid DSP */
+    // phase-shift keying-2
+    quiet_modulation_psk2 = 1,
+    // phase-shift keying-4
+    quiet_modulation_psk4,
+    // phase-shift keying-8
+    quiet_modulation_psk8,
+    // phase-shift keying-16
+    quiet_modulation_psk16,
+    // phase-shift keying-32
+    quiet_modulation_psk32,
+    // phase-shift keying-64
+    quiet_modulation_psk64,
+    // phase-shift keying-128
+    quiet_modulation_psk128,
+    // phase-shift keying-256
+    quiet_modulation_psk256,
+
+    // differential phase-shift keying-2
+    quiet_modulation_dpsk2,
+    // differential phase-shift keying-4
+    quiet_modulation_dpsk4,
+    // differential phase-shift keying-8
+    quiet_modulation_dpsk8,
+    // differential phase-shift keying-16
+    quiet_modulation_dpsk16,
+    // differential phase-shift keying-32
+    quiet_modulation_dpsk32,
+    // differential phase-shift keying-64
+    quiet_modulation_dpsk64,
+    // differential phase-shift keying-128
+    quiet_modulation_dpsk128,
+    // differential phase-shift keying-256
+    quiet_modulation_dpsk256,
+
+    // amplitude-shift keying-2
+    quiet_modulation_ask2,
+    // amplitude-shift keying-4
+    quiet_modulation_ask4,
+    // amplitude-shift keying-8
+    quiet_modulation_ask8,
+    // amplitude-shift keying-16
+    quiet_modulation_ask16,
+    // amplitude-shift keying-32
+    quiet_modulation_ask32,
+    // amplitude-shift keying-64
+    quiet_modulation_ask64,
+    // amplitude-shift keying-128
+    quiet_modulation_ask128,
+    // amplitude-shift keying-256
+    quiet_modulation_ask256,
+
+    // quadrature amplitude-shift keying-4
+    quiet_modulation_qask4,
+    // quadrature amplitude-shift keying-8
+    quiet_modulation_qask8,
+    // quadrature amplitude-shift keying-16
+    quiet_modulation_qask16,
+    // quadrature amplitude-shift keying-32
+    quiet_modulation_qask32,
+    // quadrature amplitude-shift keying-64
+    quiet_modulation_qask64,
+    // quadrature amplitude-shift keying-128
+    quiet_modulation_qask128,
+    // quadrature amplitude-shift keying-256
+    quiet_modulation_qask256,
+    // quadrature amplitude-shift keying-512
+    quiet_modulation_qask512,
+    // quadrature amplitude-shift keying-1024
+    quiet_modulation_qask1024,
+    // quadrature amplitude-shift keying-2048
+    quiet_modulation_qask2048,
+    // quadrature amplitude-shift keying-4096
+    quiet_modulation_qask4096,
+    // quadrature amplitude-shift keying-8192
+    quiet_modulation_qask8192,
+    // quadrature amplitude-shift keying-16384
+    quiet_modulation_qask16384,
+    // quadrature amplitude-shift keying-32768
+    quiet_modulation_qask32768,
+    // quadrature amplitude-shift keying-65536
+    quiet_modulation_qask65536,
+
+    // amplitude phase-shift keying-4
+    quiet_modulation_apsk4,
+    // amplitude phase-shift keying-8
+    quiet_modulation_apsk8,
+    // amplitude phase-shift keying-16
+    quiet_modulation_apsk16,
+    // amplitude phase-shift keying-32
+    quiet_modulation_apsk32,
+    // amplitude phase-shift keying-64
+    quiet_modulation_apsk64,
+    // amplitude phase-shift keying-128
+    quiet_modulation_apsk128,
+    // amplitude phase-shift keying-256
+    quiet_modulation_apsk256,
+
+    // binary phase-shift keying
+    quiet_modulation_bpsk,
+
+    // quaternary phase-shift keying
+    quiet_modulation_qpsk,
+
+    // on-off keying
+    quiet_modulation_ook,
+
+    // square quadrature amplitude-shift keying-32
+    quiet_modulation_sqask32,
+
+    // square quadrature amplitude-shift keying-128
+    quiet_modulation_sqask128,
+
+    // V.29 star constellation
+    quiet_modulation_v29,
+
+    // optimal quadrature amplitude-shift keying-16
+    quiet_modulation_opt_qask16,
+    // optimal quadrature amplitude-shift keying-32
+    quiet_modulation_opt_qask32,
+    // optimal quadrature amplitude-shift keying-64
+    quiet_modulation_opt_qask64,
+    // optimal quadrature amplitude-shift keying-128
+    quiet_modulation_opt_qask128,
+    // optimal quadrature amplitude-shift keying-256
+    quiet_modulation_opt_qask256,
+
+    // Virginia Tech logo constellation
+    quiet_modulation_vtech,
+} quiet_modulation_scheme_t;
+
 /* Encoder options for OFDM
  *
  * These options configure the behavior of OFDM, orthogonal frequency division
@@ -198,7 +404,7 @@ typedef enum encodings {
      * computational capacity.
      */
     gmsk_encoding,
-} encoding_t;
+} quiet_encoding_t;
 
 /* Encoder options
  *
@@ -215,221 +421,22 @@ typedef struct {
     quiet_resampler_options resampler;
 
     // Encoder mode, one of {ofdm_encoding, modem_encoding, gmsk_encoding}
-    encoding_t encoding;
+    quiet_encoding_t encoding;
 
-    /* Numerical value for checksum scheme used to confirm integrity of frame
-     *
-     * These values correspond to those used by liquid DSP. In particular,
-     *
-     * 1: no error-detection
-     *
-     * 2: 8-bit checksum
-     *
-     * 3: 8-bit CRC
-     *
-     * 4: 16-bit CRC
-     *
-     * 5: 24-bit CRC
-     *
-     * 6: 32-bit CRC
-     *
-     * All other values invalid
-     */
-    unsigned int checksum_scheme;
+    quiet_checksum_scheme_t checksum_scheme;
+    quiet_error_correction_scheme_t inner_fec_scheme;
+    quiet_error_correction_scheme_t outer_fec_scheme;
+    quiet_modulation_scheme_t mod_scheme;
 
-    /* Numerical value for inner FEC (forward error correction) scheme
-     *
-     * These values correspond to those used by liquid DSP. In particular,
-     *
-     * 1: no error-correction
-     *
-     * 2: simple repeat code, r1/3
-     *
-     * 3: simple repeat code, r1/5
-     *
-     * 4: Hamming (7,4) block code, r1/2 (really 4/7)
-     *
-     * 5: Hamming (7,4) with extra parity bit, r1/2
-     *
-     * 6: Hamming (12,8) block code, r2/3
-     *
-     * 7: Golay (24,12) block code, r1/2
-     *
-     * 8: SEC-DED (22,16) block code, r8/11
-     *
-     * 9: SEC-DED (39,32) block code
-     *
-     * 10: SEC-DED (72,64) block code, r8/9
-     *
-     * 11: convolutional code r1/2, K=7, dfree=10
-     *
-     * 12: convolutional code r1/2, K=9, dfree=12
-     *
-     * 13; convolutional code r1/3, K=9, dfree=18
-     *
-     * 14: convolutional code 1/6, K=15, dfree<=57 (Heller 1968)
-     *
-     * 15: perforated convolutional code r2/3, K=7, dfree=6
-     *
-     * 16: perforated convolutional code r3/4, K=7, dfree=5
-     *
-     * 17: perforated convolutional code r4/5, K=7, dfree=4
-     *
-     * 18: perforated convolutional code r5/6, K=7, dfree=4
-     *
-     * 19: perforated convolutional code r6/7, K=7, dfree=3
-     *
-     * 20: perforated convolutional code r7/8, K=7, dfree=3
-     *
-     * 21: perforated convolutional code r2/3, K=9, dfree=7
-     *
-     * 22: perforated convolutional code r3/4, K=9, dfree=6
-     *
-     * 23: perforated convolutional code r4/5, K=9, dfree=5
-     *
-     * 24: perforated convolutional code r5/6, K=9, dfree=5
-     *
-     * 25: perforated convolutional code r6/7, K=9, dfree=4
-     *
-     * 26: perforated convolutional code r7/8, K=9, dfree=4
-     *
-     * 27: Reed-Solomon m=8, n=255, k=223
-     *
-     * All other values invalid
+    /* Header schemes
+     * These control the frame header properties
+     * Only used if header_override_defaults = true
      */
-    unsigned int inner_fec_scheme;
-
-    /* Numerical value for outer FEC (forward error correction) scheme
-     *
-     * This uses the same set of values as inner_fec_scheme
-     */
-    unsigned int outer_fec_scheme;
-
-    /* Numerical value for modulation scheme.
-     *
-     * This value is ignored in GMSK mode
-     *
-     * These values correspond to those used by liquid DSP. In particular,
-     *
-     * 1: phase-shift keying-2
-     *
-     * 2: phase-shift keying-4
-     *
-     * 3: phase-shift keying-8
-     *
-     * 4: phase-shift keying-16
-     *
-     * 5: phase-shift keying-32
-     *
-     * 6: phase-shift keying-64
-     *
-     * 7: phase-shift keying-128
-     *
-     * 8: phase-shift keying-256
-     *
-     * 9: differential phase-shift keying-2
-     *
-     * 10: differential phase-shift keying-4
-     *
-     * 11: differential phase-shift keying-8
-     *
-     * 12: differential phase-shift keying-16
-     *
-     * 13: differential phase-shift keying-32
-     *
-     * 14: differential phase-shift keying-64
-     *
-     * 15: differential phase-shift keying-128
-     *
-     * 16: differential phase-shift keying-256
-     *
-     * 17: amplitude-shift keying-2
-     *
-     * 18: amplitude-shift keying-4
-     *
-     * 19: amplitude-shift keying-8
-     *
-     * 20: amplitude-shift keying-16
-     *
-     * 21: amplitude-shift keying-32
-     *
-     * 22: amplitude-shift keying-64
-     *
-     * 23: amplitude-shift keying-128
-     *
-     * 24: amplitude-shift keying-256
-     *
-     * 25: quadrature amplitude-shift keying-4
-     *
-     * 26: quadrature amplitude-shift keying-8
-     *
-     * 27: quadrature amplitude-shift keying-16
-     *
-     * 28: quadrature amplitude-shift keying-32
-     *
-     * 29: quadrature amplitude-shift keying-64
-     *
-     * 30: quadrature amplitude-shift keying-128
-     *
-     * 31: quadrature amplitude-shift keying-256
-     *
-     * 32: quadrature amplitude-shift keying-512
-     *
-     * 33: quadrature amplitude-shift keying-1024
-     *
-     * 34: quadrature amplitude-shift keying-2048
-     *
-     * 35: quadrature amplitude-shift keying-4096
-     *
-     * 36: quadrature amplitude-shift keying-8192
-     *
-     * 37: quadrature amplitude-shift keying-16384
-     *
-     * 38: quadrature amplitude-shift keying-32768
-     *
-     * 39: quadrature amplitude-shift keying-65536
-     *
-     * 40: amplitude phase-shift keying-4
-     *
-     * 41: amplitude phase-shift keying-8
-     *
-     * 42: amplitude phase-shift keying-16
-     *
-     * 43: amplitude phase-shift keying-32
-     *
-     * 44: amplitude phase-shift keying-64
-     *
-     * 45: amplitude phase-shift keying-128
-     *
-     * 46: amplitude phase-shift keying-256
-     *
-     * 47: binary phase-shift keying
-     *
-     * 48: quaternary phase-shift keying
-     *
-     * 49: on-off keying
-     *
-     * 50: square quadrature amplitude-shift keying-32
-     *
-     * 51: square quadrature amplitude-shift keying-128
-     *
-     * 52: V.29 star constellation
-     *
-     * 53: optimal quadrature amplitude-shift keying-16
-     *
-     * 54: optimal quadrature amplitude-shift keying-32
-     *
-     * 55: optimal quadrature amplitude-shift keying-64
-     *
-     * 56: optimal quadrature amplitude-shift keying-128
-     *
-     * 57: optimal quadrature amplitude-shift keying-256
-     *
-     * 58: Virginia Tech logo constellation
-     *
-     * All other values invalid
-     */
-    unsigned int mod_scheme;
+    bool header_override_defaults;
+    quiet_checksum_scheme_t header_checksum_scheme;
+    quiet_error_correction_scheme_t header_inner_fec_scheme;
+    quiet_error_correction_scheme_t header_outer_fec_scheme;
+    quiet_modulation_scheme_t header_mod_scheme;
 
     /* Maximum frame length
      *
@@ -451,7 +458,8 @@ typedef struct {
  * In order for a decoder to decode the signals from an encoder, certain
  * options must match between both. In particular, the encoding mode and
  * modopt/demodopt must match. Additionally, if ofdm_encoding is used,
- * then the ofdmopt must also match.
+ * then the ofdmopt must also match. If the header options are overriden
+ * in the encoder, then they must also be overriden in the decoder.
  */
 typedef struct {
     // OFDM options, used only by OFDM mode
@@ -464,7 +472,17 @@ typedef struct {
     quiet_resampler_options resampler;
 
     // Encoder mode, one of {ofdm_encoding, modem_encoding, gmsk_encoding}
-    encoding_t encoding;
+    quiet_encoding_t encoding;
+
+    /* Header schemes
+     * These control the frame header properties
+     * Only used if header_override_defaults = true
+     */
+    bool header_override_defaults;
+    quiet_checksum_scheme_t header_checksum_scheme;
+    quiet_error_correction_scheme_t header_inner_fec_scheme;
+    quiet_error_correction_scheme_t header_outer_fec_scheme;
+    quiet_modulation_scheme_t header_mod_scheme;
 
     /*
      * Enable debug mode on receiver

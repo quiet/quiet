@@ -17,15 +17,15 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     json_t *v;
     if ((v = json_object_get(profile, "checksum_scheme"))) {
         const char *scheme = json_string_value(v);
-        opt->checksum_scheme = liquid_getopt_str2crc(scheme);
+        opt->checksum_scheme = (quiet_checksum_scheme_t)liquid_getopt_str2crc(scheme);
     }
     if ((v = json_object_get(profile, "inner_fec_scheme"))) {
         const char *scheme = json_string_value(v);
-        opt->inner_fec_scheme = liquid_getopt_str2fec(scheme);
+        opt->inner_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
     }
     if ((v = json_object_get(profile, "outer_fec_scheme"))) {
         const char *scheme = json_string_value(v);
-        opt->outer_fec_scheme = liquid_getopt_str2fec(scheme);
+        opt->outer_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
     }
     if ((v = json_object_get(profile, "mod_scheme"))) {
         const char *scheme = json_string_value(v);
@@ -33,7 +33,27 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
             opt->encoding = gmsk_encoding;
         } else {
             opt->encoding = modem_encoding; // this will be overriden later if ofdm
-            opt->mod_scheme = liquid_getopt_str2mod(scheme);
+            opt->mod_scheme = (quiet_modulation_scheme_t)liquid_getopt_str2mod(scheme);
+        }
+    }
+    if ((v = json_object_get(profile, "header"))) {
+        json_t *vv;
+        opt->header_override_defaults = true;
+        if ((vv = json_object_get(v, "checksum_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_checksum_scheme = (quiet_checksum_scheme_t)liquid_getopt_str2crc(scheme);
+        }
+        if ((vv = json_object_get(v, "inner_fec_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_inner_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
+        }
+        if ((vv = json_object_get(v, "outer_fec_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_outer_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
+        }
+        if ((vv = json_object_get(v, "mod_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_mod_scheme = (quiet_modulation_scheme_t)liquid_getopt_str2mod(scheme);
         }
     }
     if ((v = json_object_get(profile, "frame_length"))) {
@@ -41,6 +61,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
     }
     if ((v = json_object_get(profile, "ofdm"))) {
         if (opt->encoding == gmsk_encoding) {
+            free(opt);
             quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;
         }
@@ -71,6 +92,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         if ((vv = json_object_get(v, "gain"))) {
             float gain = json_number_value(vv);
             if (gain < 0 || gain > 0.5) {
+                free(opt);
                 quiet_set_last_error(quiet_profile_invalid_profile);
                 return NULL;
             }
@@ -192,8 +214,29 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
             opt->encoding = modem_encoding; // this will be overriden later if ofdm
         }
     }
+    if ((v = json_object_get(profile, "header"))) {
+        json_t *vv;
+        opt->header_override_defaults = true;
+        if ((vv = json_object_get(v, "checksum_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_checksum_scheme = (quiet_checksum_scheme_t)liquid_getopt_str2crc(scheme);
+        }
+        if ((vv = json_object_get(v, "inner_fec_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_inner_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
+        }
+        if ((vv = json_object_get(v, "outer_fec_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_outer_fec_scheme = (quiet_error_correction_scheme_t)liquid_getopt_str2fec(scheme);
+        }
+        if ((vv = json_object_get(v, "mod_scheme"))) {
+            const char *scheme = json_string_value(vv);
+            opt->header_mod_scheme = (quiet_modulation_scheme_t)liquid_getopt_str2mod(scheme);
+        }
+    }
     if ((v = json_object_get(profile, "ofdm"))) {
         if (opt->encoding == gmsk_encoding) {
+            free(opt);
             quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;
         }

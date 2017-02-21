@@ -77,6 +77,17 @@ static void decoder_ofdm_create(const decoder_options *opt, decoder *d) {
     if (opt->is_debug) {
         ofdmflexframesync_debug_enable(ofdm.framesync);
     }
+    ofdmflexframesync_decode_header_soft(ofdm.framesync, 1);
+    ofdmflexframesync_decode_payload_soft(ofdm.framesync, 1);
+    if (opt->header_override_defaults) {
+        ofdmflexframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+            .mod_scheme = opt->header_mod_scheme,
+        };
+        ofdmflexframesync_set_header_props(ofdm.framesync, &header_props);
+    }
 
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
@@ -96,6 +107,17 @@ static void decoder_modem_create(const decoder_options *opt, decoder *d) {
     flexframesync_set_header_len(modem.framesync, 0);
     if (opt->is_debug) {
         flexframesync_debug_enable(modem.framesync);
+    }
+    flexframesync_decode_header_soft(modem.framesync, 1);
+    flexframesync_decode_payload_soft(modem.framesync, 1);
+    if (opt->header_override_defaults) {
+        flexframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+            .mod_scheme = opt->header_mod_scheme,
+        };
+        flexframesync_set_header_props(modem.framesync, &header_props);
     }
 
     size_t symbolbuf_len = 256;

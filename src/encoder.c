@@ -15,6 +15,15 @@ void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
         opt->ofdmopt.num_subcarriers, opt->ofdmopt.cyclic_prefix_len,
         opt->ofdmopt.taper_len, subcarriers, &props);
     ofdmflexframegen_set_header_len(ofdm.framegen, 0);
+    if (opt->header_override_defaults) {
+        ofdmflexframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+            .mod_scheme = opt->header_mod_scheme,
+        };
+        ofdmflexframegen_set_header_props(ofdm.framegen, &header_props);
+    }
 
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
@@ -39,7 +48,15 @@ void encoder_modem_create(const encoder_options *opt, encoder *e) {
 
     modem.framegen = flexframegen_create(&props);
     flexframegen_set_header_len(modem.framegen, 0);
-
+    if (opt->header_override_defaults) {
+        flexframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+            .mod_scheme = opt->header_mod_scheme,
+        };
+        flexframegen_set_header_props(modem.framegen, &header_props);
+    }
     e->symbolbuf = NULL;
     e->symbolbuf_len = 0;
     modem.symbols_remaining = 0;
