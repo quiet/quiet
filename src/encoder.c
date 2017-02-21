@@ -321,12 +321,15 @@ static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
 }
 
 static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
+    size_t ofdmwritelen;
     switch (e->opt.encoding) {
     case ofdm_encoding:
         // ofdm can't control the size of its blocks, so it ignores
         // requested_length
-        ofdmflexframegen_writesymbol(e->frame.ofdm.framegen, e->symbolbuf);
-        return e->opt.ofdmopt.num_subcarriers + e->opt.ofdmopt.cyclic_prefix_len;
+        // XXX ofdm now can, update this to take advantage of that
+        ofdmwritelen = e->opt.ofdmopt.num_subcarriers + e->opt.ofdmopt.cyclic_prefix_len;
+        ofdmflexframegen_write(e->frame.ofdm.framegen, e->symbolbuf, ofdmwritelen);
+        return ofdmwritelen;
     case modem_encoding:
         if (requested_length > e->frame.modem.symbols_remaining) {
             requested_length = e->frame.modem.symbols_remaining;
