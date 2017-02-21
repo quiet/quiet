@@ -11,6 +11,7 @@
 #endif
 
 const size_t decoder_default_buffer_len = 1 << 16;
+const size_t decoder_default_stats_buffer_len = 1 << 16;
 
 typedef struct { ofdmflexframesync framesync; } ofdm_decoder;
 
@@ -39,6 +40,13 @@ struct quiet_decoder {
     ring *buf;
     uint8_t *writeframe;
     size_t writeframe_len;
+
+    ring *stats_ring;
+    uint8_t *stats_packed;
+    size_t stats_packed_len;
+    quiet_decoder_frame_stats *stats_unpacked;
+    size_t stats_unpacked_symbols_cap;
+
     quiet_decoder_frame_stats stats[num_frames_stats];
     quiet_complex *stats_symbols[num_frames_stats];
     size_t stats_symbol_caps[num_frames_stats];

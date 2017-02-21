@@ -1010,10 +1010,15 @@ unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d);
  * must be called on the decoder object before calling
  * quiet_decoder_consume.
  *
+ * This function must be called from the same thread that calls
+ * quiet_decoder_consume.
+ *
  * @return quiet_decoder_frame_stats which is an array of structs containing
  *  stats info, num_frames long
  */
 const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, size_t *num_frames);
+
+const quiet_decoder_frame_stats *quiet_decoder_recv_stats(quiet_decoder *d);
 
 /* Enable stats collection
  * @d decoder object
@@ -1036,6 +1041,9 @@ void quiet_decoder_enable_stats(quiet_decoder *d);
  */
 void quiet_decoder_disable_stats(quiet_decoder *d);
 
+void quiet_decoder_set_stats_blocking(quiet_decoder *d, time_t sec, long nano);
+
+void quiet_decoder_set_stats_nonblocking(quiet_decoder *d);
 /* Destroy decoder
  * @d decoder object
  *

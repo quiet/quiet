@@ -4,6 +4,110 @@ unsigned int quiet_decoder_checksum_fails(const quiet_decoder *d) {
     return d->checksum_fails;
 }
 
+static void decoder_collect_stats(decoder *d, framesyncstats_s stats, int payload_valid) {
+    size_t stats_index = d->num_frames_collected;
+    if (stats_index < num_frames_stats) {
+        quiet_complex *sym = d->stats_symbols[stats_index];
+        size_t sym_cap = d->stats_symbol_caps[stats_index];
+
+        if (sym_cap < stats.num_framesyms) {
+            d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(quiet_complex));
+            d->stats_symbol_caps[stats_index] = stats.num_framesyms;
+        }
+
+        for (size_t i = 0; i < stats.num_framesyms; i++) {
+            d->stats_symbols[stats_index][i].real = crealf(stats.framesyms[i]);
+            d->stats_symbols[stats_index][i].imaginary = cimagf(stats.framesyms[i]);
+        }
+
+        quiet_decoder_frame_stats *fstats = d->stats + stats_index;
+
+        fstats->symbols = d->stats_symbols[stats_index];
+        fstats->num_symbols = stats.num_framesyms;
+        fstats->error_vector_magnitude = stats.evm;
+        fstats->received_signal_strength_indicator = stats.rssi;
+        fstats->checksum_passed = payload_valid;
+
+        d->num_frames_collected++;
+    }
+    // length-prefixed
+    size_t write_len = sizeof(size_t);
+
+    // length-prefixed symbol section
+    // (this is slightly redundant but easier to think about)
+    write_len += sizeof(size_t);
+
+    // write all the symbols
+    write_len += stats.num_framesyms * sizeof(complex float);
+
+    // rssi and evm
+    write_len += 2 * sizeof(float);
+
+    // is payload valid?
+    write_len += sizeof(int);
+
+    ring_writer_lock(d->stats_ring);
+
+    // reserve the space we need
+    ssize_t reserved = ring_write_partial_init(d->stats_ring, write_len);
+
+    if (reserved != write_len) {
+        // bail
+        return;
+    }
+
+    // total length of what's to come
+    size_t prefix = write_len - sizeof(size_t);
+
+    ssize_t written = ring_write_partial(d->stats_ring, &prefix, sizeof(size_t));
+
+    if (written != sizeof(size_t)) {
+        assert(false && "partial write failed");
+    }
+
+    // cast this to a size_t to be consistent
+    // (liquid uses an unsigned int)
+    size_t num_framesyms = stats.num_framesyms;
+
+    written = ring_write_partial(d->stats_ring, &num_framesyms, sizeof(size_t));
+
+    if (written != sizeof(size_t)) {
+        assert(false && "partial write failed");
+    }
+
+    written = ring_write_partial(d->stats_ring, stats.framesyms, stats.num_framesyms * sizeof(complex float));
+
+    if (written != (stats.num_framesyms * sizeof(complex float))) {
+        assert(false && "partial write failed");
+    }
+
+    written = ring_write_partial(d->stats_ring, &stats.rssi, sizeof(float));
+
+    if (written != sizeof(float)) {
+        assert(false && "partial write failed");
+    }
+
+    written = ring_write_partial(d->stats_ring, &stats.evm, sizeof(float));
+
+    if (written != sizeof(float)) {
+        assert(false && "partial write failed");
+    }
+
+    written = ring_write_partial(d->stats_ring, &payload_valid, sizeof(int));
+
+    if (written != sizeof(int)) {
+        assert(false && "partial write failed");
+    }
+
+    ssize_t commit_ret = ring_write_partial_commit(d->stats_ring);
+
+    if (commit_ret) {
+        assert(false && "partial write commit failed");
+    }
+
+    ring_writer_unlock(d->stats_ring);
+}
+
 static int decoder_on_decode(unsigned char *header, int header_valid, unsigned char *payload,
                              unsigned int payload_len, int payload_valid,
                              framesyncstats_s stats, void *dvoid) {
@@ -19,31 +123,7 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
     decoder *d = dvoid;
 
     if (d->stats_enabled) {
-        size_t stats_index = d->num_frames_collected;
-        if (stats_index < num_frames_stats) {
-            quiet_complex *sym = d->stats_symbols[stats_index];
-            size_t sym_cap = d->stats_symbol_caps[stats_index];
-
-            if (sym_cap < stats.num_framesyms) {
-                d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(quiet_complex));
-                d->stats_symbol_caps[stats_index] = stats.num_framesyms;
-            }
-
-            for (size_t i = 0; i < stats.num_framesyms; i++) {
-                d->stats_symbols[stats_index][i].real = crealf(stats.framesyms[i]);
-                d->stats_symbols[stats_index][i].imaginary = cimagf(stats.framesyms[i]);
-            }
-
-            quiet_decoder_frame_stats *fstats = d->stats + stats_index;
-
-            fstats->symbols = d->stats_symbols[stats_index];
-            fstats->num_symbols = stats.num_framesyms;
-            fstats->error_vector_magnitude = stats.evm;
-            fstats->received_signal_strength_indicator = stats.rssi;
-            fstats->checksum_passed = payload_valid;
-
-            d->num_frames_collected++;
-        }
+        decoder_collect_stats(d, stats, payload_valid);
     }
 
 
@@ -192,6 +272,9 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
         d->stats_symbols[i] = NULL;
         d->stats_symbol_caps[i] = 0;
     }
+    d->stats_ring = NULL;
+    d->stats_packed = NULL;
+    d->stats_unpacked = NULL;
 
     return d;
 }
@@ -208,6 +291,22 @@ void quiet_decoder_set_nonblocking(quiet_decoder *d) {
     ring_reader_unlock(d->buf);
 }
 
+void quiet_decoder_set_stats_blocking(quiet_decoder *d, time_t sec, long nano) {
+    if (d->stats_ring) {
+        ring_reader_lock(d->stats_ring);
+        ring_set_reader_blocking(d->stats_ring, sec, nano);
+        ring_reader_unlock(d->stats_ring);
+    }
+}
+
+void quiet_decoder_set_stats_nonblocking(quiet_decoder *d) {
+    if (d->stats_ring) {
+        ring_reader_lock(d->stats_ring);
+        ring_set_reader_nonblocking(d->stats_ring);
+        ring_reader_unlock(d->stats_ring);
+    }
+}
+
 void quiet_decoder_enable_stats(quiet_decoder *d) {
     d->stats_enabled = true;
 
@@ -216,6 +315,13 @@ void quiet_decoder_enable_stats(quiet_decoder *d) {
         d->stats_symbol_caps[i] = 0;
     }
     d->num_frames_collected = 0;
+
+    d->stats_ring = ring_create(decoder_default_stats_buffer_len);
+    d->stats_packed = NULL;
+    d->stats_packed_len = 0;
+    d->stats_unpacked = malloc(sizeof(quiet_decoder_frame_stats));
+    d->stats_unpacked->symbols = NULL;
+    d->stats_unpacked_symbols_cap = 0;
 }
 
 void quiet_decoder_disable_stats(quiet_decoder *d) {
@@ -229,6 +335,26 @@ void quiet_decoder_disable_stats(quiet_decoder *d) {
         }
     }
     d->num_frames_collected = 0;
+
+    if (d->stats_ring) {
+        ring_destroy(d->stats_ring);
+        d->stats_ring = NULL;
+    }
+
+    if (d->stats_packed) {
+        free(d->stats_packed);
+        d->stats_packed = NULL;
+        d->stats_packed_len = 0;
+    }
+
+    if (d->stats_unpacked) {
+        if (d->stats_unpacked->symbols) {
+            free((quiet_complex *)d->stats_unpacked->symbols);
+        }
+        free(d->stats_unpacked);
+        d->stats_unpacked = NULL;
+        d->stats_unpacked_symbols_cap = 0;
+    }
 }
 
 const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, size_t *num_frames) {
@@ -237,17 +363,107 @@ const quiet_decoder_frame_stats *quiet_decoder_consume_stats(quiet_decoder *d, s
     return d->stats;
 }
 
+const quiet_decoder_frame_stats *quiet_decoder_recv_stats(quiet_decoder *d) {
+    if (!d->stats_ring) {
+        return NULL;
+    }
+
+    ring_reader_lock(d->stats_ring);
+
+    size_t statslen;
+    ssize_t statslen_written = ring_read(d->stats_ring, (uint8_t*)(&statslen), sizeof(size_t));
+
+    if (statslen_written == 0) {
+        quiet_set_last_error(quiet_success);
+        return NULL;
+    }
+
+    if (statslen_written < 0) {
+        ring_reader_unlock(d->stats_ring);
+        switch (statslen_written) {
+            case RingErrorWouldBlock:
+                quiet_set_last_error(quiet_would_block);
+                break;
+            case RingErrorTimedout:
+                quiet_set_last_error(quiet_timedout);
+                break;
+            default:
+                quiet_set_last_error(quiet_io);
+        }
+        return NULL;
+    }
+
+    if (statslen > d->stats_packed_len) {
+        d->stats_packed = realloc(d->stats_packed, statslen);
+        d->stats_packed_len = statslen;
+    }
+
+    if (ring_read(d->stats_ring, d->stats_packed, statslen) < 0) {
+        ring_reader_unlock(d->stats_ring);
+        assert(false && "packed stats read failed");
+        quiet_set_last_error(quiet_io);
+        return NULL;
+    }
+
+    // we keep the ring locked because we're also using it
+    // to sync on writing this stats object
+
+    uint8_t *packed_iter = d->stats_packed;
+
+    memcpy(&d->stats_unpacked->num_symbols, packed_iter, sizeof(size_t));
+    packed_iter += sizeof(size_t);
+
+    size_t symbols_write_size = d->stats_unpacked->num_symbols * sizeof(quiet_complex);
+
+    if (symbols_write_size > d->stats_unpacked_symbols_cap) {
+        d->stats_unpacked->symbols = realloc((quiet_complex*)d->stats_unpacked->symbols, symbols_write_size);
+        d->stats_unpacked_symbols_cap = symbols_write_size;
+    }
+
+    complex float temp;
+    quiet_complex *symbols = (quiet_complex *)d->stats_unpacked->symbols;
+    for (size_t i = 0; i < d->stats_unpacked->num_symbols; i++) {
+        memcpy(&temp, packed_iter, sizeof(complex float));
+        packed_iter += sizeof(complex float);
+        symbols[i].real = crealf(temp);
+        symbols[i].imaginary = cimagf(temp);
+    }
+
+    memcpy(&d->stats_unpacked->received_signal_strength_indicator, packed_iter, sizeof(float));
+    packed_iter += sizeof(float);
+
+    memcpy(&d->stats_unpacked->error_vector_magnitude, packed_iter, sizeof(float));
+    packed_iter += sizeof(float);
+
+    int valid;
+    memcpy(&valid, packed_iter, sizeof(int));
+    d->stats_unpacked->checksum_passed = (bool)(valid);
+
+    ring_reader_unlock(d->stats_ring);
+
+    return d->stats_unpacked;
+}
+
 ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
     size_t framelen;
     ssize_t framelen_written;
-#if LOCKABLE_RING_BUFFER
     ring_reader_lock(d->buf);
-#endif
     framelen_written = ring_read(d->buf, (uint8_t*)(&framelen), sizeof(size_t));
+    if (framelen_written == 0) {
+        return 0;
+    }
     if (framelen_written < 0) {
-#if LOCKABLE_RING_BUFFER
         ring_reader_unlock(d->buf);
-#endif
+        switch (framelen_written) {
+            case RingErrorWouldBlock:
+                quiet_set_last_error(quiet_would_block);
+                break;
+            case RingErrorTimedout:
+                quiet_set_last_error(quiet_timedout);
+                break;
+            default:
+                quiet_set_last_error(quiet_io);
+        }
         return -1;
     }
 
@@ -463,6 +679,11 @@ void quiet_decoder_close(decoder *d) {
     ring_close(d->buf);
     ring_reader_unlock(d->buf);
 
+    if (d->stats_ring) {
+        ring_reader_lock(d->stats_ring);
+        ring_close(d->stats_ring);
+        ring_reader_unlock(d->stats_ring);
+    }
 }
 
 void quiet_decoder_destroy(decoder *d) {
@@ -493,6 +714,18 @@ void quiet_decoder_destroy(decoder *d) {
         }
     }
     ring_destroy(d->buf);
+    if (d->stats_ring) {
+        ring_destroy(d->stats_ring);
+    }
+    if (d->stats_packed) {
+        free(d->stats_packed);
+    }
+    if (d->stats_unpacked) {
+        if (d->stats_unpacked->symbols) {
+            free((quiet_complex *)d->stats_unpacked->symbols);
+        }
+        free(d->stats_unpacked);
+    }
     if (d->writeframe) {
         free(d->writeframe);
     }
