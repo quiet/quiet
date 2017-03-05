@@ -56,12 +56,12 @@ find_path(liquid_include NAMES liquid/liquid.h)
 find_library(liquid_library NAMES liquid)
 find_package_handle_standard_args(Liquid DEFAULT_MSG liquid_library liquid_include)
 mark_as_advanced(liquid_include liquid_library)
-if(Liquid_FOUND)
+if(LIQUID_FOUND)
     add_library(liquid UNKNOWN IMPORTED)
     set_target_properties(liquid PROPERTIES IMPORTED_LOCATION "${liquid_library}" INTERFACE_INCLUDE_DIRECTORIES "${liquid_include}")
     check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
     if(NOT LIQUID_DEVEL_FUNCTIONS)
-      unset(Liquid_FOUND CACHE)
+      unset(LIQUID_FOUND CACHE)
         message(FATAL_ERROR "
 libquiet requires the devel branch of libliquid but
   found a different branch installed
