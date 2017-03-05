@@ -12,16 +12,18 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DQUIET_DEBUG)
-    set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-g -O0")
-    set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Wl,-no_pie")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -O0")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -Wl,-no_pie")
 else()
     if("${CMAKE_C_COMPILER_ID}" STREQUAL "Clang")
       set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-Ofast -g3")
       set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} "-Ofast -flto")
     else()
-      set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} "-O2")
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g")
     endif()
 endif()
+
+set(CMAKE_MACOSX_RPATH 1)
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 
@@ -47,11 +49,16 @@ else()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=c99")
 endif()
 
-find_library(LIQUID liquid REQUIRED)
-if (LIQUID)
+find_path(liquid_include NAMES liquid/liquid.h)
+find_library(liquid_library NAMES liquid)
+find_package_handle_standard_args(Liquid DEFAULT_MSG liquid_library liquid_include)
+mark_as_advanced(liquid_include liquid_library)
+if(Liquid_FOUND)
+    add_library(liquid UNKNOWN IMPORTED)
+    set_target_properties(liquid PROPERTIES IMPORTED_LOCATION "${liquid_library}" INTERFACE_INCLUDE_DIRECTORIES "${liquid_include}")
     check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
     if(NOT LIQUID_DEVEL_FUNCTIONS)
-        unset(LIQUID_DEVEL_FUNCTIONS CACHE)
+      unset(Liquid_FOUND CACHE)
         message(FATAL_ERROR "
 libquiet requires the devel branch of libliquid but
   found a different branch installed
@@ -60,7 +67,6 @@ fetch the devel branch using
 and install it before continuing")
     endif()
 else()
-    unset(LIQUID CACHE)
     message(FATAL_ERROR "
 libquiet requires libliquid but cannot find it
 fetch the devel branch using
@@ -68,9 +74,14 @@ fetch the devel branch using
 and install it before continuing")
 endif()
 
-find_library(JANSSON jansson REQUIRED)
-if (NOT JANSSON)
-    unset(JANSSON CACHE)
+find_path(jansson_include NAMES jansson.h)
+find_library(jansson_library NAMES jansson)
+find_package_handle_standard_args(Jansson DEFAULT_MSG jansson_library jansson_include)
+mark_as_advanced(jansson_include jansson_library)
+if(Jansson_FOUND)
+    add_library(jansson UNKNOWN IMPORTED)
+    set_target_properties(jansson PROPERTIES IMPORTED_LOCATION "${jansson_library}" INTERFACE_INCLUDE_DIRECTORIES "${jansson_include}")
+else()
     message(FATAL_ERROR "
 libquiet requires libjansson but cannot find it
 fetch the latest jansson release from
