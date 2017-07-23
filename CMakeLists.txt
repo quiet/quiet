@@ -99,7 +99,7 @@ mark_as_advanced(portaudio_include portaudio_library)
 if (PORTAUDIO_FOUND)
     add_library(portaudio UNKNOWN IMPORTED)
     set_target_properties(portaudio PROPERTIES IMPORTED_LOCATION "${portaudio_library}" INTERFACE_INCLUDE_DIRECTORIES "${portaudio_include}")
-else()
+
     set(SRCFILES ${SRCFILES} src/portaudio_encoder.c src/portaudio_decoder.c)
     add_definitions(-DQUIET_PORTAUDIO=1)
     set(CORE_DEPENDENCIES ${CORE_DEPENDENCIES} portaudio)
