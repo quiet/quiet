@@ -126,7 +126,7 @@ add_custom_target(lib DEPENDS quiet quiet_static)
 
 add_custom_target(quiet-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet.h ${CMAKE_BINARY_DIR}/include/quiet.h)
 
-if (PORTAUDIO)
+if (PORTAUDIO_FOUND)
   add_custom_target(quiet-portaudio-h ALL COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_SOURCE_DIR}/include/quiet-portaudio.h ${CMAKE_BINARY_DIR}/include/quiet-portaudio.h)
 endif()
 
@@ -160,7 +160,7 @@ from building its file generating programs. you can get libsndfile from
 ")
 endif()
 
-if (PORTAUDIO)
+if (PORTAUDIO_FOUND)
     add_executable(quiet_encode_soundcard programs/encode_soundcard.c)
     target_link_libraries(quiet_encode_soundcard quiet_static ${CMAKE_THREAD_LIBS_INIT})
     set(buildable_programs ${buildable_programs} quiet_encode_soundcard)
