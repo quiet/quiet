@@ -19,6 +19,8 @@ else()
   project (Quiet C)
 endif()
 
+set(CORE_DEPENDENCIES liquid jansson)
+
 if (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
       add_definitions(-DQUIET_DEBUG)
@@ -46,6 +48,7 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -D_XOPEN_SOURCE=700 -std=c99")
   endif()
+  set(CORE_DEPENDENCIES ${CORE_DEPENDENCIES} m)
 elseif (CMAKE_C_COMPILER_ID MATCHES "MSVC")
   set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} /wd4003")
 endif()
@@ -58,7 +61,6 @@ set(SRCFILES src/demodulator.c src/modulator.c src/utility.c src/decoder.c src/e
 set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/lib)
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
-set(CORE_DEPENDENCIES liquid jansson m)
 
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(Threads)
