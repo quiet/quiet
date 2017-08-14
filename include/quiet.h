@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+typedef ptrdiff_t ssize_t;
+#endif
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
