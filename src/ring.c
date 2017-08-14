@@ -86,7 +86,7 @@ ssize_t ring_read(ring *r, void *vdst, size_t len) {
         return RingErrorWouldBlock;
     }
 
-    const uint8_t *dst = (const uint8_t *)vdst;
+    uint8_t *dst = (uint8_t *)vdst;
 
     size_t prewrap = ring_calculate_distance(r, r->reader, r->base + r->length);
     prewrap = (prewrap > len) ? len : prewrap;
