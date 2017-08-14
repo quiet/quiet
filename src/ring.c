@@ -1,10 +1,10 @@
 #include "quiet/ring.h"
 
 ring *ring_create(size_t length) {
-    ring *r = malloc(sizeof(ring));
+    ring *r = (ring*)malloc(sizeof(ring));
 
     r->length = length;
-    r->base = malloc(length);
+    r->base = (uint8_t*)malloc(length);
     r->reader = r->base;
     r->writer = r->base;
 
