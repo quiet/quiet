@@ -185,19 +185,19 @@ ssize_t ring_write_partial_commit(ring *r) {
     return 0;
 }
 
-void ring_reader_set_blocking(ring *r, time_t sec, long nano) {
+void ring_set_reader_blocking(ring *r, time_t sec, long nano) {
     assert(false && "blocking mode not supported by this version. please recompile with pthread support");
 }
 
-void ring_reader_set_nonblocking(ring *r) {
+void ring_set_reader_nonblocking(ring *r) {
     return;
 }
 
-void ring_writer_set_blocking(ring *r, time_t sec, long nano) {
+void ring_set_writer_blocking(ring *r, time_t sec, long nano) {
     assert(false && "blocking mode not supported by this version. please recompile with pthread support");
 }
 
-void ring_writer_set_nonblocking(ring *r) {
+void ring_set_writer_nonblocking(ring *r) {
     return;
 }
 
