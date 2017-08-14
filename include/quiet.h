@@ -5,10 +5,6 @@
 extern "C" {
 #endif
 
-#ifdef _MSC_VER
-typedef ptrdiff_t ssize_t;
-#endif
-
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,6 +12,10 @@ typedef ptrdiff_t ssize_t;
 #include <time.h>
 /* Representation for single sample containing sound */
 typedef float quiet_sample_t;
+
+#ifdef _MSC_VER
+typedef ptrdiff_t ssize_t;
+#endif
 
 typedef enum {
     quiet_success,
