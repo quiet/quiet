@@ -1,4 +1,16 @@
+#ifdef _MSC_VER
+#include <windows.h>
+static inline void usleep(int micros)
+{
+    if (micros > 0 && micros < 1000) {
+        return Sleep(1);
+    }
+    return Sleep(micros/1000);
+}
+#else
 #include <unistd.h>
+#endif
+
 #include "quiet/portaudio.h"
 
 typedef quiet_portaudio_encoder portaudio_encoder;
