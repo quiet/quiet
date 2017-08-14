@@ -1,4 +1,5 @@
 #include "quiet/common.h"
+#include <assert.h>
 
 typedef struct {
     size_t length;
