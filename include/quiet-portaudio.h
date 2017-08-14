@@ -1,5 +1,10 @@
 #ifndef QUIET_PORTAUDIO_H
 #define QUIET_PORTAUDIO_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <quiet.h>
 #include <portaudio.h>
 
@@ -44,5 +49,9 @@ void quiet_portaudio_decoder_enable_stats(quiet_portaudio_decoder *d);
 void quiet_portaudio_decoder_disable_stats(quiet_portaudio_decoder *d);
 
 void quiet_portaudio_decoder_destroy(quiet_portaudio_decoder *d);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
