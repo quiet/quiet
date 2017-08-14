@@ -2,6 +2,10 @@
 #define QUIET_COMMON_H
 #include <string.h>
 
+#ifdef _MSC_VER
+#define _USE_MATH_DEFINES
+#endif
+
 #ifdef QUIET_CXX
 #include <complex>
 typedef std::complex<float> quiet_float_complex;
