@@ -2,6 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 include(CheckLibraryExists)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
+include(FindPackageHandleStandardArgs)
 
 set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/share/quiet/")
 add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}quiet-profiles.json")
