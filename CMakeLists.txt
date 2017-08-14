@@ -8,6 +8,10 @@ add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}quiet-profi
 
 option(QUIET_CXX "Build libquiet using C++ rather than C" OFF)
 
+if (CMAKE_C_COMPILER_ID MATCHES "MSVC")
+  set(QUIET_CXX ON)
+endif()
+
 if (QUIET_CXX)
   project (Quiet CXX C)
   add_definitions(-DQUIET_CXX=1)
