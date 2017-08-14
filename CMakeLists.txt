@@ -1,11 +1,19 @@
 cmake_minimum_required (VERSION 2.6)
-project (Quiet)
 include(CheckLibraryExists)
 include(CheckIncludeFiles)
 include(CheckCCompilerFlag)
 
 set(QUIET_PROFILES_LOCATION "${CMAKE_INSTALL_PREFIX}/share/quiet/")
 add_definitions(-DQUIET_PROFILES_LOCATION="${QUIET_PROFILES_LOCATION}quiet-profiles.json")
+
+option(QUIET_CXX "Build libquiet using C++ rather than C" OFF)
+
+if (QUIET_CXX)
+  project (Quiet CXX C)
+  add_definitions(-DQUIET_CXX=1)
+else()
+  project (Quiet C)
+endif()
 
 if (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -26,7 +34,14 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU" OR CMAKE_C_COMPILER_ID MATCHES "Clang")
         set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O2 -g")
       endif()
   endif()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -D_XOPEN_SOURCE=700 -std=c99")
+  if (QUIET_CXX)
+    set(CMAKE_CXX_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -DQUIET_BUILD_CPLUSPLUS -std=c++11")
+      if (CMAKE_C_COMPILER_ID MATCHES "Clang")
+          add_definitions("-x c++")
+      endif()
+  else()
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wpedantic -Wall -D_XOPEN_SOURCE=700 -std=c99")
+  endif()
 endif()
 
 set(CMAKE_MACOSX_RPATH 1)
@@ -59,16 +74,16 @@ mark_as_advanced(liquid_include liquid_library)
 if(LIQUID_FOUND)
     add_library(liquid UNKNOWN IMPORTED)
     set_target_properties(liquid PROPERTIES IMPORTED_LOCATION "${liquid_library}" INTERFACE_INCLUDE_DIRECTORIES "${liquid_include}")
-    check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
-    if(NOT LIQUID_DEVEL_FUNCTIONS)
-      unset(LIQUID_FOUND CACHE)
-        message(FATAL_ERROR "
-libquiet requires the devel branch of libliquid but
-  found a different branch installed
-fetch the devel branch using
-    git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch
-and install it before continuing")
-    endif()
+    #check_library_exists(liquid flexframesync_set_header_len,flexframegen_set_header_len,ofdmflexframesync_set_header_len,ofdmflexframegen_set_header_len,resamp_rrrf_execute_output_block,liquid_pack_array_block "" LIQUID_DEVEL_FUNCTIONS)
+    #if(NOT LIQUID_DEVEL_FUNCTIONS)
+    #  unset(LIQUID_FOUND CACHE)
+    #        message(FATAL_ERROR "
+        #libquiet requires the devel branch of libliquid but
+        #  found a different branch installed
+        #fetch the devel branch using
+        #    git clone https://github.com/quiet/liquid-dsp.git -b devel --single-branch
+        #and install it before continuing")
+        #    endif()
 else()
     message(FATAL_ERROR "
 libquiet requires libliquid but cannot find it
@@ -114,6 +129,9 @@ from building its sound streaming programs. you can get portaudio from
 ")
 endif()
 
+if (QUIET_CXX)
+  set_source_files_properties(${SRCFILES} PROPERTIES LANGUAGE CXX)
+endif()
 
 add_library(quiet_static ${SRCFILES})
 target_link_libraries(quiet_static ${CORE_DEPENDENCIES})

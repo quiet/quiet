@@ -11,7 +11,7 @@ static void decoder_collect_stats(decoder *d, framesyncstats_s stats, int payloa
         size_t sym_cap = d->stats_symbol_caps[stats_index];
 
         if (sym_cap < stats.num_framesyms) {
-            d->stats_symbols[stats_index] = realloc(sym, stats.num_framesyms * sizeof(quiet_complex));
+            d->stats_symbols[stats_index] = (quiet_complex*)realloc(sym, stats.num_framesyms * sizeof(quiet_complex));
             d->stats_symbol_caps[stats_index] = stats.num_framesyms;
         }
 
@@ -38,7 +38,7 @@ static void decoder_collect_stats(decoder *d, framesyncstats_s stats, int payloa
     write_len += sizeof(size_t);
 
     // write all the symbols
-    write_len += stats.num_framesyms * sizeof(complex float);
+    write_len += stats.num_framesyms * sizeof(quiet_float_complex);
 
     // rssi and evm
     write_len += 2 * sizeof(float);
@@ -75,9 +75,9 @@ static void decoder_collect_stats(decoder *d, framesyncstats_s stats, int payloa
         assert(false && "partial write failed");
     }
 
-    written = ring_write_partial(d->stats_ring, stats.framesyms, stats.num_framesyms * sizeof(complex float));
+    written = ring_write_partial(d->stats_ring, stats.framesyms, stats.num_framesyms * sizeof(quiet_float_complex));
 
-    if (written != (stats.num_framesyms * sizeof(complex float))) {
+    if (written != (stats.num_framesyms * sizeof(quiet_float_complex))) {
         assert(false && "partial write failed");
     }
 
@@ -120,7 +120,7 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
         return 0;
     }
 
-    decoder *d = dvoid;
+    decoder *d = (decoder*)dvoid;
 
     if (d->stats_enabled) {
         decoder_collect_stats(d, stats, payload_valid);
@@ -134,7 +134,7 @@ static int decoder_on_decode(unsigned char *header, int header_valid, unsigned c
 
     size_t framelen = payload_len + sizeof(size_t);
     if (framelen > d->writeframe_len) {
-        d->writeframe = realloc(d->writeframe, framelen);
+        d->writeframe = (uint8_t*)realloc(d->writeframe, framelen);
         d->writeframe_len = framelen;
     }
 
@@ -162,19 +162,18 @@ static void decoder_ofdm_create(const decoder_options *opt, decoder *d) {
     ofdmflexframesync_decode_header_soft(ofdm.framesync, 1);
     ofdmflexframesync_decode_payload_soft(ofdm.framesync, 1);
     if (opt->header_override_defaults) {
-        ofdmflexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
-            .mod_scheme = opt->header_mod_scheme,
-        };
+        ofdmflexframegenprops_s header_props;
+        header_props.check = opt->header_checksum_scheme;
+        header_props.fec0 = opt->header_inner_fec_scheme;
+        header_props.fec1 = opt->header_outer_fec_scheme;
+        header_props.mod_scheme = opt->header_mod_scheme;
         ofdmflexframesync_set_header_props(ofdm.framesync, &header_props);
     }
 
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
-    d->symbolbuf = malloc(symbolbuf_len *
-                          sizeof(float complex));
+    d->symbolbuf = (quiet_float_complex*)malloc(symbolbuf_len *
+                          sizeof(quiet_float_complex));
     d->symbolbuf_len = symbolbuf_len;
 
     free(subcarriers);
@@ -193,17 +192,16 @@ static void decoder_modem_create(const decoder_options *opt, decoder *d) {
     flexframesync_decode_header_soft(modem.framesync, 1);
     flexframesync_decode_payload_soft(modem.framesync, 1);
     if (opt->header_override_defaults) {
-        flexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
-            .mod_scheme = opt->header_mod_scheme,
-        };
+        flexframegenprops_s header_props;
+        header_props.check = (crc_scheme)opt->header_checksum_scheme;
+        header_props.fec0 = (fec_scheme)opt->header_inner_fec_scheme;
+        header_props.fec1 = (fec_scheme)opt->header_outer_fec_scheme;
+        header_props.mod_scheme = opt->header_mod_scheme;
         flexframesync_set_header_props(modem.framesync, &header_props);
     }
 
     size_t symbolbuf_len = 256;
-    d->symbolbuf = malloc(symbolbuf_len * sizeof(float complex));
+    d->symbolbuf = (quiet_float_complex*)malloc(symbolbuf_len * sizeof(quiet_float_complex));
     d->symbolbuf_len = symbolbuf_len;
 
     d->frame.modem = modem;
@@ -220,14 +218,14 @@ static void decoder_gmsk_create(const decoder_options *opt, decoder *d) {
     }
 
     size_t symbolbuf_len = 256;
-    d->symbolbuf = malloc(symbolbuf_len * sizeof(float complex));
+    d->symbolbuf = (quiet_float_complex*)malloc(symbolbuf_len * sizeof(quiet_float_complex));
     d->symbolbuf_len = symbolbuf_len;
 
     d->frame.gmsk = gmsk;
 }
 
 decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
-    decoder *d = malloc(sizeof(decoder));
+    decoder *d = (decoder*)malloc(sizeof(decoder));
 
     d->opt = *opt;
 
@@ -258,7 +256,7 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     }
 
     size_t stride_len = decoder_max_len(d);
-    d->baserate = malloc(stride_len * sizeof(sample_t));
+    d->baserate = (sample_t*)malloc(stride_len * sizeof(sample_t));
     d->baserate_offset = 0;
 
     d->checksum_fails = 0;
@@ -319,7 +317,7 @@ void quiet_decoder_enable_stats(quiet_decoder *d) {
     d->stats_ring = ring_create(decoder_default_stats_buffer_len);
     d->stats_packed = NULL;
     d->stats_packed_len = 0;
-    d->stats_unpacked = malloc(sizeof(quiet_decoder_frame_stats));
+    d->stats_unpacked = (quiet_decoder_frame_stats*)malloc(sizeof(quiet_decoder_frame_stats));
     d->stats_unpacked->symbols = NULL;
     d->stats_unpacked_symbols_cap = 0;
 }
@@ -394,7 +392,7 @@ const quiet_decoder_frame_stats *quiet_decoder_recv_stats(quiet_decoder *d) {
     }
 
     if (statslen > d->stats_packed_len) {
-        d->stats_packed = realloc(d->stats_packed, statslen);
+        d->stats_packed = (uint8_t*)realloc(d->stats_packed, statslen);
         d->stats_packed_len = statslen;
     }
 
@@ -416,15 +414,15 @@ const quiet_decoder_frame_stats *quiet_decoder_recv_stats(quiet_decoder *d) {
     size_t symbols_write_size = d->stats_unpacked->num_symbols * sizeof(quiet_complex);
 
     if (symbols_write_size > d->stats_unpacked_symbols_cap) {
-        d->stats_unpacked->symbols = realloc((quiet_complex*)d->stats_unpacked->symbols, symbols_write_size);
+        d->stats_unpacked->symbols = (quiet_complex*)realloc((quiet_complex*)d->stats_unpacked->symbols, symbols_write_size);
         d->stats_unpacked_symbols_cap = symbols_write_size;
     }
 
-    complex float temp;
+    quiet_float_complex temp;
     quiet_complex *symbols = (quiet_complex *)d->stats_unpacked->symbols;
     for (size_t i = 0; i < d->stats_unpacked->num_symbols; i++) {
-        memcpy(&temp, packed_iter, sizeof(complex float));
-        packed_iter += sizeof(complex float);
+        memcpy(&temp, packed_iter, sizeof(quiet_float_complex));
+        packed_iter += sizeof(quiet_float_complex);
         symbols[i].real = crealf(temp);
         symbols[i].imaginary = cimagf(temp);
     }
@@ -611,7 +609,7 @@ void quiet_decoder_flush(decoder *d) {
     size_t symbol_len = 0;
 
     if (d->resampler) {
-        sample_t *flusher = calloc(d->opt.resampler.delay, sizeof(sample_t));
+        sample_t *flusher = (sample_t*)calloc(d->opt.resampler.delay, sizeof(sample_t));
         size_t stride_len = decoder_max_len(d);
         unsigned int resamp_read, resamp_write;
         resamp_rrrf_execute_output_block(d->resampler, flusher,

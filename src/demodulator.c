@@ -5,7 +5,7 @@ demodulator *demodulator_create(const demodulator_options *opt) {
         return NULL;
     }
 
-    demodulator *d = malloc(sizeof(demodulator));
+    demodulator *d = (demodulator*)malloc(sizeof(demodulator));
 
     d->opt = *opt;
 
@@ -26,7 +26,7 @@ demodulator *demodulator_create(const demodulator_options *opt) {
 }
 
 size_t demodulator_recv(demodulator *d, const sample_t *samples, size_t sample_len,
-                        float complex *symbols) {
+                        quiet_float_complex *symbols) {
     if (!d) {
         return 0;
     }
@@ -36,7 +36,7 @@ size_t demodulator_recv(demodulator *d, const sample_t *samples, size_t sample_l
         return 0;
     }
 
-    float complex post_mixer[d->opt.samples_per_symbol];
+    quiet_float_complex *post_mixer = (quiet_float_complex*)alloca(d->opt.samples_per_symbol*sizeof(quiet_float_complex));
     size_t written = 0;
     for (size_t i = 0; i < sample_len; i += d->opt.samples_per_symbol) {
         for (size_t j = 0; j < d->opt.samples_per_symbol; j++) {
@@ -66,13 +66,13 @@ size_t demodulator_flush_symbol_len(const demodulator *d) {
     return 2 * d->opt.symbol_delay;
 }
 
-size_t demodulator_flush(demodulator *d, float complex *symbols) {
+size_t demodulator_flush(demodulator *d, quiet_float_complex *symbols) {
     if (!d) {
         return 0;
     }
 
     size_t sample_len = d->opt.samples_per_symbol * demodulator_flush_symbol_len(d);
-    sample_t terminate[sample_len];
+    sample_t *terminate = (sample_t*)alloca(sample_len*sizeof(sample_t));
     for (size_t i = 0; i < sample_len; i++) {
         terminate[i] = 0;
     }

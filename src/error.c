@@ -14,9 +14,9 @@ static void quiet_error_pthread_init() {
 
 quiet_error quiet_get_last_error_pthread() {
     pthread_once(&quiet_last_error_once, quiet_error_pthread_init);
-    quiet_error *last = pthread_getspecific(quiet_last_error_key);
+    quiet_error *last = (quiet_error*)pthread_getspecific(quiet_last_error_key);
     if (!last) {
-        last = malloc(sizeof(quiet_error));
+        last = (quiet_error*)malloc(sizeof(quiet_error));
         pthread_setspecific(quiet_last_error_key, last);
         *last = quiet_success;
     }
@@ -25,9 +25,9 @@ quiet_error quiet_get_last_error_pthread() {
 
 void quiet_set_last_error_pthread(quiet_error err) {
     pthread_once(&quiet_last_error_once, quiet_error_pthread_init);
-    quiet_error *last = pthread_getspecific(quiet_last_error_key);
+    quiet_error *last = (quiet_error*)pthread_getspecific(quiet_last_error_key);
     if (!last) {
-        last = malloc(sizeof(quiet_error));
+        last = (quiet_error*)malloc(sizeof(quiet_error));
         pthread_setspecific(quiet_last_error_key, last);
     }
     *last = err;

@@ -2,7 +2,7 @@
 
 unsigned char *ofdm_subcarriers_create(const ofdm_options *opt) {
     unsigned char *subcarriers =
-        malloc(opt->num_subcarriers * sizeof(unsigned char));
+        (unsigned char*)malloc(opt->num_subcarriers * sizeof(unsigned char));
     // get the default subcarrier placement and then modify it slightly
     ofdmframe_init_default_sctype(opt->num_subcarriers, subcarriers);
     // now add some nulls

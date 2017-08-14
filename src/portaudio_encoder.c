@@ -23,17 +23,16 @@ static int encoder_callback(const void *input_buffer, void *output_buffer_v,
 
 portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
     size_t num_channels = 2;
-    PaStreamParameters param = {
-        .device = device,
-        .channelCount = num_channels,
-        .sampleFormat = paFloat32,
-        .suggestedLatency = latency,
-        .hostApiSpecificStreamInfo = NULL,
-    };
+    PaStreamParameters param;
+    param.device = device;
+    param.channelCount = (int)num_channels;
+    param.sampleFormat = paFloat32;
+    param.suggestedLatency = latency;
+    param.hostApiSpecificStreamInfo = NULL;
 
     PaError err;
     PaStream *stream;
-    portaudio_encoder *enc = malloc(1 * sizeof(portaudio_encoder));
+    portaudio_encoder *enc = (portaudio_encoder*)malloc(1 * sizeof(portaudio_encoder));
     err = Pa_OpenStream(&stream, NULL, &param, sample_rate,
                         sample_buffer_size, paNoFlag, encoder_callback, enc);
     if (err != paNoError) {
@@ -44,9 +43,9 @@ portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *o
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
     quiet_encoder *e = quiet_encoder_create(opt, info->sampleRate);
 
-    quiet_sample_t *sample_buffer = calloc(num_channels * sample_buffer_size,
+    quiet_sample_t *sample_buffer = (quiet_sample_t*)calloc(num_channels * sample_buffer_size,
                                            sizeof(quiet_sample_t));
-    quiet_sample_t *mono_buffer = malloc(sample_buffer_size * sizeof(quiet_sample_t));
+    quiet_sample_t *mono_buffer = (quiet_sample_t*)malloc(sample_buffer_size * sizeof(quiet_sample_t));
 
     err = Pa_StartStream(stream);
     if (err != paNoError) {

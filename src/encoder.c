@@ -3,12 +3,11 @@
 void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
     ofdm_encoder ofdm;
 
-    ofdmflexframegenprops_s props = {
-        .check = opt->checksum_scheme,
-        .fec0 = opt->inner_fec_scheme,
-        .fec1 = opt->outer_fec_scheme,
-        .mod_scheme = opt->mod_scheme,
-    };
+    ofdmflexframegenprops_s props;
+    props.check = opt->checksum_scheme;
+    props.fec0 = opt->inner_fec_scheme;
+    props.fec1 = opt->outer_fec_scheme;
+    props.mod_scheme = opt->mod_scheme;
 
     unsigned char *subcarriers = ofdm_subcarriers_create(&opt->ofdmopt);
     ofdm.framegen = ofdmflexframegen_create(
@@ -16,19 +15,18 @@ void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
         opt->ofdmopt.taper_len, subcarriers, &props);
     ofdmflexframegen_set_header_len(ofdm.framegen, 0);
     if (opt->header_override_defaults) {
-        ofdmflexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
-            .mod_scheme = opt->header_mod_scheme,
-        };
+        ofdmflexframegenprops_s header_props;
+        header_props.check = opt->header_checksum_scheme;
+        header_props.fec0 = opt->header_inner_fec_scheme;
+        header_props.fec1 = opt->header_outer_fec_scheme;
+        header_props.mod_scheme = opt->header_mod_scheme;
         ofdmflexframegen_set_header_props(ofdm.framegen, &header_props);
     }
 
     size_t symbolbuf_len =
         opt->ofdmopt.num_subcarriers + opt->ofdmopt.cyclic_prefix_len;
-    e->symbolbuf = malloc(symbolbuf_len *
-                          sizeof(float complex));  // XXX check malloc result
+    e->symbolbuf = (quiet_float_complex*)malloc(symbolbuf_len *
+                          sizeof(quiet_float_complex));  // XXX check malloc result
     e->symbolbuf_len = symbolbuf_len;
 
     free(subcarriers);
@@ -39,22 +37,20 @@ void encoder_ofdm_create(const encoder_options *opt, encoder *e) {
 void encoder_modem_create(const encoder_options *opt, encoder *e) {
     modem_encoder modem;
 
-    flexframegenprops_s props = {
-        .check = opt->checksum_scheme,
-        .fec0 = opt->inner_fec_scheme,
-        .fec1 = opt->outer_fec_scheme,
-        .mod_scheme = opt->mod_scheme,
-    };
+    flexframegenprops_s props;
+    props.check = (crc_scheme)opt->checksum_scheme;
+    props.fec0 = (fec_scheme)opt->inner_fec_scheme;
+    props.fec1 = (fec_scheme)opt->outer_fec_scheme;
+    props.mod_scheme = opt->mod_scheme;
 
     modem.framegen = flexframegen_create(&props);
     flexframegen_set_header_len(modem.framegen, 0);
     if (opt->header_override_defaults) {
-        flexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
-            .mod_scheme = opt->header_mod_scheme,
-        };
+        flexframegenprops_s header_props;
+        header_props.check = (crc_scheme)opt->header_checksum_scheme;
+        header_props.fec0 = (fec_scheme)opt->header_inner_fec_scheme;
+        header_props.fec1 = (fec_scheme)opt->header_outer_fec_scheme;
+        header_props.mod_scheme = opt->header_mod_scheme;
         flexframegen_set_header_props(modem.framegen, &header_props);
     }
     e->symbolbuf = NULL;
@@ -86,7 +82,7 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
         return NULL;
     }
 
-    encoder *e = malloc(sizeof(encoder));
+    encoder *e = (encoder*)malloc(sizeof(encoder));
 
     e->opt = *opt;
 
@@ -107,7 +103,7 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     size_t emit_len = modulator_sample_len(e->mod, e->symbolbuf_len);
     size_t flush_len = modulator_flush_sample_len(e->mod);
     e->samplebuf_cap = (emit_len > flush_len) ? emit_len : flush_len;
-    e->samplebuf = malloc(e->samplebuf_cap * sizeof(sample_t));
+    e->samplebuf = (sample_t*)malloc(e->samplebuf_cap * sizeof(sample_t));
     e->samplebuf_len = 0;
     e->samplebuf_offset = 0;
 
@@ -130,8 +126,8 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     }
 
     e->buf = ring_create(encoder_default_buffer_len);
-    e->tempframe = malloc(sizeof(size_t) + e->opt.frame_len);
-    e->readframe = malloc(e->opt.frame_len);
+    e->tempframe = (uint8_t*)malloc(sizeof(size_t) + e->opt.frame_len);
+    e->readframe = (uint8_t*)malloc(e->opt.frame_len);
 
     return e;
 }
@@ -291,17 +287,19 @@ static bool encoder_read_next_frame(encoder *e) {
 }
 
 static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
-    uint8_t *empty = calloc(data_len, sizeof(uint8_t));
+    uint8_t *empty = (uint8_t*)calloc(data_len, sizeof(uint8_t));
     uint8_t header[1];
     size_t num_symbols;
     switch (e->opt.encoding) {
     case ofdm_encoding:
         ofdmflexframegen_assemble(e->frame.ofdm.framegen, header, empty,
                                   data_len);  // TODO actual calculation?
-        size_t num_ofdm_blocks =
-            ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
-        num_symbols = num_ofdm_blocks * e->symbolbuf_len;
-        ofdmflexframegen_reset(e->frame.ofdm.framegen);
+        {
+            size_t num_ofdm_blocks =
+                ofdmflexframegen_getframelen(e->frame.ofdm.framegen);
+            num_symbols = num_ofdm_blocks * e->symbolbuf_len;
+            ofdmflexframegen_reset(e->frame.ofdm.framegen);
+        }
         break;
     case modem_encoding:
         flexframegen_assemble(e->frame.modem.framegen, header, empty, data_len);
@@ -337,9 +335,9 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
 
         if (requested_length > e->symbolbuf_len) {
             e->symbolbuf =
-                realloc(e->symbolbuf,
+                (quiet_float_complex*)realloc(e->symbolbuf,
                         requested_length *
-                            sizeof(float complex));  // XXX check malloc result
+                            sizeof(quiet_float_complex));  // XXX check malloc result
             e->symbolbuf_len = requested_length;
         }
 
@@ -354,9 +352,9 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
 
         if (requested_length > e->symbolbuf_len) {
             e->symbolbuf =
-                realloc(e->symbolbuf,
+                (quiet_float_complex*)realloc(e->symbolbuf,
                         requested_length *
-                            sizeof(float complex));  // XXX check malloc result
+                            sizeof(quiet_float_complex));  // XXX check malloc result
             e->symbolbuf_len = requested_length;
         }
 
@@ -457,7 +455,7 @@ ssize_t quiet_encoder_emit(encoder *e, sample_t *samplebuf, size_t samplebuf_len
 
         if (sample_buffer_needed > e->samplebuf_cap) {
             e->samplebuf =
-                realloc(e->samplebuf,
+                (sample_t*)realloc(e->samplebuf,
                         sample_buffer_needed *
                             sizeof(sample_t));  // XXX check malloc result
             e->samplebuf_cap = sample_buffer_needed;

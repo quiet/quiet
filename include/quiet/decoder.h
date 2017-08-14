@@ -29,7 +29,7 @@ struct quiet_decoder {
         gmsk_decoder gmsk;
     } frame;
     demodulator *demod;
-    float complex *symbolbuf;
+    quiet_float_complex *symbolbuf;
     size_t symbolbuf_len;
     unsigned int i;
     float resample_rate;

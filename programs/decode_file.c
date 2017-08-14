@@ -50,13 +50,13 @@ int decode_wav(FILE *payload, const char *wav_fname,
 
     quiet_decoder *d = quiet_decoder_create(opt, sample_rate);
     size_t wantread = 16384;
-    quiet_sample_t *samplebuf = malloc(wantread * sizeof(quiet_sample_t));
+    quiet_sample_t *samplebuf = (quiet_sample_t*)malloc(wantread * sizeof(quiet_sample_t));
     if (samplebuf == NULL) {
         return 1;
     }
     bool done = false;
     size_t bufsize = 1 << 13;
-    uint8_t *buf = malloc(bufsize);
+    uint8_t *buf = (uint8_t*)malloc(bufsize);
     while (!done) {
         size_t nread = wav_read(wav, samplebuf, wantread);
 

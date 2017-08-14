@@ -25,7 +25,7 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, latency, sample_rate, 16384);
 
     size_t write_buffer_size = 16384;
-    uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));
+    uint8_t *write_buffer = (uint8_t*)malloc(write_buffer_size*sizeof(uint8_t));
 
     while (!should_terminate) {
         quiet_portaudio_decoder_consume(d);

@@ -8,7 +8,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         return NULL;
     }
 
-    encoder_options *opt = calloc(1, sizeof(encoder_options));
+    encoder_options *opt = (encoder_options*)calloc(1, sizeof(encoder_options));
     if (!opt) {
         quiet_set_last_error(quiet_mem_fail);
         return NULL;
@@ -198,7 +198,7 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         return NULL;
     }
 
-    decoder_options *opt = calloc(1, sizeof(decoder_options));
+    decoder_options *opt = (decoder_options*)calloc(1, sizeof(decoder_options));
     if (!opt) {
         quiet_set_last_error(quiet_mem_fail);
         return NULL;
@@ -354,14 +354,14 @@ decoder_options *quiet_decoder_profile_str(const char *input,
 char **profile_keys(json_t *root, size_t *size) {
     size_t numkeys = json_object_size(root);
     *size = numkeys;
-    char **keys = malloc(numkeys*sizeof(char*));
+    char **keys = (char**)malloc(numkeys*sizeof(char*));
     size_t i = 0;
 
     void *iter = json_object_iter(root);
     while (iter) {
         const char *nextkey = json_object_iter_key(iter);
         size_t keylen = strlen(nextkey) + 1;
-        char *key = malloc(keylen*sizeof(char));
+        char *key = (char*)malloc(keylen*sizeof(char));
         strncpy(key, nextkey, keylen);
         keys[i] = key;
         i++;

@@ -1,7 +1,18 @@
 #ifndef QUIET_COMMON_H
 #define QUIET_COMMON_H
 #include <string.h>
+
+#ifdef QUIET_CXX
+#include <complex>
+typedef std::complex<float> quiet_float_complex;
+static inline float crealf(quiet_float_complex f) { return std::real(f); }
+static inline float cimagf(quiet_float_complex f) { return std::imag(f); }
+#define LIQUID_BUILD_CPLUSPLUS 1
+#else
 #include <complex.h>
+#include <alloca.h>
+typedef float complex quiet_float_complex;
+#endif
 #include <math.h>
 
 #include "quiet.h"

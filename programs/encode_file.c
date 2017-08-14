@@ -42,9 +42,9 @@ int encode_to_wav(FILE *payload, const char *out_fname,
     quiet_encoder *e = quiet_encoder_create(opt, sample_rate);
 
     size_t block_len = 16384;
-    uint8_t *readbuf = malloc(block_len * sizeof(uint8_t));
+    uint8_t *readbuf = (uint8_t*)malloc(block_len * sizeof(uint8_t));
     size_t samplebuf_len = 16384;
-    quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));
+    quiet_sample_t *samplebuf = (quiet_sample_t*)malloc(samplebuf_len * sizeof(quiet_sample_t));
     quiet_encoder_clamp_frame_len(e, samplebuf_len);
     bool done = false;
     if (readbuf == NULL) {

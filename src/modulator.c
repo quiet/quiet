@@ -1,7 +1,7 @@
 #include "quiet/common.h"
 
 modulator *modulator_create(const modulator_options *opt) {
-    modulator *m = malloc(sizeof(modulator));
+    modulator *m = (modulator*)malloc(sizeof(modulator));
 
     m->opt = *opt;
 
@@ -47,13 +47,13 @@ size_t modulator_symbol_len(const modulator *m, size_t sample_len) {
 // modulator_emit assumes that samples is large enough to store symbol_len *
 // samples_per_symbol samples
 // returns number of samples written to *samples
-size_t modulator_emit(modulator *m, const float complex *symbols, size_t symbol_len,
+size_t modulator_emit(modulator *m, const quiet_float_complex *symbols, size_t symbol_len,
                              sample_t *samples) {
     if (!m) {
         return 0;
     }
 
-    float complex post_filter[m->opt.samples_per_symbol];
+    quiet_float_complex *post_filter = (quiet_float_complex*)alloca(m->opt.samples_per_symbol*sizeof(quiet_float_complex));
     size_t written = 0;
     for (size_t i = 0; i < symbol_len; i++) {
         if (m->interp) {
@@ -62,7 +62,7 @@ size_t modulator_emit(modulator *m, const float complex *symbols, size_t symbol_
             post_filter[0] = symbols[i];  // pass thru
         }
         for (size_t j = 0; j < m->opt.samples_per_symbol; j++) {
-            float complex mixed;
+            quiet_float_complex mixed;
             nco_crcf_mix_up(m->nco, post_filter[j], &mixed);
             if (m->dcfilter) {
                 iirfilt_crcf_execute(m->dcfilter, mixed, &mixed);
@@ -94,7 +94,7 @@ size_t modulator_flush(modulator *m, sample_t *samples) {
     }
 
     size_t symbol_len = 2 * m->opt.symbol_delay;
-    float complex terminate[symbol_len];
+    quiet_float_complex *terminate = (quiet_float_complex*)alloca(symbol_len*sizeof(quiet_float_complex));
     for (size_t i = 0; i < symbol_len; i++) {
         terminate[i] = 0;
     }

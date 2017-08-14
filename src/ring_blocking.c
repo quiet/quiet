@@ -1,7 +1,7 @@
 #include "quiet/ring_blocking.h"
 
 static ring_wait_t *ring_wait_create() {
-    ring_wait_t *w = malloc(sizeof(ring_wait_t));
+    ring_wait_t *w = (ring_wait_t*)malloc(sizeof(ring_wait_t));
     w->is_blocking = false;
     pthread_cond_init(&w->cond, NULL);
     return w;
@@ -66,10 +66,10 @@ static void ring_wait_signal(ring_wait_t *w) {
 }
 
 ring *ring_create(size_t length) {
-    ring *r = malloc(sizeof(ring));
+    ring *r = (ring*)malloc(sizeof(ring));
 
     r->length = length;
-    r->base = malloc(length);
+    r->base = (uint8_t*)malloc(length);
     r->reader = r->base;
     r->writer = r->base;
     pthread_mutex_init(&r->mutex, NULL);

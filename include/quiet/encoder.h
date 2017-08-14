@@ -32,7 +32,7 @@ struct quiet_encoder {
         gmsk_encoder gmsk;
     } frame;
     modulator *mod;
-    float complex *symbolbuf;
+    quiet_float_complex *symbolbuf;
     size_t symbolbuf_len;
     sample_t *samplebuf;
     size_t samplebuf_cap;
