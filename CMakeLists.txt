@@ -75,7 +75,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
 
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(Threads)
-if (CMAKE_USE_PTHREADS_INIT)
+if (CMAKE_USE_PTHREADS_INIT OR MSVC)
   add_definitions(-DRING_BLOCKING=1)
   add_definitions(-DQUIET_PTHREAD_ERROR=1)
   set(SRCFILES ${SRCFILES} src/ring_blocking.c)
