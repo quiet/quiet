@@ -5,6 +5,7 @@
 #include <stdbool.h>
 
 #ifdef _MSC_VER
+#include <time.h>
 #include <windows.h>
 typedef CRITICAL_SECTION pthread_mutex_t;
 
@@ -12,16 +13,6 @@ static inline void pthread_mutex_init(pthread_mutex_t *mutex, void *attr) { Init
 static inline void pthread_mutex_destroy(pthread_mutex_t *mutex) { DeleteCriticalSection(mutex); }
 static inline void pthread_mutex_lock(pthread_mutex_t *mutex) { EnterCriticalSection(mutex); }
 static inline void pthread_mutex_unlock(pthread_mutex_t *mutex) { LeaveCriticalSection(mutex); }
-
-struct timespec {
-    int64_t tv_sec;
-    int64_t tv_nsec;
-};
-
-struct timeval {
-    int64_t tv_sec;
-    int64_t tv_usec;
-};
 
 int gettimeofday(struct timeval *tp, void *_arg) {
     tp->tv_sec = 0;
@@ -35,7 +26,7 @@ static inline void pthread_cond_init(pthread_cond_t *cv, void *attr) { Initializ
 static inline void pthread_cond_destroy(pthread_cond_t *cv) { }
 static inline void pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mutex) { SleepConditionVariableCS(cv, mutex, INFINITE); }
 static inline void pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mutex, struct timespec *deadline) {
-    SleepConditionVariableCS(cv, mutex, deadline.tv_sec * 1000 + (deadline.tv_nsec / 1000000));
+    SleepConditionVariableCS(cv, mutex, deadline->tv_sec * 1000 + (deadline->tv_nsec / 1000000));
 }
 static inline void pthread_cond_signal(pthread_cond_t *cv) { WakeConditionVariable(cv); }
 static inline void pthread_cond_broadcast(pthread_cond_t *cv) { WakeAllConditionVariable(cv); }
