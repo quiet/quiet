@@ -1,6 +1,7 @@
 #include "quiet/error.h"
 
 #if QUIET_PTHREAD_ERROR
+#include <pthread.h>
 static pthread_once_t quiet_last_error_once = PTHREAD_ONCE_INIT;
 static pthread_key_t quiet_last_error_key;
 
@@ -32,6 +33,30 @@ void quiet_set_last_error_pthread(quiet_error err) {
     }
     *last = err;
 }
+#elif QUIET_WIN_ERROR
+#include <windows.h>
+INIT_ONCE quiet_last_error_once = INIT_ONCE_STATIC_INIT;
+static DWORD thread_local_error_key;
+
+static bool quiet_error_win_init(INIT_ONCE *once, void *, void *) {
+    thread_local_error_key = TlsAlloc();
+    quiet_error *last = (quiet_error*)malloc(sizeof(quiet_error));
+    *last = quiet_success;
+    TlsSetValue(thread_local_error_key, last);
+    return true;
+}
+
+quiet_error quiet_get_last_error_win() {
+    InitOnceExecuteOnce(&quiet_last_error_once, quiet_error_win_init, NULL, NULL);
+    return *(quiet_error*)TlsGetValue(thread_local_error_key);
+}
+
+void quiet_set_last_error_win(quiet_error err) {
+    InitOnceExecuteOnce(&quiet_last_error_once, quiet_error_win_init, NULL, NULL);
+    quiet_error *last = (quiet_error*)TlsGetValue(thread_local_error_key);
+    *last = err;
+}
+
 #else
 static quiet_error quiet_last_error;
 
@@ -47,6 +72,8 @@ void quiet_set_last_error_global(quiet_error err) {
 quiet_error quiet_get_last_error() {
 #if QUIET_PTHREAD_ERROR
     return quiet_get_last_error_pthread();
+#elif QUIET_WIN_ERROR
+    return quiet_get_last_error_win();
 #else
     return quiet_get_last_error_global();
 #endif
@@ -55,6 +82,8 @@ quiet_error quiet_get_last_error() {
 void quiet_set_last_error(quiet_error err) {
 #if QUIET_PTHREAD_ERROR
     quiet_set_last_error_pthread(err);
+#elif QUIET_WIN_ERROR
+    quiet_set_last_error_win(err);
 #else
     quiet_set_last_error_global(err);
 #endif
