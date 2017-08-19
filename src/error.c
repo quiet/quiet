@@ -38,12 +38,12 @@ void quiet_set_last_error_pthread(quiet_error err) {
 INIT_ONCE quiet_last_error_once = INIT_ONCE_STATIC_INIT;
 static DWORD thread_local_error_key;
 
-bool __stdcall quiet_error_win_init(INIT_ONCE *once, void *, void *) {
+int __stdcall quiet_error_win_init(INIT_ONCE *once, void *, void *) {
     thread_local_error_key = TlsAlloc();
     quiet_error *last = (quiet_error*)malloc(sizeof(quiet_error));
     *last = quiet_success;
     TlsSetValue(thread_local_error_key, last);
-    return true;
+    return 1;
 }
 
 quiet_error quiet_get_last_error_win() {
