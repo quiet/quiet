@@ -6,6 +6,7 @@
 
 #ifdef _MSC_VER
 #include <time.h>
+#include <errno.h>
 #include <windows.h>
 typedef CRITICAL_SECTION pthread_mutex_t;
 
@@ -24,9 +25,25 @@ typedef CONDITION_VARIABLE pthread_cond_t;
 
 static inline void pthread_cond_init(pthread_cond_t *cv, void *attr) { InitializeConditionVariable(cv); }
 static inline void pthread_cond_destroy(pthread_cond_t *cv) { }
-static inline void pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mutex) { SleepConditionVariableCS(cv, mutex, INFINITE); }
-static inline void pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mutex, struct timespec *deadline) {
-    SleepConditionVariableCS(cv, mutex, deadline->tv_sec * 1000 + (deadline->tv_nsec / 1000000));
+static inline int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mutex) {
+    int res = SleepConditionVariableCS(cv, mutex, INFINITE);
+    if (res) {
+        return 0;
+    }
+    if (GetLastError() == ERROR_TIMEOUT) {
+        return ETIMEDOUT;
+    }
+    return EINVAL;
+}
+static inline int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mutex, struct timespec *deadline) {
+    int res = SleepConditionVariableCS(cv, mutex, deadline->tv_sec * 1000 + (deadline->tv_nsec / 1000000));
+    if (res) {
+        return 0;
+    }
+    if (GetLastError() == ERROR_TIMEOUT) {
+        return ETIMEDOUT;
+    }
+    return EINVAL;
 }
 static inline void pthread_cond_signal(pthread_cond_t *cv) { WakeConditionVariable(cv); }
 static inline void pthread_cond_broadcast(pthread_cond_t *cv) { WakeAllConditionVariable(cv); }
