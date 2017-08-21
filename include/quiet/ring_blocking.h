@@ -15,7 +15,7 @@ static inline void pthread_mutex_destroy(pthread_mutex_t *mutex) { DeleteCritica
 static inline void pthread_mutex_lock(pthread_mutex_t *mutex) { EnterCriticalSection(mutex); }
 static inline void pthread_mutex_unlock(pthread_mutex_t *mutex) { LeaveCriticalSection(mutex); }
 
-int gettimeofday(struct timeval *tp, void *_arg) {
+static int gettimeofday(struct timeval *tp, void *_arg) {
     tp->tv_sec = 0;
     tp->tv_usec = 0;
     return 0;
