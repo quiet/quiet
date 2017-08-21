@@ -5,6 +5,19 @@
 #include <pthread.h>
 #include <time.h>
 
+#ifdef _MSC_VER
+#include <windows.h>
+static inline void usleep(int micros)
+{
+    if (micros > 0 && micros < 1000) {
+        return Sleep(1);
+    }
+    return Sleep(micros/1000);
+}
+#else
+#include <unistd.h>
+#endif
+
 typedef struct {
     ring *buf;
     size_t write_len;
@@ -19,8 +32,8 @@ void *write_sequence(void *arg_void) {
     size_t write_len = arg->write_len;
     uint8_t seq = 0;
     size_t temp_len = 16;
-    uint8_t *temp = malloc(temp_len * sizeof(uint8_t));
-    int *res = malloc(1 * sizeof(int));
+    uint8_t *temp = (uint8_t*)malloc(temp_len * sizeof(uint8_t));
+    int *res = (int*)malloc(1 * sizeof(int));
     *res = 0;
     for (size_t i = 0; i < write_len; ) {
         size_t nitems = rand() % 16 + 1;
@@ -58,9 +71,9 @@ void *read_sequence(void *arg_void) {
     ring *buf = arg->buf;
     size_t write_len = arg->write_len;
     size_t temp_len = 16;
-    uint8_t *temp = malloc(temp_len * sizeof(uint8_t));
+    uint8_t *temp = (uint8_t*)malloc(temp_len * sizeof(uint8_t));
     uint8_t seq = 0;
-    int *res = malloc(1 * sizeof(int));
+    int *res = (int*)malloc(1 * sizeof(int));
     *res = 0;
     for (size_t i = 0; i < write_len; ) {
         size_t nitems = rand() % 16 + 1;

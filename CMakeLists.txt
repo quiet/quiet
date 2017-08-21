@@ -234,7 +234,7 @@ add_dependencies(integration_test_runner cp-test-profiles)
 
 set(TEST_RUNNERS integration_test_runner)
 
-if (CMAKE_USE_PTHREADS_INIT)
+if (CMAKE_USE_PTHREADS_INIT OR MSVC)
   add_executable(test_ring_blocking EXCLUDE_FROM_ALL tests/ring_blocking.c src/ring_blocking.c)
   target_link_libraries(test_ring_blocking ${CMAKE_THREAD_LIBS_INIT})
   set_target_properties(test_ring_blocking PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")

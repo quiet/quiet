@@ -54,8 +54,8 @@ int test_payload(const char *profile_name,
     quiet_decoder *d = quiet_decoder_create(decodeopt, decode_rate);
 
     size_t samplebuf_len = 16384;
-    quiet_sample_t *samplebuf = malloc(samplebuf_len * sizeof(quiet_sample_t));
-    quiet_sample_t *silence = calloc(samplebuf_len, sizeof(quiet_sample_t));
+    quiet_sample_t *samplebuf = (quiet_sample_t*)malloc(samplebuf_len * sizeof(quiet_sample_t));
+    quiet_sample_t *silence = (quiet_sample_t*)calloc(samplebuf_len, sizeof(quiet_sample_t));
     if (do_clamp) {
         quiet_encoder_clamp_frame_len(e, samplebuf_len);
     }
@@ -68,7 +68,7 @@ int test_payload(const char *profile_name,
     }
 
     size_t payload_blocklen = 1 << 14;
-    uint8_t *payload_decoded = malloc(payload_blocklen * sizeof(uint8_t));
+    uint8_t *payload_decoded = (uint8_t*)malloc(payload_blocklen * sizeof(uint8_t));
 
     size_t written = samplebuf_len;
     size_t accum;
@@ -117,7 +117,7 @@ int test_profile(unsigned int encode_rate, unsigned int decode_rate, const char 
     size_t do_close_frame_len = sizeof(do_close_frame)/sizeof(bool);
     for (size_t i = 0; i < payload_lens_len; i++) {
         size_t payload_len = payload_lens[i];
-        uint8_t *payload = malloc(payload_len*sizeof(uint8_t));
+        uint8_t *payload = (uint8_t*)malloc(payload_len*sizeof(uint8_t));
         for (size_t j = 0; j < payload_len; j++) {
             payload[j] = rand() & 0xff;
         }
