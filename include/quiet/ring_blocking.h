@@ -5,53 +5,13 @@
 #include <stdbool.h>
 
 #ifdef _MSC_VER
-#include <time.h>
-#include <errno.h>
 #include <windows.h>
-typedef CRITICAL_SECTION pthread_mutex_t;
-
-static inline void pthread_mutex_init(pthread_mutex_t *mutex, void *attr) { InitializeCriticalSection(mutex); }
-static inline void pthread_mutex_destroy(pthread_mutex_t *mutex) { DeleteCriticalSection(mutex); }
-static inline void pthread_mutex_lock(pthread_mutex_t *mutex) { EnterCriticalSection(mutex); }
-static inline void pthread_mutex_unlock(pthread_mutex_t *mutex) { LeaveCriticalSection(mutex); }
-
-static int gettimeofday(struct timeval *tp, void *_arg) {
-    tp->tv_sec = 0;
-    tp->tv_usec = 0;
-    return 0;
-}
-
-typedef CONDITION_VARIABLE pthread_cond_t;
-
-static inline void pthread_cond_init(pthread_cond_t *cv, void *attr) { InitializeConditionVariable(cv); }
-static inline void pthread_cond_destroy(pthread_cond_t *cv) { }
-static inline int pthread_cond_wait(pthread_cond_t *cv, pthread_mutex_t *mutex) {
-    int res = SleepConditionVariableCS(cv, mutex, INFINITE);
-    if (res) {
-        return 0;
-    }
-    if (GetLastError() == ERROR_TIMEOUT) {
-        return ETIMEDOUT;
-    }
-    return EINVAL;
-}
-static inline int pthread_cond_timedwait(pthread_cond_t *cv, pthread_mutex_t *mutex, struct timespec *deadline) {
-    int res = SleepConditionVariableCS(cv, mutex, deadline->tv_sec * 1000 + (deadline->tv_nsec / 1000000));
-    if (res) {
-        return 0;
-    }
-    if (GetLastError() == ERROR_TIMEOUT) {
-        return ETIMEDOUT;
-    }
-    return EINVAL;
-}
-static inline void pthread_cond_signal(pthread_cond_t *cv) { WakeConditionVariable(cv); }
-static inline void pthread_cond_broadcast(pthread_cond_t *cv) { WakeAllConditionVariable(cv); }
+typedef CRITICAL_SECTION quiet_mutex;
+typedef CONDITION_VARIABLE quiet_cond;
 #else
-#include <unistd.h>
-#include <errno.h>
-#include <sys/time.h>
 #include <pthread.h>
+typedef pthread_mutex_t quiet_mutex;
+typedef pthread_cond_t quiet_cond;
 #endif
 
 #include "quiet/common.h"
@@ -59,7 +19,7 @@ static inline void pthread_cond_broadcast(pthread_cond_t *cv) { WakeAllCondition
 typedef struct {
     bool is_blocking;
     struct timespec timeout;
-    pthread_cond_t cond;
+    quiet_cond cond;
 } ring_wait_t;
 
 // pthread condvar approach to ring buffer
@@ -69,7 +29,7 @@ typedef struct {
     uint8_t *base;
     uint8_t *reader;
     uint8_t *writer;
-    pthread_mutex_t mutex;
+    quiet_mutex mutex;
 
     size_t partial_write_length;
     uint8_t *partial_writer;

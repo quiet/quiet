@@ -1,14 +1,73 @@
 #include "quiet/ring_blocking.h"
 
+#ifdef _MSC_VER
+#include <time.h>
+#include <errno.h>
+static inline void quiet_mutex_init(quiet_mutex *mutex, void *attr) { InitializeCriticalSection(mutex); }
+static inline void quiet_mutex_destroy(quiet_mutex *mutex) { DeleteCriticalSection(mutex); }
+static inline void quiet_mutex_lock(quiet_mutex *mutex) { EnterCriticalSection(mutex); }
+static inline void quiet_mutex_unlock(quiet_mutex *mutex) { LeaveCriticalSection(mutex); }
+
+static int quiet_gettime(struct timeval *tp, void *_arg) {
+    tp->tv_sec = 0;
+    tp->tv_usec = 0;
+    return 0;
+}
+
+static inline void quiet_cond_init(quiet_cond *cv, void *attr) { InitializeConditionVariable(cv); }
+static inline void quiet_cond_destroy(quiet_cond *cv) { }
+static inline int quiet_cond_wait(quiet_cond *cv, quiet_mutex *mutex) {
+    int res = SleepConditionVariableCS(cv, mutex, INFINITE);
+    if (res) {
+        return 0;
+    }
+    if (GetLastError() == ERROR_TIMEOUT) {
+        return ETIMEDOUT;
+    }
+    return EINVAL;
+}
+static inline int quiet_cond_timedwait(quiet_cond *cv, quiet_mutex *mutex, struct timespec *deadline) {
+    int res = SleepConditionVariableCS(cv, mutex, deadline->tv_sec * 1000 + (deadline->tv_nsec / 1000000));
+    if (res) {
+        return 0;
+    }
+    if (GetLastError() == ERROR_TIMEOUT) {
+        return ETIMEDOUT;
+    }
+    return EINVAL;
+}
+static inline void quiet_cond_signal(quiet_cond *cv) { WakeConditionVariable(cv); }
+static inline void quiet_cond_broadcast(quiet_cond *cv) { WakeAllConditionVariable(cv); }
+#else
+#include <unistd.h>
+#include <errno.h>
+#include <sys/time.h>
+static inline void quiet_mutex_init(quiet_mutex *mutex, const pthread_mutexattr_t *attr) { pthread_mutex_init(mutex, attr); }
+static inline void quiet_mutex_destroy(quiet_mutex *mutex) { pthread_mutex_destroy(mutex); }
+static inline void quiet_mutex_lock(quiet_mutex *mutex) { pthread_mutex_lock(mutex); }
+static inline void quiet_mutex_unlock(quiet_mutex *mutex) { pthread_mutex_unlock(mutex); }
+
+static int quiet_gettime(struct timeval *tp, void *_arg) {
+    return gettimeofday(tp, _arg);
+}
+
+static inline void quiet_cond_init(quiet_cond *cv, const pthread_condattr_t *attr) { pthread_cond_init(cv, attr); }
+static inline void quiet_cond_destroy(quiet_cond *cv) { pthread_cond_destroy(cv); }
+static inline int quiet_cond_wait(quiet_cond *cv, quiet_mutex *mutex) { return pthread_cond_wait(cv, mutex); }
+static inline int quiet_cond_timedwait(quiet_cond *cv, quiet_mutex *mutex, struct timespec *deadline) { return pthread_cond_timedwait(cv, mutex, deadline); }
+static inline void quiet_cond_signal(quiet_cond *cv) { pthread_cond_signal(cv); }
+static inline void quiet_cond_broadcast(quiet_cond *cv) { pthread_cond_broadcast(cv); }
+#endif
+
 static ring_wait_t *ring_wait_create() {
     ring_wait_t *w = (ring_wait_t*)malloc(sizeof(ring_wait_t));
     w->is_blocking = false;
-    pthread_cond_init(&w->cond, NULL);
+    quiet_cond_init(&w->cond, NULL);
     return w;
 }
 
 static void ring_wait_destroy(ring_wait_t *w) {
-    pthread_cond_destroy(&w->cond);
+    quiet_cond_destroy(&w->cond);
 }
 
 static void ring_wait_set_blocking(ring_wait_t *w, time_t sec, long nano) {
@@ -29,7 +88,7 @@ static struct timespec ring_wait_calculate_deadline(ring_wait_t *w) {
         return deadline;
     }
     struct timeval now;
-    gettimeofday(&now, NULL);
+    quiet_gettime(&now, NULL);
 
     struct timespec timeout = w->timeout;
     deadline.tv_sec = now.tv_sec + timeout.tv_sec;
@@ -41,28 +100,28 @@ static struct timespec ring_wait_calculate_deadline(ring_wait_t *w) {
     return deadline;
 }
 
-static int ring_wait_wait(ring_wait_t *w, pthread_mutex_t *mu, struct timespec deadline) {
+static int ring_wait_wait(ring_wait_t *w, quiet_mutex *mu, struct timespec deadline) {
     if (deadline.tv_sec == 0 && deadline.tv_nsec == 0) {
         int res = EINTR;
         while (res == EINTR) {
-            res = pthread_cond_wait(&w->cond, mu);
+            res = quiet_cond_wait(&w->cond, mu);
         }
         return res;
     }
 
     int res = EINTR;
     while (res == EINTR) {
-        res = pthread_cond_timedwait(&w->cond, mu, &deadline);
+        res = quiet_cond_timedwait(&w->cond, mu, &deadline);
     }
     return res;
 }
 
 static void ring_wait_broadcast(ring_wait_t *w) {
-    pthread_cond_broadcast(&w->cond);
+    quiet_cond_broadcast(&w->cond);
 }
 
 static void ring_wait_signal(ring_wait_t *w) {
-    pthread_cond_signal(&w->cond);
+    quiet_cond_signal(&w->cond);
 }
 
 ring *ring_create(size_t length) {
@@ -72,7 +131,7 @@ ring *ring_create(size_t length) {
     r->base = (uint8_t*)malloc(length);
     r->reader = r->base;
     r->writer = r->base;
-    pthread_mutex_init(&r->mutex, NULL);
+    quiet_mutex_init(&r->mutex, NULL);
     r->read_wait = ring_wait_create();
     r->write_wait = ring_wait_create();
     r->is_closed = false;
@@ -88,7 +147,7 @@ ring *ring_create(size_t length) {
 void ring_destroy(ring *r) {
     ring_wait_destroy(r->read_wait);
     ring_wait_destroy(r->write_wait);
-    pthread_mutex_destroy(&r->mutex);
+    quiet_mutex_destroy(&r->mutex);
     free(r->base);
     free(r);
 }
@@ -356,17 +415,17 @@ void ring_advance_reader(ring *r, size_t len) {
 }
 
 void ring_reader_lock(ring *r) {
-    pthread_mutex_lock(&r->mutex);
+    quiet_mutex_lock(&r->mutex);
 }
 
 void ring_reader_unlock(ring *r) {
-    pthread_mutex_unlock(&r->mutex);
+    quiet_mutex_unlock(&r->mutex);
 }
 
 void ring_writer_lock(ring *r) {
-    pthread_mutex_lock(&r->mutex);
+    quiet_mutex_lock(&r->mutex);
 }
 
 void ring_writer_unlock(ring *r) {
-    pthread_mutex_unlock(&r->mutex);
+    quiet_mutex_unlock(&r->mutex);
 }
