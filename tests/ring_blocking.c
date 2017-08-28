@@ -21,7 +21,7 @@ typedef struct {
     void *arg;
 } thread_call;
 
-static uint32_t __stdcall *thread_wrapper(void *callv) {
+static uint32_t __stdcall thread_wrapper(void *callv) {
     thread_call *call = (thread_call*)callv;
     uint32_t res = call->fn(call->arg);
     free(call);
