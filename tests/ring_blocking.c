@@ -21,11 +21,11 @@ typedef struct {
     void *arg;
 } thread_call;
 
-static uint32_t __stdcall thread_wrapper(void *callv) {
+static DWORD __stdcall thread_wrapper(void *callv) {
     thread_call *call = (thread_call*)callv;
     uint32_t res = call->fn(call->arg);
     free(call);
-    return res;
+    return (DWORD)res;
 }
 
 static void thread_create(thread_id *id, uint32_t (*fn)(void*), void *arg) {
@@ -36,7 +36,7 @@ static void thread_create(thread_id *id, uint32_t (*fn)(void*), void *arg) {
 }
 
 static uint32_t thread_join(thread_id id) {
-    return WaitForSingleObject(id, INFINITE);
+    return (uint32_t)WaitForSingleObject(id, INFINITE);
 }
 #else
 #include <unistd.h>
