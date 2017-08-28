@@ -223,8 +223,6 @@ install(TARGETS ${buildable_programs}
 
 add_custom_target(docs COMMAND cldoc generate -- --output docs/html --language=c ${CMAKE_BINARY_DIR}/include/quiet.h DEPENDS quiet-h)
 
-set(CTEST_BUILD_CONFIGURATION ${CMAKE_BUILD_TYPE})
-
 add_executable(integration_test_runner EXCLUDE_FROM_ALL tests/integration.c)
 target_link_libraries(integration_test_runner quiet_static)
 set_target_properties(integration_test_runner PROPERTIES RUNTIME_OUTPUT_DIRECTORY "tests")
@@ -248,5 +246,5 @@ if (CMAKE_USE_PTHREADS_INIT OR MSVC)
 endif()
 
 add_custom_target(test_runners DEPENDS ${TEST_RUNNERS})
-add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} DEPENDS test_runners)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} -C "$<CONFIGURATION>" DEPENDS test_runners)
 enable_testing()
