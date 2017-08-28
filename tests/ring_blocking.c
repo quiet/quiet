@@ -14,10 +14,25 @@ static inline void usleep(int micros)
     return Sleep(micros/1000);
 }
 
-typedef DWORD thread_id;
+typedef HANDLE thread_id;
+
+typedef struct {
+    uint32_t (*fn)(void*);
+    void *arg;
+} thread_call;
+
+static uint32_t __stdcall *thread_wrapper(void *callv) {
+    thread_call *call = (thread_call*)callv;
+    uint32_t res = call->fn(call->arg);
+    free(call);
+    return res;
+}
 
 static void thread_create(thread_id *id, uint32_t (*fn)(void*), void *arg) {
-    CreateThread(NULL, NULL, fn, arg, 0, id);
+    thread_call *call = (thread_call*)malloc(sizeof(thread_call));
+    call->fn = fn;
+    call->arg = arg;
+    *id = CreateThread(NULL, NULL, thread_wrapper, call, 0, NULL);
 }
 
 static uint32_t thread_join(thread_id id) {
@@ -68,7 +83,7 @@ typedef struct {
 
 const uint8_t seq_len = 231; // make this non power of 2 to force buffer variations
 
-uint32_t write_sequence(void *arg_void) {
+static uint32_t write_sequence(void *arg_void) {
     arg_t *arg = (arg_t*)arg_void;
     ring *buf = arg->buf;
     size_t write_len = arg->write_len;
@@ -106,7 +121,7 @@ uint32_t write_sequence(void *arg_void) {
     return res;
 }
 
-uint32_t read_sequence(void *arg_void) {
+static uint32_t read_sequence(void *arg_void) {
     arg_t *arg = (arg_t*)arg_void;
     ring *buf = arg->buf;
     size_t write_len = arg->write_len;
