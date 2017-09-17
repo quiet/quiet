@@ -13,7 +13,7 @@ size_t quiet_portaudio_encoder_get_frame_len(const quiet_portaudio_encoder *e);
 
 size_t quiet_portaudio_encoder_clamp_frame_len(quiet_portaudio_encoder *e, size_t sample_len);
 
-ssize_t quiet_portaudio_encoder_send(quiet_portaudio_encoder *enc, uint8_t *buf, size_t len);
+ssize_t quiet_portaudio_encoder_send(quiet_portaudio_encoder *enc, const uint8_t *buf, size_t len);
 
 ssize_t quiet_portaudio_encoder_emit(quiet_portaudio_encoder *enc);
 
