@@ -41,6 +41,14 @@ ssize_t quiet_portaudio_decoder_recv(quiet_portaudio_decoder *d, uint8_t *data, 
     return quiet_decoder_recv(d->dec, data, len);
 }
 
+void quiet_portaudio_decoder_set_blocking(quiet_portaudio_decoder *d, time_t sec, long nano) {
+    quiet_decoder_set_blocking(d->dec, sec, nano);
+}
+
+void quiet_portaudio_decoder_set_nonblocking(quiet_portaudio_decoder *d) {
+    quiet_decoder_set_nonblocking(d->dec);
+}
+
 void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
     PaError err = Pa_ReadStream(d->stream, d->sample_buffer, d->sample_buffer_size);
     if (err != paNoError) {

@@ -64,6 +64,14 @@ portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *o
     return enc;
 }
 
+void quiet_portaudio_encoder_set_blocking(portaudio_encoder *e, time_t sec, long nano) {
+    quiet_encoder_set_blocking(e->enc, sec, nano);
+}
+
+void quiet_portaudio_encoder_set_nonblocking(portaudio_encoder *e) {
+    quiet_encoder_set_nonblocking(e->enc);
+}
+
 size_t quiet_portaudio_encoder_get_frame_len(const portaudio_encoder *e) {
     return quiet_encoder_get_frame_len(e->enc);
 }
