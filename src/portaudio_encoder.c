@@ -22,7 +22,8 @@ static int encoder_callback(const void *input_buffer, void *output_buffer_v,
 }
 
 portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
-    size_t num_channels = 2;
+    const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
+    size_t num_channels = 2 < deviceInfo->maxOutputChannels ? 2 : deviceInfo->maxOutputChannels;
     PaStreamParameters param = {
         .device = device,
         .channelCount = num_channels,
