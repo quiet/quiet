@@ -23,6 +23,8 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
     uint8_t *read_buffer = malloc(read_buffer_size*sizeof(uint8_t));
     bool done = false;
 
+    quiet_portaudio_encoder_set_blocking(e, 0, 0);
+
     while (!done) {
         size_t nread = fread(read_buffer, sizeof(uint8_t), read_buffer_size, input);
         if (nread == 0) {

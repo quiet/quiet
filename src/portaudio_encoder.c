@@ -49,18 +49,18 @@ portaudio_encoder *quiet_portaudio_encoder_create(const quiet_encoder_options *o
                                            sizeof(quiet_sample_t));
     quiet_sample_t *mono_buffer = malloc(sample_buffer_size * sizeof(quiet_sample_t));
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
-        return NULL;
-    }
-
     enc->enc = e;
     enc->sample_buffer = sample_buffer;
     enc->mono_buffer = mono_buffer;
     enc->stream = stream;
     enc->sample_buffer_size = sample_buffer_size;
     enc->num_channels = num_channels;
+
+    err = Pa_StartStream(stream);
+    if (err != paNoError) {
+        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
+        return NULL;
+    }
 
     return enc;
 }
