@@ -39,12 +39,6 @@ portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, Pa
         return NULL;
     }
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
-        return NULL;
-    }
-
     const PaStreamInfo *info = Pa_GetStreamInfo(stream);
     decoder *d = quiet_decoder_create(opt, info->sampleRate);
 
@@ -57,6 +51,12 @@ portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, Pa
     dec->mono_buffer = mono_buffer;
     dec->sample_buffer_size = sample_buffer_size;
     dec->num_channels = num_channels;
+
+    err = Pa_StartStream(stream);
+    if (err != paNoError) {
+        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
+        return NULL;
+    }
 
     return dec;
 }
