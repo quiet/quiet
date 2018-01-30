@@ -3,12 +3,12 @@
 
 #include "quiet-portaudio.h"
 
-static bool should_terminate = false;
-
+static quiet_portaudio_decoder *decoder = NULL;
 static void sig_handler(int signal) {
-    should_terminate = true;
+    if (decoder) {
+        quiet_portaudio_decoder_close(decoder);
+    }
 }
-
 
 int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     PaError err = Pa_Initialize();
@@ -22,22 +22,22 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
     double sample_rate = deviceInfo->defaultSampleRate;
     PaTime latency = deviceInfo->defaultLowInputLatency;
 
-    quiet_portaudio_decoder *d = quiet_portaudio_decoder_create(opt, device, latency, sample_rate, 16384);
+    decoder = quiet_portaudio_decoder_create(opt, device, latency, sample_rate);
+    quiet_portaudio_decoder_set_blocking(decoder, 0, 0);
 
     size_t write_buffer_size = 16384;
     uint8_t *write_buffer = malloc(write_buffer_size*sizeof(uint8_t));
 
-    while (!should_terminate) {
-        quiet_portaudio_decoder_consume(d);
-        ssize_t read = quiet_portaudio_decoder_recv(d, write_buffer, write_buffer_size);
-        if (read < 0) {
-            continue;
+    while (true) {
+        ssize_t read = quiet_portaudio_decoder_recv(decoder, write_buffer, write_buffer_size);
+        if (read <= 0) {
+            break;
         }
         fwrite(write_buffer, 1, read, output);
     }
 
     free(write_buffer);
-    quiet_portaudio_decoder_destroy(d);
+    quiet_portaudio_decoder_destroy(decoder);
 
     return 0;
 }

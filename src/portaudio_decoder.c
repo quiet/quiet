@@ -1,7 +1,108 @@
 #include "quiet/portaudio_decoder.h"
+#include <unistd.h>
 
-portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, PaDeviceIndex device, PaTime latency, double sample_rate, size_t sample_buffer_size) {
-    PaStream *stream;
+static void decoder_dealloc(portaudio_decoder *dec) {
+    if (!dec) {
+        return;
+    }
+    if (dec->stream) {
+        Pa_CloseStream(dec->stream);
+    }
+    if (dec->dec) {
+        quiet_decoder_destroy(dec->dec);
+    }
+    if (dec->mono_buffer) {
+        free(dec->mono_buffer);
+    }
+    if (dec->consume_ring) {
+        ring_destroy(dec->consume_ring);
+    }
+    pthread_mutex_destroy(&dec->reflock);
+    free(dec);
+}
+
+static unsigned int decoder_decref(portaudio_decoder *dec) {
+    pthread_mutex_lock(&dec->reflock);
+    dec->refcnt--;
+    unsigned int refcnt = dec->refcnt;
+    pthread_mutex_unlock(&dec->reflock);
+    if (refcnt == 0) {
+        decoder_dealloc(dec);
+    }
+    return refcnt;
+}
+
+static int decoder_callback(const void *input_buffer_v, void *output_buffer_v,
+                            unsigned long frame_count, const PaStreamCallbackTimeInfo *time_info,
+                            PaStreamCallbackFlags status_flags, void *decoder_v) {
+
+    portaudio_decoder *dec = (portaudio_decoder *)decoder_v;
+    quiet_sample_t *input_buffer = (quiet_sample_t *)input_buffer_v;
+
+    if (frame_count > dec->mono_buffer_size) {
+        // XXX we need an upsized buffer if this happens
+        return paAbort;
+    }
+
+    for (size_t i = 0; i < frame_count; i++) {
+        dec->mono_buffer[i] = input_buffer[i * dec->num_channels];
+    }
+
+    ring_writer_lock(dec->consume_ring);
+    while (frame_count > 0) {
+        size_t next_write = frame_count < 64 ? frame_count : 64;
+        frame_count -= next_write;
+        ssize_t ring_written =
+            ring_write(dec->consume_ring, dec->mono_buffer, next_write * sizeof(quiet_sample_t));
+        if (ring_written == RingErrorWouldBlock) {
+            // in this case, do we signal that we lost samples?
+            ring_writer_unlock(dec->consume_ring);
+            return paContinue;
+        }
+        if (ring_written == 0) {
+            // someone closed the ring, so quit
+            ring_writer_unlock(dec->consume_ring);
+            return paComplete;
+        }
+        if (ring_written < 0) {
+            ring_writer_unlock(dec->consume_ring);
+            return paAbort;
+        }
+    }
+    ring_writer_unlock(dec->consume_ring);
+    return paContinue;
+}
+
+static void *consume(void *dec_void) {
+    portaudio_decoder *dec = (portaudio_decoder *)dec_void;
+    size_t pcm_buffer_len = 64;
+    quiet_sample_t *pcm = malloc(pcm_buffer_len * sizeof(quiet_sample_t));
+    for (;;) {
+        // get some pcm from the soundcard thread via dec->consume_ring
+        ring_reader_lock(dec->consume_ring);
+        ssize_t bytes_read = ring_read(dec->consume_ring, pcm, pcm_buffer_len * sizeof(quiet_sample_t));
+        ring_reader_unlock(dec->consume_ring);
+
+        if (bytes_read <= 0) {
+            break;
+        }
+
+        quiet_decoder_consume(dec->dec, pcm, (bytes_read / (sizeof(quiet_sample_t))));
+    }
+    free(pcm);
+
+    while (Pa_IsStreamActive(dec->stream)) {
+        usleep(100);
+    }
+    quiet_decoder_close(dec->dec);
+
+    decoder_decref(dec);
+
+    return NULL;
+}
+
+portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, PaDeviceIndex device,
+                                                  PaTime latency, double sample_rate) {
     const PaDeviceInfo *deviceInfo = Pa_GetDeviceInfo(device);
     size_t num_channels = 2 < deviceInfo->maxInputChannels ? 2 : deviceInfo->maxInputChannels;
     PaStreamParameters param = {
@@ -11,33 +112,43 @@ portaudio_decoder *quiet_portaudio_decoder_create(const decoder_options *opt, Pa
         .suggestedLatency = latency,
         .hostApiSpecificStreamInfo = NULL,
     };
-    PaError err = Pa_OpenStream(&stream, &param, NULL, sample_rate,
-                        sample_buffer_size, paNoFlag, NULL, NULL);
+
+    portaudio_decoder *dec = calloc(1, sizeof(portaudio_decoder));
+    dec->refcnt++;
+    pthread_mutex_init(&dec->reflock, NULL);
+    PaError err = Pa_OpenStream(&dec->stream, &param, NULL, sample_rate, 0, paNoFlag, decoder_callback, dec);
     if (err != paNoError) {
         printf("failed to open port audio stream, %s\n", Pa_GetErrorText(err));
+        decoder_decref(dec);
         return NULL;
     }
 
-    err = Pa_StartStream(stream);
-    if (err != paNoError) {
-        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
-        return NULL;
-    }
-
-    const PaStreamInfo *info = Pa_GetStreamInfo(stream);
+    const PaStreamInfo *info = Pa_GetStreamInfo(dec->stream);
     decoder *d = quiet_decoder_create(opt, info->sampleRate);
 
-    quiet_sample_t *sample_buffer = malloc(num_channels * sample_buffer_size * sizeof(quiet_sample_t));
-    quiet_sample_t *mono_buffer = malloc(sample_buffer_size * sizeof(quiet_sample_t));
-    portaudio_decoder *decoder = malloc(1 * sizeof(portaudio_decoder));
-    decoder->dec = d;
-    decoder->stream = stream;
-    decoder->sample_buffer = sample_buffer;
-    decoder->mono_buffer = mono_buffer;
-    decoder->sample_buffer_size = sample_buffer_size;
-    decoder->num_channels = num_channels;
+    dec->mono_buffer_size = (1 << 14);
+    quiet_sample_t *mono_buffer =
+        malloc(dec->mono_buffer_size * sizeof(quiet_sample_t));
+    dec->dec = d;
+    dec->mono_buffer = mono_buffer;
+    dec->num_channels = num_channels;
+    dec->consume_ring = ring_create(4 * (1 << 14));
+    ring_set_reader_blocking(dec->consume_ring, 0, 0);
 
-    return decoder;
+    err = Pa_StartStream(dec->stream);
+    if (err != paNoError) {
+        printf("failed to start port audio stream, %s\n", Pa_GetErrorText(err));
+        decoder_decref(dec);
+        return NULL;
+    }
+
+    dec->refcnt++;
+    pthread_attr_t consume_attr;
+    pthread_attr_init(&consume_attr);
+    pthread_attr_setdetachstate(&consume_attr, PTHREAD_CREATE_DETACHED);
+    pthread_create(&dec->consume_thread, &consume_attr, consume, dec);
+
+    return dec;
 }
 
 ssize_t quiet_portaudio_decoder_recv(quiet_portaudio_decoder *d, uint8_t *data, size_t len) {
@@ -52,48 +163,38 @@ void quiet_portaudio_decoder_set_nonblocking(quiet_portaudio_decoder *d) {
     quiet_decoder_set_nonblocking(d->dec);
 }
 
-void quiet_portaudio_decoder_consume(quiet_portaudio_decoder *d) {
-    PaError err = Pa_ReadStream(d->stream, d->sample_buffer, d->sample_buffer_size);
-    if (err != paNoError) {
-        printf("failed to read port audio stream, %s\n", Pa_GetErrorText(err));
-        return;
-    }
-    for (size_t i = 0; i < d->sample_buffer_size; i++) {
-        d->mono_buffer[i] = 0;
-        for (size_t j = 0; j < d->num_channels; j++) {
-            d->mono_buffer[i] += d->sample_buffer[(i * d->num_channels) + j];
-        }
-    }
-    quiet_decoder_consume(d->dec, d->mono_buffer, d->sample_buffer_size);
-}
-
 bool quiet_portaudio_decoder_frame_in_progress(quiet_portaudio_decoder *d) {
+    // TODO lock decoder!
     return quiet_decoder_frame_in_progress(d->dec);
 }
 
 unsigned int quiet_portaudio_decoder_checksum_fails(const quiet_portaudio_decoder *d) {
+    // TODO lock decoder!
     return quiet_decoder_checksum_fails(d->dec);
 }
 
-const quiet_decoder_frame_stats *quiet_portaudio_decoder_consume_stats(quiet_portaudio_decoder *d, size_t *num_frames) {
+const quiet_decoder_frame_stats *quiet_portaudio_decoder_consume_stats(quiet_portaudio_decoder *d,
+                                                                       size_t *num_frames) {
+    // TODO lock decoder!
     return quiet_decoder_consume_stats(d->dec, num_frames);
 }
 
 void quiet_portaudio_decoder_enable_stats(quiet_portaudio_decoder *d) {
+    // TODO lock decoder!
     quiet_decoder_enable_stats(d->dec);
 }
 
 void quiet_portaudio_decoder_disable_stats(quiet_portaudio_decoder *d) {
+    // TODO lock decoder!
     quiet_decoder_disable_stats(d->dec);
 }
 
-void quiet_portaudio_decoder_destroy(quiet_portaudio_decoder *d) {
-    Pa_StopStream(d->stream);
-    Pa_CloseStream(d->stream);
-
-    quiet_decoder_destroy(d->dec);
-    free(d->sample_buffer);
-    free(d->mono_buffer);
-    free(d);
+void quiet_portaudio_decoder_close(quiet_portaudio_decoder *dec) {
+    ring_writer_lock(dec->consume_ring);
+    ring_close(dec->consume_ring);
+    ring_writer_unlock(dec->consume_ring);
 }
 
+void quiet_portaudio_decoder_destroy(quiet_portaudio_decoder *d) {
+    decoder_decref(d);
+}
