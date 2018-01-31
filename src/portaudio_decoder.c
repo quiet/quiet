@@ -49,11 +49,12 @@ static int decoder_callback(const void *input_buffer_v, void *output_buffer_v,
     }
 
     ring_writer_lock(dec->consume_ring);
+    quiet_sample_t *buf = dec->mono_buffer;
     while (frame_count > 0) {
         size_t next_write = frame_count < 64 ? frame_count : 64;
         frame_count -= next_write;
         ssize_t ring_written =
-            ring_write(dec->consume_ring, dec->mono_buffer, next_write * sizeof(quiet_sample_t));
+            ring_write(dec->consume_ring, buf, next_write * sizeof(quiet_sample_t));
         if (ring_written == RingErrorWouldBlock) {
             // in this case, do we signal that we lost samples?
             ring_writer_unlock(dec->consume_ring);
@@ -68,6 +69,7 @@ static int decoder_callback(const void *input_buffer_v, void *output_buffer_v,
             ring_writer_unlock(dec->consume_ring);
             return paAbort;
         }
+        buf += next_write;
     }
     ring_writer_unlock(dec->consume_ring);
     return paContinue;
