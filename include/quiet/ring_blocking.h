@@ -47,6 +47,8 @@ ssize_t ring_read(ring *r, void *dst, size_t len);
 // must be called with lock held
 void ring_close(ring *r);
 // must be called with lock held
+bool ring_is_closed(ring *r);
+// must be called with lock held
 void ring_advance_reader(ring *r, size_t len);
 
 ssize_t ring_write_partial_init(ring *r, size_t len);

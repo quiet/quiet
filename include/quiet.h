@@ -1020,8 +1020,9 @@ void quiet_decoder_set_nonblocking(quiet_decoder *d);
  * help hide uneven latencies in the decoding process and ensure smoother
  * reception at the cost of longer latencies.
  *
+ * @return number of samples consumed, or 0 if the decoder is closed
  */
-void quiet_decoder_consume(quiet_decoder *d, const quiet_sample_t *samplebuf, size_t sample_len);
+ssize_t quiet_decoder_consume(quiet_decoder *d, const quiet_sample_t *samplebuf, size_t sample_len);
 
 /**
  * Check if a frame is likely being received

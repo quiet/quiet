@@ -104,6 +104,10 @@ void ring_close(ring *r) {
     r->is_closed = true;
 }
 
+bool ring_close(ring *r) {
+    return r->is_closed;
+}
+
 void ring_advance_reader(ring *r, size_t len) {
     r->reader = ring_calculate_advance(r, r->reader, len);
 }

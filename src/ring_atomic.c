@@ -127,6 +127,10 @@ void ring_close(ring *r) {
     atomic_store(&r->is_closed, true);
 }
 
+bool ring_is_closed(ring *r) {
+    return (bool)atomic_load(&r->is_closed);
+}
+
 void ring_advance_reader(ring *r, size_t len) {
     uint8_t *r_copy = (uint8_t*)atomic_load(&r->reader);
     r_copy = ring_calculate_advance(r, r_copy, len);

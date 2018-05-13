@@ -449,12 +449,11 @@ ssize_t quiet_decoder_recv(quiet_decoder *d, uint8_t *data, size_t len) {
     ssize_t framelen_written;
     ring_reader_lock(d->buf);
     framelen_written = ring_read(d->buf, (uint8_t*)(&framelen), sizeof(size_t));
-    if (framelen_written == 0) {
-        return 0;
-    }
-    if (framelen_written < 0) {
+    if (framelen_written <= 0) {
         ring_reader_unlock(d->buf);
         switch (framelen_written) {
+            case 0:
+                return 0;
             case RingErrorWouldBlock:
                 quiet_set_last_error(quiet_would_block);
                 break;
@@ -498,9 +497,17 @@ static size_t decoder_max_len(decoder *d) {
     return d->symbolbuf_len * d->demod->opt.samples_per_symbol;
 }
 
-void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_len) {
+ssize_t quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_len) {
     if (!d) {
-        return;
+        return 0;
+    }
+
+    ring_writer_lock(d->buf);
+    bool closed = ring_is_closed(d->buf);
+    ring_writer_unlock(d->buf);
+
+    if (closed) {
+        return 0;
     }
 
     size_t stride_len = decoder_max_len(d);
@@ -587,6 +594,8 @@ void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_
             break;
         }
     }
+
+    return sample_len;
 }
 
 bool quiet_decoder_frame_in_progress(decoder *d) {
