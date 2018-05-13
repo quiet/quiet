@@ -30,6 +30,7 @@ uint8_t *ring_calculate_advance(const ring *r, uint8_t *p, size_t adv);
 ssize_t ring_write(ring *r, const void *buf, size_t len);
 ssize_t ring_read(ring *r, void *dst, size_t len);
 void ring_close(ring *r);
+bool ring_is_closed(ring *r);
 void ring_advance_reader(ring *r, size_t len);
 
 ssize_t ring_write_partial_init(ring *r, size_t len);
