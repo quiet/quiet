@@ -1,4 +1,4 @@
-<img src="https://quiet.github.io/qmp_header_t.png" alt="Quiet Modem Project logo" height="70" >
+<img src="https://quiet.github.io/qmp_header_t.png" alt="Quiet Modem Project logo" height="140" >
 
 [Quiet](https://github.com/quiet/quiet/)
 ===========
