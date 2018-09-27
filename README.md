@@ -1,3 +1,5 @@
+<img src="https://quiet.github.io/qmp_header_t.png" alt="Quiet Modem Project logo" height="70" >
+
 [Quiet](https://github.com/quiet/quiet/)
 ===========
 [![Build Status](https://travis-ci.org/quiet/quiet.svg?branch=master)](https://travis-ci.org/quiet/quiet)
