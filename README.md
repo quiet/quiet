@@ -2,9 +2,7 @@
 
 [Quiet](https://github.com/quiet/quiet/)
 ===========
-[![Build Status](https://travis-ci.org/quiet/quiet.svg?branch=master)](https://travis-ci.org/quiet/quiet)
-
-[![Quiet Modem Chat](https://discordapp.com/api/guilds/290985648054206464/embed.png?style=shield)](https://discordapp.com/invite/eRw5UjF)
+[![Build Status](https://travis-ci.org/quiet/quiet.svg?branch=master)](https://travis-ci.org/quiet/quiet) [![Quiet Modem Chat](https://discordapp.com/api/guilds/290985648054206464/embed.png?style=shield)](https://discordapp.com/invite/eRw5UjF)
 
 
 **[Documentation](http://quiet.github.io/quiet/)**
