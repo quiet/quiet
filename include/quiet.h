@@ -427,6 +427,8 @@ typedef enum encodings {
      * computational capacity.
      */
     gmsk_encoding,
+
+    dsss_encoding,
 } quiet_encoding_t;
 
 /**

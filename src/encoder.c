@@ -80,6 +80,33 @@ void encoder_gmsk_create(const encoder_options *opt, encoder *e) {
     e->frame.gmsk = gmsk;
 }
 
+void encoder_dsss_create(const encoder_options *opt, encoder *e) {
+    dsss_encoder dsss;
+
+    dsssframegenprops_s props = {
+        .check = opt->checksum_scheme,
+        .fec0 = opt->inner_fec_scheme,
+        .fec1 = opt->outer_fec_scheme,
+    };
+
+    dsss.framegen = dsssframegen_create(&props);
+    printf("doing a thing\n");
+    dsssframegen_set_header_len(dsss.framegen, 0);
+    if (opt->header_override_defaults) {
+        dsssframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+        };
+        dsssframegen_set_header_props(dsss.framegen, &header_props);
+    }
+    e->symbolbuf = NULL;
+    e->symbolbuf_len = 0;
+    dsss.symbols_remaining = 0;
+
+    e->frame.dsss = dsss;
+}
+
 encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     if (opt->modopt.gain < 0 || opt->modopt.gain > 0.5) {
         quiet_set_last_error(quiet_encoder_bad_config);
@@ -99,6 +126,9 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
         break;
     case gmsk_encoding:
         encoder_gmsk_create(opt, e);
+        break;
+    case dsss_encoding:
+        encoder_dsss_create(opt, e);
         break;
     }
 
@@ -204,6 +234,8 @@ static int encoder_is_assembled(encoder *e) {
         return flexframegen_is_assembled(e->frame.modem.framegen);
     case gmsk_encoding:
         return gmskframegen_is_assembled(e->frame.gmsk.framegen);
+    case dsss_encoding:
+        return dsssframegen_is_assembled(e->frame.dsss.framegen);
     }
 }
 
@@ -284,6 +316,10 @@ static bool encoder_read_next_frame(encoder *e) {
                               framelen, (crc_scheme)e->opt.checksum_scheme,
                               (fec_scheme)e->opt.inner_fec_scheme, (fec_scheme)e->opt.outer_fec_scheme);
         break;
+    case dsss_encoding:
+        dsssframegen_assemble(e->frame.dsss.framegen, header, e->readframe, framelen);
+        e->frame.dsss.symbols_remaining = dsssframegen_getframelen(e->frame.dsss.framegen);
+        break;
     }
 
     e->has_flushed = false;
@@ -314,6 +350,11 @@ static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
                               (fec_scheme)e->opt.outer_fec_scheme);
         num_symbols = gmskframegen_getframelen(e->frame.gmsk.framegen);
         gmskframegen_reset(e->frame.gmsk.framegen);
+        break;
+    case dsss_encoding:
+        dsssframegen_assemble(e->frame.dsss.framegen, header, empty, data_len);
+        num_symbols = dsssframegen_getframelen(e->frame.dsss.framegen);
+        dsssframegen_reset(e->frame.dsss.framegen);
         break;
     }
     free(empty);
@@ -368,6 +409,19 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
             }
         }
         return i;
+    case dsss_encoding:
+        if (requested_length > e->frame.dsss.symbols_remaining) {
+            requested_length = e->frame.dsss.symbols_remaining;
+        }
+
+        if (requested_length > e->symbolbuf_len) {
+            e->symbolbuf = realloc(e->symbolbuf, requested_length * sizeof(float complex));
+            e->symbolbuf_len = requested_length;
+        }
+
+        dsssframegen_write_samples(e->frame.dsss.framegen, e->symbolbuf, requested_length);
+        e->frame.dsss.symbols_remaining -= requested_length;
+        return requested_length;
     }
 }
 
@@ -500,6 +554,9 @@ void quiet_encoder_destroy(encoder *e) {
         break;
     case gmsk_encoding:
         gmskframegen_destroy(e->frame.gmsk.framegen);
+        break;
+    case dsss_encoding:
+        dsssframegen_destroy(e->frame.dsss.framegen);
         break;
     }
     if (e->resampler) {

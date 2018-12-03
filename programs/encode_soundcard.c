@@ -31,7 +31,9 @@ int encode_to_soundcard(FILE *input, quiet_encoder_options *opt) {
             done = true;
         }
 
+        printf("getting frame len\n");
         size_t frame_len = quiet_portaudio_encoder_get_frame_len(e);
+        printf("frame len %zu\n", frame_len);
         for (size_t i = 0; i < nread; i += frame_len) {
             frame_len = (frame_len > (nread - i)) ? (nread - i) : frame_len;
             quiet_portaudio_encoder_send(e, read_buffer + i, frame_len);

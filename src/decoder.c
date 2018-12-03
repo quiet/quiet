@@ -226,6 +226,32 @@ static void decoder_gmsk_create(const decoder_options *opt, decoder *d) {
     d->frame.gmsk = gmsk;
 }
 
+static void decoder_dsss_create(const decoder_options *opt, decoder *d) {
+    dsss_decoder dsss;
+
+    dsss.framesync = dsssframesync_create(decoder_on_decode, d);
+    dsssframesync_set_header_len(dsss.framesync, 0);
+    if (opt->is_debug) {
+        dsssframesync_debug_enable(dsss.framesync);
+    }
+    dsssframesync_decode_header_soft(dsss.framesync, 1);
+    dsssframesync_decode_payload_soft(dsss.framesync, 1);
+    if (opt->header_override_defaults) {
+        dsssframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+        };
+        dsssframesync_set_header_props(dsss.framesync, &header_props);
+    }
+
+    size_t symbolbuf_len = 256;
+    d->symbolbuf = malloc(symbolbuf_len * sizeof(float complex));
+    d->symbolbuf_len = symbolbuf_len;
+
+    d->frame.dsss = dsss;
+}
+
 decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
     decoder *d = malloc(sizeof(decoder));
 
@@ -240,6 +266,9 @@ decoder *quiet_decoder_create(const decoder_options *opt, float sample_rate) {
         break;
     case gmsk_encoding:
         decoder_gmsk_create(opt, d);
+        break;
+    case dsss_encoding:
+        decoder_dsss_create(opt, d);
         break;
     }
 
@@ -585,6 +614,16 @@ void quiet_decoder_consume(decoder *d, const sample_t *samplebuf, size_t sample_
             }
 
             break;
+        case dsss_encoding:
+            dsssframesync_execute(d->frame.dsss.framesync, d->symbolbuf, symbol_len);
+            if (d->opt.is_debug) {
+                char fname[50];
+                sprintf(fname, "framesync_%u.out", d->i);
+                dsssframesync_debug_print(d->frame.dsss.framesync, fname);
+                d->i++;
+            }
+
+            break;
         }
     }
 }
@@ -599,6 +638,9 @@ bool quiet_decoder_frame_in_progress(decoder *d) {
         break;
     case gmsk_encoding:
         return gmskframesync_is_frame_open(d->frame.gmsk.framesync);
+        break;
+    case dsss_encoding:
+        return dsssframesync_is_frame_open(d->frame.dsss.framesync);
         break;
     }
 }
@@ -671,6 +713,9 @@ void quiet_decoder_flush(decoder *d) {
         gmskframesync_execute(d->frame.gmsk.framesync, d->symbolbuf,
                               symbol_len);
         break;
+    case dsss_encoding:
+        dsssframesync_execute(d->frame.dsss.framesync, d->symbolbuf, symbol_len);
+        break;
     }
 }
 
@@ -700,6 +745,9 @@ void quiet_decoder_destroy(decoder *d) {
         break;
     case gmsk_encoding:
         gmskframesync_destroy(d->frame.gmsk.framesync);
+        break;
+    case dsss_encoding:
+        dsssframesync_destroy(d->frame.dsss.framesync);
         break;
     }
     if (d->resampler) {
