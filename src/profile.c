@@ -33,6 +33,8 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
             opt->encoding = gmsk_encoding;
         } else if (strcmp(scheme, "dsss") == 0) {
             opt->encoding = dsss_encoding;
+        } else if (strcmp(scheme, "fsk") == 0) {
+            opt->encoding = fsk_encoding;
         } else {
             opt->encoding = modem_encoding; // this will be overriden later if ofdm
             opt->mod_scheme = (quiet_modulation_scheme_t)liquid_getopt_str2mod(scheme);
@@ -62,7 +64,7 @@ encoder_options *encoder_profile(json_t *root, const char *profilename) {
         opt->frame_len = json_integer_value(v);
     }
     if ((v = json_object_get(profile, "ofdm"))) {
-        if (opt->encoding == gmsk_encoding || opt->encoding == dsss_encoding) {
+        if (opt->encoding == gmsk_encoding || opt->encoding == dsss_encoding || opt->encoding == fsk_encoding) {
             free(opt);
             quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;
@@ -214,6 +216,8 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
             opt->encoding = gmsk_encoding;
         } else if (strcmp(scheme, "dsss") == 0) {
             opt->encoding = dsss_encoding;
+        } else if (strcmp(scheme, "fsk") == 0) {
+            opt->encoding = fsk_encoding;
         } else {
             opt->encoding = modem_encoding; // this will be overriden later if ofdm
         }
@@ -239,7 +243,7 @@ decoder_options *decoder_profile(json_t *root, const char *profilename) {
         }
     }
     if ((v = json_object_get(profile, "ofdm"))) {
-        if (opt->encoding == gmsk_encoding || opt->encoding == dsss_encoding) {
+        if (opt->encoding == gmsk_encoding || opt->encoding == dsss_encoding || opt->encoding == fsk_encoding) {
             free(opt);
             quiet_set_last_error(quiet_profile_invalid_profile);
             return NULL;

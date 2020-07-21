@@ -107,6 +107,37 @@ void encoder_dsss_create(const encoder_options *opt, encoder *e) {
     e->frame.dsss = dsss;
 }
 
+void encoder_fsk_create(const encoder_options *opt, encoder *e) {
+    fsk_encoder fsk;
+
+    fskframegenprops_s props = {
+        .check = opt->checksum_scheme,
+        .fec0 = opt->inner_fec_scheme,
+        .fec1 = opt->outer_fec_scheme,
+        .bits_per_symbol = 3,
+        .samples_per_symbol = 100,
+    };
+    float bandwidth = 0.25f;
+
+    fsk.framegen = fskframegen_create(&props, bandwidth);
+    fskframegen_set_header_len(fsk.framegen, 0);
+    if (opt->header_override_defaults) {
+        fskframegenprops_s header_props = {
+            .check = opt->header_checksum_scheme,
+            .fec0 = opt->header_inner_fec_scheme,
+            .fec1 = opt->header_outer_fec_scheme,
+            .bits_per_symbol = 3,
+            .samples_per_symbol = 100,
+        };
+        fskframegen_set_header_props(fsk.framegen, &header_props);
+    }
+    e->symbolbuf = NULL;
+    e->symbolbuf_len = 0;
+    fsk.symbols_remaining = 0;
+
+    e->frame.fsk = fsk;
+}
+
 encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
     if (opt->modopt.gain < 0 || opt->modopt.gain > 0.5) {
         quiet_set_last_error(quiet_encoder_bad_config);
@@ -129,6 +160,9 @@ encoder *quiet_encoder_create(const encoder_options *opt, float sample_rate) {
         break;
     case dsss_encoding:
         encoder_dsss_create(opt, e);
+        break;
+    case fsk_encoding:
+        encoder_fsk_create(opt, e);
         break;
     }
 
@@ -236,6 +270,8 @@ static int encoder_is_assembled(encoder *e) {
         return gmskframegen_is_assembled(e->frame.gmsk.framegen);
     case dsss_encoding:
         return dsssframegen_is_assembled(e->frame.dsss.framegen);
+    case fsk_encoding:
+        return fskframegen_is_assembled(e->frame.fsk.framegen);
     }
 }
 
@@ -320,6 +356,10 @@ static bool encoder_read_next_frame(encoder *e) {
         dsssframegen_assemble(e->frame.dsss.framegen, header, e->readframe, framelen);
         e->frame.dsss.symbols_remaining = dsssframegen_getframelen(e->frame.dsss.framegen);
         break;
+    case fsk_encoding:
+        fskframegen_assemble(e->frame.fsk.framegen, header, e->readframe, framelen);
+        e->frame.fsk.symbols_remaining = fskframegen_getframelen(e->frame.fsk.framegen);
+        break;
     }
 
     e->has_flushed = false;
@@ -355,6 +395,11 @@ static size_t quiet_encoder_sample_len(encoder *e, size_t data_len) {
         dsssframegen_assemble(e->frame.dsss.framegen, header, empty, data_len);
         num_symbols = dsssframegen_getframelen(e->frame.dsss.framegen);
         dsssframegen_reset(e->frame.dsss.framegen);
+        break;
+    case fsk_encoding:
+        fskframegen_assemble(e->frame.fsk.framegen, header, empty, data_len);
+        num_symbols = fskframegen_getframelen(e->frame.fsk.framegen);
+        fskframegen_reset(e->frame.fsk.framegen);
         break;
     }
     free(empty);
@@ -421,6 +466,19 @@ static size_t encoder_fillsymbols(encoder *e, size_t requested_length) {
 
         dsssframegen_write_samples(e->frame.dsss.framegen, e->symbolbuf, requested_length);
         e->frame.dsss.symbols_remaining -= requested_length;
+        return requested_length;
+    case fsk_encoding:
+        if (requested_length > e->frame.fsk.symbols_remaining) {
+            requested_length = e->frame.fsk.symbols_remaining;
+        }
+
+        if (requested_length > e->symbolbuf_len) {
+            e->symbolbuf = realloc(e->symbolbuf, requested_length * sizeof(float complex));
+            e->symbolbuf_len = requested_length;
+        }
+
+        fskframegen_write_samples(e->frame.fsk.framegen, e->symbolbuf, requested_length);
+        e->frame.fsk.symbols_remaining -= requested_length;
         return requested_length;
     }
 }
@@ -557,6 +615,9 @@ void quiet_encoder_destroy(encoder *e) {
         break;
     case dsss_encoding:
         dsssframegen_destroy(e->frame.dsss.framegen);
+        break;
+    case fsk_encoding:
+        fskframegen_destroy(e->frame.fsk.framegen);
         break;
     }
     if (e->resampler) {

@@ -29,6 +29,11 @@ typedef struct {
     size_t symbols_remaining;
 } dsss_encoder;
 
+typedef struct {
+    fskframegen framegen;
+    size_t symbols_remaining;
+} fsk_encoder;
+
 struct quiet_encoder {
     encoder_options opt;
     union {
@@ -36,6 +41,7 @@ struct quiet_encoder {
         modem_encoder modem;
         gmsk_encoder gmsk;
         dsss_encoder dsss;
+        fsk_encoder fsk;
     } frame;
     modulator *mod;
     float complex *symbolbuf;

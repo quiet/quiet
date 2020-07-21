@@ -429,6 +429,8 @@ typedef enum encodings {
     gmsk_encoding,
 
     dsss_encoding,
+
+    fsk_encoding,
 } quiet_encoding_t;
 
 /**

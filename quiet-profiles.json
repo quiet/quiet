@@ -265,5 +265,36 @@
         "inner_fec_scheme": "none",
         "outer_fec_scheme": "none"
       }
+    },
+    "audible-fsk": {
+      "mod_scheme": "fsk",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "none",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 18000,
+        "gain": 0.15
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 10,
+        "symbol_delay": 4,
+        "excess_bandwidth": 0.35
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "none",
+        "outer_fec_scheme": "v29"
+      }
     }
 }
