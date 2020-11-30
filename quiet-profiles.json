@@ -267,20 +267,20 @@
       }
     },
     "audible-fsk": {
-      "mod_scheme": "fsk",
+      "mod_scheme": "fsk8",
       "checksum_scheme": "crc32",
       "inner_fec_scheme": "none",
       "outer_fec_scheme": "v29",
       "frame_length": 20,
       "modulation": {
-        "center_frequency": 18000,
+        "center_frequency": 8000,
         "gain": 0.15
       },
       "interpolation": {
         "shape": "kaiser",
-        "samples_per_symbol": 10,
-        "symbol_delay": 4,
-        "excess_bandwidth": 0.35
+        "samples_per_symbol": 40,
+        "symbol_delay": 13,
+        "excess_bandwidth": 0.3
       },
       "encoder_filters": {
         "dc_filter_alpha": 0.01
@@ -294,7 +294,235 @@
       "header": {
         "checksum_scheme": "crc32",
         "inner_fec_scheme": "none",
-        "outer_fec_scheme": "v29"
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk8"
+      },
+      "fsk": {
+        "bandwidth": 0.45,
+        "samples_per_symbol": 50
+      }
+    },
+    "ultrasonic-fsk": {
+      "mod_scheme": "fsk16",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "none",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 19000,
+        "gain": 0.35
+      },
+      "interpolation": {
+        "shape": "rrcos",
+        "samples_per_symbol": 40,
+        "symbol_delay": 21,
+        "excess_bandwidth": 0.40
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "none",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk16"
+      },
+      "preamble": {
+        "polynomial": "0x13",
+        "polynomial_length": 4,
+        "polynomial_seed": 1
+      },
+      "detection_threshold": "0.5",
+      "fsk": {
+        "bandwidth": 0.35,
+        "samples_per_symbol": 70
+      }
+    },
+    "ultrasonic-experimental": {
+      "mod_scheme": "bpsk",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "rs8",
+      "outer_fec_scheme": "v29",
+      "frame_length": 100,
+      "modulation": {
+        "center_frequency": 19000,
+        "gain": 0.2
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 10,
+        "symbol_delay": 4,
+        "excess_bandwidth": 0.31
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "secded7264",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "bpsk"
+      }
+    },
+    "audible-fsk-robust": {
+      "mod_scheme": "fsk8",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "none",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 8000,
+        "gain": 0.15
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 40,
+        "symbol_delay": 13,
+        "excess_bandwidth": 0.3
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "none",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk8"
+      },
+      "fsk": {
+        "bandwidth": 0.45,
+        "samples_per_symbol": 250
+      }
+    },
+    "ultrasonic-fsk-robust": {
+      "mod_scheme": "fsk8",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "none",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 19000,
+        "gain": 0.35
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 40,
+        "symbol_delay": 13,
+        "excess_bandwidth": 0.3
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "none",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk8"
+      },
+      "preamble": {
+        "polynomial": "0x29",
+        "polynomial_length": 5,
+        "polynomial_seed": 1
+      },
+      "fsk": {
+        "bandwidth": 0.45,
+        "samples_per_symbol": 250
+      }
+    },
+    "audible-fsk-fast": {
+      "mod_scheme": "fsk8",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "rs8",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 8000,
+        "gain": 0.15
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 40,
+        "symbol_delay": 13,
+        "excess_bandwidth": 0.3
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "rs8",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk8"
+      },
+      "fsk": {
+        "bandwidth": 0.45,
+        "samples_per_symbol": 20
+      }
+    },
+    "ultrasonic-fsk-fast": {
+      "mod_scheme": "fsk8",
+      "checksum_scheme": "crc32",
+      "inner_fec_scheme": "rs8",
+      "outer_fec_scheme": "v29",
+      "frame_length": 20,
+      "modulation": {
+        "center_frequency": 19000,
+        "gain": 0.35
+      },
+      "interpolation": {
+        "shape": "kaiser",
+        "samples_per_symbol": 40,
+        "symbol_delay": 13,
+        "excess_bandwidth": 0.3
+      },
+      "encoder_filters": {
+        "dc_filter_alpha": 0.01
+      },
+      "resampler": {
+        "delay": 13,
+        "bandwidth": 0.45,
+        "attenuation": 60,
+        "filter_bank_size": 64
+      },
+      "header": {
+        "checksum_scheme": "crc32",
+        "inner_fec_scheme": "rs8",
+        "outer_fec_scheme": "v29",
+        "mod_scheme": "fsk8"
+      },
+      "fsk": {
+        "bandwidth": 0.45,
+        "samples_per_symbol": 20
       }
     }
 }

@@ -194,9 +194,9 @@ static void decoder_modem_create(const decoder_options *opt, decoder *d) {
     flexframesync_decode_payload_soft(modem.framesync, 1);
     if (opt->header_override_defaults) {
         flexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
+            .check = (crc_scheme)opt->header_checksum_scheme,
+            .fec0 = (fec_scheme)opt->header_inner_fec_scheme,
+            .fec1 = (fec_scheme)opt->header_outer_fec_scheme,
             .mod_scheme = opt->header_mod_scheme,
         };
         flexframesync_set_header_props(modem.framesync, &header_props);
@@ -256,20 +256,32 @@ static void decoder_fsk_create(const decoder_options *opt, decoder *d) {
     fsk_decoder fsk;
 
     fsk.framesync = fskframesync_create(decoder_on_decode, d);
-    fskframesync_set_bandwidth(fsk.framesync, 0.25f);
+    fskframesync_set_bandwidth(fsk.framesync, opt->fskopt.bandwidth);
+    fskframesync_set_samples_per_symbol(fsk.framesync, opt->fskopt.samples_per_symbol);
     fskframesync_set_header_len(fsk.framesync, 0);
     if (opt->is_debug) {
         fskframesync_debug_enable(fsk.framesync);
     }
     if (opt->header_override_defaults) {
         fskframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
-            .bits_per_symbol = 3,
-            .samples_per_symbol = 100,
+            .check = (crc_scheme)opt->header_checksum_scheme,
+            .fec0 = (fec_scheme)opt->header_inner_fec_scheme,
+            .fec1 = (fec_scheme)opt->header_outer_fec_scheme,
+            .bits_per_symbol = fskmod2bits(opt->header_mod_scheme),
         };
         fskframesync_set_header_props(fsk.framesync, &header_props);
+    }
+    if (opt->preamble_override_defaults) {
+        fskframepreambleprops_s preamble_props = {
+            .poly = opt->preamble_polynomial,
+            .poly_len = opt->preamble_polynomial_length,
+            .poly_seed = opt->preamble_polynomial_seed,
+        };
+        fskframesync_set_preamble_props(fsk.framesync, &preamble_props);
+    }
+
+    if (opt->preamble_detection_threshold) {
+        fskframesync_set_preamble_detection_threshold(fsk.framesync, opt->preamble_detection_threshold);
     }
 
     size_t symbolbuf_len = 256;

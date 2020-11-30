@@ -40,9 +40,9 @@ void encoder_modem_create(const encoder_options *opt, encoder *e) {
     modem_encoder modem;
 
     flexframegenprops_s props = {
-        .check = opt->checksum_scheme,
-        .fec0 = opt->inner_fec_scheme,
-        .fec1 = opt->outer_fec_scheme,
+        .check = (crc_scheme)opt->checksum_scheme,
+        .fec0 = (fec_scheme)opt->inner_fec_scheme,
+        .fec1 = (fec_scheme)opt->outer_fec_scheme,
         .mod_scheme = opt->mod_scheme,
     };
 
@@ -50,9 +50,9 @@ void encoder_modem_create(const encoder_options *opt, encoder *e) {
     flexframegen_set_header_len(modem.framegen, 0);
     if (opt->header_override_defaults) {
         flexframegenprops_s header_props = {
-            .check = opt->header_checksum_scheme,
-            .fec0 = opt->header_inner_fec_scheme,
-            .fec1 = opt->header_outer_fec_scheme,
+            .check = (crc_scheme)opt->header_checksum_scheme,
+            .fec0 = (fec_scheme)opt->header_inner_fec_scheme,
+            .fec1 = (fec_scheme)opt->header_outer_fec_scheme,
             .mod_scheme = opt->header_mod_scheme,
         };
         flexframegen_set_header_props(modem.framegen, &header_props);
@@ -90,7 +90,6 @@ void encoder_dsss_create(const encoder_options *opt, encoder *e) {
     };
 
     dsss.framegen = dsssframegen_create(&props);
-    printf("doing a thing\n");
     dsssframegen_set_header_len(dsss.framegen, 0);
     if (opt->header_override_defaults) {
         dsssframegenprops_s header_props = {
@@ -114,23 +113,31 @@ void encoder_fsk_create(const encoder_options *opt, encoder *e) {
         .check = opt->checksum_scheme,
         .fec0 = opt->inner_fec_scheme,
         .fec1 = opt->outer_fec_scheme,
-        .bits_per_symbol = 3,
-        .samples_per_symbol = 100,
+        .bits_per_symbol = fskmod2bits(opt->mod_scheme),
     };
-    float bandwidth = 0.25f;
+    float bandwidth = opt->fskopt.bandwidth;
+    unsigned int samples_per_symbol = opt->fskopt.samples_per_symbol;
 
-    fsk.framegen = fskframegen_create(&props, bandwidth);
+    fsk.framegen = fskframegen_create(&props, bandwidth, samples_per_symbol);
     fskframegen_set_header_len(fsk.framegen, 0);
     if (opt->header_override_defaults) {
         fskframegenprops_s header_props = {
             .check = opt->header_checksum_scheme,
             .fec0 = opt->header_inner_fec_scheme,
             .fec1 = opt->header_outer_fec_scheme,
-            .bits_per_symbol = 3,
-            .samples_per_symbol = 100,
+            .bits_per_symbol = fskmod2bits(opt->header_mod_scheme),
         };
         fskframegen_set_header_props(fsk.framegen, &header_props);
     }
+    if (opt->preamble_override_defaults) {
+        fskframepreambleprops_s preamble_props = {
+            .poly = opt->preamble_polynomial,
+            .poly_len = opt->preamble_polynomial_length,
+            .poly_seed = opt->preamble_polynomial_seed,
+        };
+        fskframegen_set_preamble_props(fsk.framegen, &preamble_props);
+    }
+
     e->symbolbuf = NULL;
     e->symbolbuf_len = 0;
     fsk.symbols_remaining = 0;

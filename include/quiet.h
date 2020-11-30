@@ -375,6 +375,23 @@ typedef enum quiet_modulation_schemes {
 
     /// Virginia Tech logo constellation
     quiet_modulation_vtech,
+
+    /// frequency-shift keying-2
+    quiet_modulation_fsk2 = 512,
+    /// frequency-shift keying-4
+    quiet_modulation_fsk4,
+    /// frequency-shift keying-8
+    quiet_modulation_fsk8,
+    /// frequency-shift keying-16
+    quiet_modulation_fsk16,
+    /// frequency-shift keying-32
+    quiet_modulation_fsk32,
+    /// frequency-shift keying-64
+    quiet_modulation_fsk64,
+    /// frequency-shift keying-128
+    quiet_modulation_fsk128,
+    /// frequency-shift keying-256
+    quiet_modulation_fsk256,
 } quiet_modulation_scheme_t;
 
 /**
@@ -401,6 +418,21 @@ typedef struct {
     /// number of extra guard subcarriers inserted on right (high freq)
     size_t right_band;
 } quiet_ofdm_options;
+
+/**
+ * Encoder options for FSK
+ *
+ * These options configure the behavior of FSK, frequency shift keying,
+ * as used by the encoder. FSK modulates bits across a pre-defined
+ * set of frequencies.
+ */
+typedef struct {
+    /// bandwidth occupied by fsk encoding, between 0 and 1
+    float bandwidth;
+
+    /// number of samples encoding each symbol in preamble/header/payload
+    unsigned int samples_per_symbol;
+} quiet_fsk_options;
 
 /**
  * @enum quiet_encoding_t
@@ -442,6 +474,9 @@ typedef struct {
     /// OFDM options, used only by OFDM mode
     quiet_ofdm_options ofdmopt;
 
+    /// FSK options, used only by FSK mode
+    quiet_fsk_options fskopt;
+
     /// Interpolation filter and carrier frequency options
     quiet_modulator_options modopt;
 
@@ -466,6 +501,16 @@ typedef struct {
     quiet_error_correction_scheme_t header_inner_fec_scheme;
     quiet_error_correction_scheme_t header_outer_fec_scheme;
     quiet_modulation_scheme_t header_mod_scheme;
+
+    /**
+     * Preamble options
+     * These control the frame preamble properties
+     * Only used if preamble_override_defaults = true
+     */
+    bool preamble_override_defaults;
+    unsigned int preamble_polynomial;
+    unsigned int preamble_polynomial_length;
+    unsigned int preamble_polynomial_seed;
 
     /**
      * Maximum frame length
@@ -496,6 +541,9 @@ typedef struct {
     /// OFDM options, used only by OFDM mode
     quiet_ofdm_options ofdmopt;
 
+    /// FSK options, used only by FSK mode
+    quiet_fsk_options fskopt;
+
     /// Decimation filter and carrier frequency options
     quiet_demodulator_options demodopt;
 
@@ -515,6 +563,23 @@ typedef struct {
     quiet_error_correction_scheme_t header_inner_fec_scheme;
     quiet_error_correction_scheme_t header_outer_fec_scheme;
     quiet_modulation_scheme_t header_mod_scheme;
+
+    /**
+     * Preamble options
+     * These control the frame preamble properties
+     * Only used if preamble_override_defaults = true
+     */
+    bool preamble_override_defaults;
+    unsigned int preamble_polynomial;
+    unsigned int preamble_polynomial_length;
+    unsigned int preamble_polynomial_seed;
+    quiet_modulation_scheme_t preamble_mod_scheme;
+
+    /**
+     * Preamble detection threshold controls the level at which frames will
+     * detect. A value of 0 will give the default threshold.
+     */
+    float preamble_detection_threshold;
 
     /**
      * Enable debug mode on receiver

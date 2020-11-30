@@ -9,6 +9,7 @@ static ring_wait_t *ring_wait_create() {
 
 static void ring_wait_destroy(ring_wait_t *w) {
     pthread_cond_destroy(&w->cond);
+    free(w);
 }
 
 static void ring_wait_set_blocking(ring_wait_t *w, time_t sec, long nano) {
