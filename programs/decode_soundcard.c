@@ -44,7 +44,7 @@ int decode_from_soundcard(FILE *output, quiet_decoder_options *opt) {
 
 int main(int argc, char **argv) {
     if (argc < 2 || argc > 4) {
-        printf("usage: encode_soundcard <profilename> [<output_destination>]\n");
+        printf("usage: decode_soundcard <profilename> [<output_destination>]\n");
         exit(1);
     }
     quiet_decoder_options *decodeopt =
